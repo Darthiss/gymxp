@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { useData } from '../lib/store';
 import { useGame } from '../lib/game';
-import { nextRankNeeds, nextVisitMilestone, sortSessions } from '../lib/xp';
+import { nextVisitMilestone, QUEST_ALL_BONUS, sortSessions } from '../lib/xp';
+import { QuestList, RankProgress, SeasonCard, Stars } from '../components/Progression';
 import { compare, heroGoal } from '../lib/legends';
 import { holidayOn } from '../lib/holidays';
 import { fmtDate, fmtKg, fmtNum, plural, today } from '../lib/util';
@@ -37,20 +38,23 @@ export function Home() {
         <a className="icon-btn" href="#/settings" aria-label="Settings">⚙️</a>
       </div>
 
-      <a href="#/awards" className="card card-link level-card stack" style={{ '--rank-color': L.rank.color } as React.CSSProperties}>
+      <a href="#/awards?tab=ranks" className="card card-link level-card stack" style={{ '--rank-color': L.rank.color } as React.CSSProperties}>
         <div className="row" style={{ gap: 16 }}>
           <LevelBadge info={L} />
           <div className="grow stack" style={{ gap: 4 }}>
             <div className="rank-title" style={{ color: L.rank.color }}>{L.rank.title}</div>
-            <div className="small dim num">{fmtNum(g.totalXp)} XP total</div>
-            {L.nextRank && <div className="tiny muted">Next rank: {L.nextRank.title} · needs {nextRankNeeds(L, g.visits)}</div>}
+            <Stars info={L} size="1.15rem" />
+            <div className="small dim num">{fmtNum(g.totalXp)} XP · {plural(g.visits, 'visit')}</div>
           </div>
         </div>
-        <XpBar pct={L.pct} />
-        <div className="row between small">
-          <span className="muted">Level {L.level + 1} in</span>
-          <span className="bold num">{fmtNum(L.span - L.into)} XP</span>
+        <div className="stack" style={{ gap: 5 }}>
+          <div className="row between tiny">
+            <span className="muted">Level {L.level} → {L.level + 1}</span>
+            <span className="bold num">{fmtNum(L.span - L.into)} XP to go</span>
+          </div>
+          <XpBar pct={L.pct} />
         </div>
+        <RankProgress info={L} visits={g.visits} />
       </a>
 
       {feriado && !trainedToday && <div className="notice good small">🧉 Today is <b>{feriado}</b>: a workout today earns +100 holiday XP!</div>}
@@ -100,6 +104,18 @@ export function Home() {
           )}
         </a>
       </div>
+
+      <div className="card stack" style={{ gap: 10 }}>
+        <div className="row between">
+          <span className="bold">🎯 Weekly quests</span>
+          <span className="tiny muted">{g.quests.filter((q) => q.done).length}/{g.quests.length} · all 3 = +{QUEST_ALL_BONUS} bonus · new every Monday</span>
+        </div>
+        <QuestList quests={g.quests} />
+      </div>
+
+      <a href="#/awards?tab=ranks" className="card card-link stack">
+        <SeasonCard s={g.season} />
+      </a>
 
       <div className="grid-3">
         <div className="stat"><div className="label">Visits</div><div className="value">{fmtNum(g.visits)}</div></div>

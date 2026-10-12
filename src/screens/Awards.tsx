@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useGame } from '../lib/game';
-import { ACHIEVEMENTS, nextRankNeeds, RANKS, RULES, xpForLevel, type AchievementCategory } from '../lib/xp';
+import { ACHIEVEMENTS, RANKS, RULES, SEASON_TIERS, xpForLevel, type AchievementCategory } from '../lib/xp';
+import { RankProgress, SeasonCard, Stars } from '../components/Progression';
 import { compare, heroGoal, LEGENDS, type LegendProgress } from '../lib/legends';
 import { fmtDate, fmtNum, plural } from '../lib/util';
 import { navigate, type Route } from '../lib/router';
@@ -26,7 +27,7 @@ export function Awards({ route }: { route: Route }) {
         <div className="row" style={{ gap: 16 }}>
           <LevelBadge info={L} size={88} />
           <div className="grow stack" style={{ gap: 4 }}>
-            <div className="rank-title" style={{ color: L.rank.color }}>{L.rank.title}</div>
+            <div className="rank-title" style={{ color: L.rank.color }}>{L.rank.title} <Stars info={L} /></div>
             <div className="small dim num">{fmtNum(g.totalXp)} XP · level {L.level} · {plural(g.visits, 'visit')}</div>
             <XpBar pct={L.pct} />
             <div className="tiny muted num">{fmtNum(L.span - L.into)} XP to level {L.level + 1}</div>
@@ -37,7 +38,7 @@ export function Awards({ route }: { route: Route }) {
       <div className="tabs">
         {(['achievements', 'ranks', 'legends'] as Tab[]).map((t) => (
           <button key={t} className={tab === t ? 'on' : ''} onClick={() => navigate(`awards?tab=${t}`, true)}>
-            {t === 'achievements' ? 'Achievements' : t === 'ranks' ? 'Ranks' : 'Legends'}
+            {t === 'achievements' ? 'Achievements' : t === 'ranks' ? 'Rank & Season' : 'Legends'}
           </button>
         ))}
       </div>
@@ -114,27 +115,77 @@ function Achievements() {
 function Ranks() {
   const g = useGame();
   const L = g.level;
+  const past = g.seasons.filter((x) => x.key !== g.season.key).reverse();
   return (
-    <div className="stack">
-      <p className="small dim">Each rank needs a <b>level</b> (XP) <b>and</b> a number of <b>gym visits</b>, so it can't be rushed. At ~3 visits a week, Olympian takes about 8–10 years.</p>
-      {L.nextRank && (
-        <div className="notice small">Next: <b style={{ color: L.nextRank.color }}>{L.nextRank.title}</b> needs {nextRankNeeds(L, g.visits)}.</div>
-      )}
-      <div className="card tight ladder">
-        {RANKS.map((r) => {
-          const current = r === L.rank;
-          const reached = RANKS.indexOf(r) <= RANKS.indexOf(L.rank);
-          return (
-            <div key={r.title} className={`rung${current ? ' current' : ''}`} style={{ opacity: reached ? 1 : 0.55 }}>
-              <span className="dot" style={{ background: r.color }} />
-              <span className="grow bold" style={{ color: current ? r.color : undefined }}>{r.title}</span>
-              <span className="tiny muted num" style={{ textAlign: 'right' }}>
-                Lv {r.minLevel} · {fmtNum(xpForLevel(r.minLevel))} XP<br />{fmtNum(r.minVisits)} visits
-              </span>
-              <span style={{ width: 16 }}>{reached ? '✓' : ''}</span>
+    <div className="stack-lg">
+      <div className="card stack small dim" style={{ lineHeight: 1.5 }}>
+        <b className="accent" style={{ fontSize: '1rem' }}>How progression works</b>
+        <div>⚡ <b>Level</b>: every workout adds XP. Early levels come every few weeks; later ones take months.</div>
+        <div>🎖️ <b>Rank</b> needs a level <i>and</i> enough gym visits, so it can't be rushed. Each rank has <b>4 stars</b>; rank points (RP) fill toward the next star with every workout. Your slower side (XP or visits) sets the pace.</div>
+        <div>🌦️ <b>Seasons</b> reset every 3 months: earn Bronze → Champion for staying consistent <i>now</i>. Your rank never resets.</div>
+        <div>🎯 <b>Weekly quests</b>: 3 small healthy challenges every Monday.</div>
+        <div>🏅 <b>Machine mastery</b>: each exercise earns Bronze → Master as you keep training it (see Progress → Strength).</div>
+        <div>👑 Past <b>Olympian</b> you keep earning service stars forever.</div>
+      </div>
+
+      <div className="stack">
+        <div className="section-title">Rank ladder</div>
+        <div className="card stack" style={{ gap: 10, '--rank-color': L.rank.color } as React.CSSProperties}>
+          <div className="row between">
+            <span className="bold" style={{ color: L.rank.color }}>{L.rank.title} <Stars info={L} /></span>
+            <span className="tiny muted">{Math.round(L.rankPct * 100)}% through this rank</span>
+          </div>
+          <RankProgress info={L} visits={g.visits} />
+        </div>
+        <div className="card tight ladder">
+          {RANKS.map((r) => {
+            const current = r === L.rank;
+            const reached = RANKS.indexOf(r) <= RANKS.indexOf(L.rank);
+            return (
+              <div key={r.title} className={`rung${current ? ' current' : ''}`} style={{ opacity: reached ? 1 : 0.55 }}>
+                <span className="dot" style={{ background: r.color }} />
+                <span className="grow bold" style={{ color: current ? r.color : undefined }}>
+                  {r.title}
+                  {current && <span style={{ marginLeft: 6 }}><Stars info={L} size="0.8rem" /></span>}
+                </span>
+                <span className="tiny muted num" style={{ textAlign: 'right' }}>
+                  Lv {r.minLevel} · {fmtNum(xpForLevel(r.minLevel))} XP<br />{fmtNum(r.minVisits)} visits
+                </span>
+                <span style={{ width: 16 }}>{reached ? '✓' : ''}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="stack">
+        <div className="section-title">Season</div>
+        <div className="card"><SeasonCard s={g.season} /></div>
+        <div className="card tight stack small dim" style={{ gap: 4, padding: 12 }}>
+          {SEASON_TIERS.map((t, i) => (
+            <div key={t.name} className="row between">
+              <span>{t.icon} {t.name}</span>
+              <span className="num">{t.name === 'Champion' ? 'weekly goal hit every week' : `${g.season.targets[i]} visits`} · +{t.xp} XP</span>
             </div>
-          );
-        })}
+          ))}
+        </div>
+        {past.length > 0 && (
+          <>
+            <div className="section-title">Past seasons</div>
+            <div className="ach-grid">
+              {past.map((x) => {
+                const t = x.tier >= 0 ? SEASON_TIERS[x.tier] : null;
+                return (
+                  <div key={x.key} className={`ach ${t ? 'unlocked' : 'locked'}`}>
+                    <span className="icon">{t?.icon ?? '🌱'}</span>
+                    <div className="title">{x.label}</div>
+                    <div className="tiny" style={{ color: t?.color ?? 'var(--muted)' }}>{t?.name ?? 'Unranked'} · {plural(x.visits, 'visit')}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

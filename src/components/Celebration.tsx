@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { levelInfo, type SessionResult } from '../lib/xp';
+import { levelInfo, rankLabel, rankStep, type SessionResult } from '../lib/xp';
+import { Stars } from './Progression';
 import { Confetti, LevelBadge, Sheet, XpBar } from './ui';
 
 export function XpBreakdown({ result }: { result: SessionResult }) {
@@ -21,6 +22,8 @@ export function Celebration({ result, onClose }: { result: SessionResult; onClos
   const after = levelInfo(result.xpAfter, result.visitsAfter);
   const levelsGained = after.level - before.level;
   const rankUp = after.rank.title !== before.rank.title;
+  const starUp = !rankUp && rankStep(after) > rankStep(before);
+  const rpGain = rankUp || starUp ? 0 : after.rp - before.rp;
   const [shown, setShown] = useState(0);
   const [barPct, setBarPct] = useState(levelsGained > 0 ? 0 : before.pct);
 
@@ -42,7 +45,7 @@ export function Celebration({ result, onClose }: { result: SessionResult; onClos
     };
   }, [result.xp, after.pct, levelsGained]);
 
-  const big = levelsGained > 0 || result.achievements.length > 0 || result.prs.length > 0;
+  const big = levelsGained > 0 || rankUp || starUp || result.achievements.length > 0 || result.prs.length > 0;
 
   return (
     <>
@@ -55,16 +58,22 @@ export function Celebration({ result, onClose }: { result: SessionResult; onClos
             {levelsGained > 0 && <div className="levelup">LEVEL UP! → {after.level}</div>}
             {rankUp && (
               <div className="tag gold" style={{ fontSize: '0.9rem', padding: '4px 12px' }}>
-                New rank: {after.rank.title}
+                🎖️ New rank: {after.rank.title}
               </div>
             )}
+            {starUp && (
+              <div className="tag gold" style={{ fontSize: '0.9rem', padding: '4px 12px' }}>
+                ⭐ New star: {rankLabel(after)}
+              </div>
+            )}
+            {rpGain > 0 && <div className="small muted">+{rpGain} rank points toward your next star</div>}
           </div>
 
           <div className="row" style={{ textAlign: 'left' }}>
             <LevelBadge info={after} size={64} />
             <div className="grow stack" style={{ gap: 6 }}>
               <div className="row between small">
-                <span className="bold" style={{ color: after.rank.color }}>{after.rank.title}</span>
+                <span className="bold" style={{ color: after.rank.color }}>{after.rank.title} <Stars info={after} /></span>
                 <span className="muted num">{after.into.toLocaleString()} / {after.span.toLocaleString()} XP</span>
               </div>
               <XpBar pct={barPct} />

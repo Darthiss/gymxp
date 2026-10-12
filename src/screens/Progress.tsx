@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import { getStore, useData } from '../lib/store';
 import { useExerciseMap, useGame } from '../lib/game';
-import { sortSessions } from '../lib/xp';
+import { masteryOf, sortSessions } from '../lib/xp';
 import { addDays, fmtDate, fmtKg, fmtNum, num, plural, today, uid, weekKey } from '../lib/util';
 import { navigate, type Route } from '../lib/router';
 import { ColumnChart, LineChart } from '../components/charts';
-import { Empty, ExerciseThumb, PageHead, toast } from '../components/ui';
+import { Empty, ExerciseThumb, PageHead, toast, XpBar } from '../components/ui';
 
 type Tab = 'workouts' | 'body' | 'lifts';
 
@@ -122,7 +122,7 @@ function Lifts() {
             <ExerciseThumb ex={ex} />
             <div className="grow">
               <div className="bold ellipsis">{ex?.name ?? 'Unknown'}</div>
-              <div className="tiny muted">{b.sessions} sessions · last {fmtDate(b.lastDate)}</div>
+              <div className="tiny muted">{masteryOf(b.sessions).current ? `${masteryOf(b.sessions).current!.icon} ${masteryOf(b.sessions).current!.name} · ` : ''}{plural(b.sessions, 'session')} · last {fmtDate(b.lastDate)}</div>
             </div>
             <div className="center">
               <div className="bold num">{b.maxKg} kg</div>
@@ -161,6 +161,7 @@ export function LiftDetail({ id }: { id: string }) {
           <div className="stat"><div className="label">Sessions</div><div className="value">{best.sessions}</div></div>
         </div>
       )}
+      {best && <MasteryCard sessions={best.sessions} />}
       {pts.length > 0 && (
         <div className="card stack">
           <div className="chips">
@@ -262,6 +263,20 @@ function Body() {
       ) : (
         <Empty icon="⚖️" title="No weigh-ins yet">Weigh in about once a week, same time of day. It also makes assisted machines count correctly.</Empty>
       )}
+    </div>
+  );
+}
+
+function MasteryCard({ sessions }: { sessions: number }) {
+  const m = masteryOf(sessions);
+  return (
+    <div className="card stack" style={{ gap: 6 }}>
+      <div className="row between">
+        <span className="bold">{m.current ? `${m.current.icon} ${m.current.name} mastery` : '🔰 No mastery yet'}</span>
+        {m.next && <span className="tiny muted num">{sessions}/{m.next.n} sessions → {m.next.icon} {m.next.name}</span>}
+      </div>
+      <XpBar thin gold pct={m.pct} />
+      <span className="tiny muted">Mastery grows with every session on this exercise. It's about practice, not weight.</span>
     </div>
   );
 }

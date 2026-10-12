@@ -27,10 +27,11 @@ export const RULES = {
 };
 
 // ---------- Levels ----------
-// Total XP to reach a level grows as 600·(L−1)^1.9. Simulated at 3 solid workouts a week:
-// 1 month ≈ level 4, 1 year ≈ level 17, 3 years ≈ 32, 5 years ≈ 43, 10 years ≈ 60.
+// Total XP to reach a level grows as 650·(L−1)^1.9. Simulated at 3 solid workouts a week
+// (incl. quests & seasons): 1 month ≈ level 5, 1 year ≈ 18, 3 years ≈ 32, 5 years ≈ 43.
+// At ~2 a week with skipped weeks: 1 year ≈ 10, 5 years ≈ 24. Consistency is what pays.
 
-const LEVEL_A = 600;
+const LEVEL_A = 650;
 const LEVEL_P = 1.9;
 
 /** Total XP required to reach `level` (level 1 = 0 XP). */
@@ -79,6 +80,13 @@ export function rankFor(level: number, visits: number): Rank {
   return r;
 }
 
+// Each rank is split into 4 divisions (★☆☆☆ → ★★★★), like League of Legends' IV→I /
+// Rocket League's divisions. Progress through a rank is the SLOWER of your XP progress
+// and your gym-visit progress toward the next rank, so stars can't be farmed with XP alone.
+// Past Olympian (the top) you keep earning "service stars" (Battlefield-style): one per 2 levels.
+export const DIVISIONS = 4;
+const OLYMPIAN_LEVELS_PER_STAR = 2;
+
 export interface LevelInfo {
   level: number;
   xp: number;
@@ -87,7 +95,17 @@ export interface LevelInfo {
   pct: number;
   rank: Rank;
   nextRank?: Rank;
+  /** 1..3 inside a normal rank; for the top rank: number of service stars earned (0+). */
+  division: number;
+  /** 0..1 progress through the whole rank (toward the next rank). */
+  rankPct: number;
+  /** 0..100 "rank points" toward the next division / star. */
+  rp: number;
+  /** Which requirement is holding the rank back right now. */
+  limiter: 'xp' | 'visits' | null;
 }
+
+const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
 export function levelInfo(xp: number, visits: number): LevelInfo {
   const level = levelForXp(xp);
@@ -95,8 +113,36 @@ export function levelInfo(xp: number, visits: number): LevelInfo {
   const span = xpForLevel(level + 1) - base;
   const into = xp - base;
   const rank = rankFor(level, visits);
-  return { level, xp, into, span, pct: span ? into / span : 0, rank, nextRank: RANKS[RANKS.indexOf(rank) + 1] };
+  const nextRank = RANKS[RANKS.indexOf(rank) + 1];
+  let division: number, rankPct: number, rp: number, limiter: LevelInfo['limiter'] = null;
+  if (nextRank) {
+    const xpFrom = xpForLevel(rank.minLevel), xpTo = xpForLevel(nextRank.minLevel);
+    const xpProg = clamp01((xp - xpFrom) / (xpTo - xpFrom));
+    const visitProg = clamp01((visits - rank.minVisits) / (nextRank.minVisits - rank.minVisits));
+    rankPct = Math.min(xpProg, visitProg);
+    limiter = xpProg < visitProg ? 'xp' : 'visits';
+    const d = Math.min(DIVISIONS - 1e-9, rankPct * DIVISIONS);
+    division = Math.floor(d) + 1;
+    rp = Math.floor((d - Math.floor(d)) * 100);
+  } else {
+    // Top rank: endless service stars
+    const over = Math.max(0, level - rank.minLevel) + into / (span || 1);
+    division = Math.floor(over / OLYMPIAN_LEVELS_PER_STAR);
+    rankPct = 1;
+    rp = Math.floor(((over % OLYMPIAN_LEVELS_PER_STAR) / OLYMPIAN_LEVELS_PER_STAR) * 100);
+  }
+  return { level, xp, into, span, pct: span ? into / span : 0, rank, nextRank, division, rankPct, rp, limiter };
 }
+
+/** "Silver Lifter ★★☆" (or "Olympian ★×4" past the top). */
+export function rankLabel(info: LevelInfo, stars = true): string {
+  if (!stars) return info.rank.title;
+  if (!info.nextRank) return info.division ? `${info.rank.title} ★×${info.division}` : info.rank.title;
+  return `${info.rank.title} ${'★'.repeat(info.division)}${'☆'.repeat(DIVISIONS - info.division)}`;
+}
+
+/** Comparable number for detecting division-ups: rank index × 100 + division. */
+export const rankStep = (info: LevelInfo) => RANKS.indexOf(info.rank) * 100 + info.division;
 
 /** What's still missing for the next rank, e.g. "level 8 · 12 more visits". */
 export function nextRankNeeds(info: LevelInfo, visits: number): string {
@@ -135,8 +181,8 @@ const VISIT_TIERS: Tier[] = [
   { n: 1, xp: 50, title: 'First Rep', icon: '🌱' },
   { n: 5, xp: 75, title: 'Getting Started', icon: '👟' },
   { n: 10, xp: 100, title: 'Double Digits', icon: '🔟' },
-  { n: 25, xp: 200, title: 'Regular', icon: '🎟️' },
-  { n: 50, xp: 300, title: 'Committed', icon: '💪' },
+  { n: 25, xp: 200, title: 'Quarter Century', icon: '🎟️' },
+  { n: 50, xp: 300, title: 'Half Century', icon: '💪' },
   { n: 75, xp: 400, title: 'Dedicated', icon: '🧱' },
   { n: 100, xp: 600, title: 'Centurion', icon: '🛡️' },
   { n: 150, xp: 750, title: 'Iron Habit', icon: '⚙️' },
@@ -285,6 +331,119 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 
 const ACH_BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));
 
+// ---------- Seasons (quarterly, like Rocket League / battle-pass seasons) ----------
+// A fresh scoreboard every 3 months that rewards *current* consistency; the lifetime rank
+// never resets. Tiers are relative to your weekly goal, so they stay honest.
+
+export interface SeasonTier { name: string; icon: string; share: number; xp: number; color: string }
+export const SEASON_TIERS: SeasonTier[] = [
+  { name: 'Bronze', icon: '🥉', share: 0.25, xp: 50, color: '#cd8a4f' },
+  { name: 'Silver', icon: '🥈', share: 0.5, xp: 100, color: '#c7d0dc' },
+  { name: 'Gold', icon: '🥇', share: 0.7, xp: 200, color: '#f5c542' },
+  { name: 'Platinum', icon: '💠', share: 0.85, xp: 300, color: '#7fe0d6' },
+  { name: 'Diamond', icon: '💎', share: 0.95, xp: 500, color: '#8fd3ff' },
+  { name: 'Champion', icon: '👑', share: 1, xp: 750, color: '#ffd166' }, // weekly goal hit EVERY week
+];
+
+export interface SeasonState {
+  key: string; // 2026-Q4
+  label: string; // Spring 2026 (southern hemisphere)
+  start: string;
+  end: string;
+  weeks: number; // weeks (by Monday) in the season
+  visits: number;
+  goalWeeks: number;
+  tier: number; // index into SEASON_TIERS, -1 = none yet
+  targets: number[]; // visits needed per tier (Champion uses goalWeeks === weeks)
+}
+
+const SEASON_NAMES = ['Summer', 'Autumn', 'Winter', 'Spring']; // Jan–Mar … Oct–Dec in Argentina
+
+export function seasonOf(date: string, goal: number): SeasonState {
+  const y = Number(date.slice(0, 4));
+  const q = Math.floor((Number(date.slice(5, 7)) - 1) / 3);
+  const start = `${y}-${String(q * 3 + 1).padStart(2, '0')}-01`;
+  const end = addDays(q === 3 ? `${y + 1}-01-01` : `${y}-${String(q * 3 + 4).padStart(2, '0')}-01`, -1);
+  let weeks = 0;
+  for (let d = start; d <= end; d = addDays(d, 1)) if (parseDate(d).getDay() === 1) weeks++;
+  return {
+    key: `${y}-Q${q + 1}`, label: `${SEASON_NAMES[q]} ${y}`, start, end, weeks, visits: 0, goalWeeks: 0, tier: -1,
+    targets: SEASON_TIERS.map((t) => Math.ceil(t.share * goal * weeks)),
+  };
+}
+
+// ---------- Weekly quests (Destiny bounties / Fortnite weekly challenges) ----------
+// Three per week, picked deterministically from the week + your history, all of them
+// healthy habits. Small XP so they motivate without inflating levels.
+
+export const QUEST_XP = 50;
+export const QUEST_ALL_BONUS = 50;
+
+interface WeekStats {
+  visits: number; sets: number; volume: number; prs: number; legs: number; groups: Set<MuscleGroup>;
+  weighIns: number; maxMinutes: number; weekend: number; newEx: number; maxExInSession: number; visitsByThu: number;
+}
+interface QuestCtx { goal: number; avgVol: number; seen: number; exTotal: number; hasWatch: boolean }
+interface QuestDef {
+  id: string; icon: string;
+  title: (c: QuestCtx) => string;
+  target: (c: QuestCtx) => number;
+  value: (s: WeekStats) => number;
+  eligible: (c: QuestCtx) => boolean;
+}
+const MAJOR: MuscleGroup[] = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs'];
+const roundTo = (n: number, step: number) => Math.max(step, Math.round(n / step) * step);
+
+const QUESTS: QuestDef[] = [
+  { id: 'pr', icon: '🏆', title: () => 'Set a personal record', target: () => 1, value: (s) => s.prs, eligible: (c) => c.seen >= 3 },
+  { id: 'legs', icon: '🦵', title: () => 'Train legs', target: () => 1, value: (s) => s.legs, eligible: () => true },
+  { id: 'fullbody', icon: '🧩', title: () => 'Hit chest, back, shoulders, arms and legs', target: () => 5, value: (s) => MAJOR.filter((g) => s.groups.has(g)).length, eligible: (c) => c.goal >= 2 },
+  { id: 'sets', icon: '🔁', title: (c) => `Complete ${c.goal * 15} sets`, target: (c) => c.goal * 15, value: (s) => s.sets, eligible: () => true },
+  { id: 'volume', icon: '📈', title: (c) => `Move ${roundTo(c.avgVol * 1.05, 100).toLocaleString('en-US')} kg (5% above your recent average)`, target: (c) => roundTo(c.avgVol * 1.05, 100), value: (s) => s.volume, eligible: (c) => c.avgVol > 0 },
+  { id: 'weighin', icon: '⚖️', title: () => 'Log your bodyweight', target: () => 1, value: (s) => s.weighIns, eligible: () => true },
+  { id: 'explore', icon: '🧭', title: () => "Try an exercise you've never done", target: () => 1, value: (s) => s.newEx, eligible: (c) => c.seen >= 3 && c.seen < c.exTotal },
+  { id: 'long', icon: '⏱️', title: () => 'One workout of 60+ minutes', target: () => 60, value: (s) => s.maxMinutes, eligible: (c) => c.hasWatch },
+  { id: 'weekend', icon: '🏖️', title: () => 'Train on Saturday or Sunday', target: () => 1, value: (s) => s.weekend, eligible: () => true },
+  { id: 'variety', icon: '🎨', title: () => 'Do 6+ different exercises in one workout', target: () => 6, value: (s) => s.maxExInSession, eligible: (c) => c.seen >= 6 },
+  { id: 'early', icon: '⚡', title: () => 'Reach your weekly goal by Thursday', target: (c) => c.goal, value: (s) => s.visitsByThu, eligible: (c) => c.goal <= 4 },
+];
+
+export interface QuestStatus { id: string; icon: string; title: string; target: number; value: number; done: boolean; xp: number }
+
+function hashStr(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+
+function pickQuests(week: string, c: QuestCtx): QuestStatus[] {
+  let seed = hashStr(`gymxp:${week}`);
+  const rnd = () => ((seed = Math.imul(seed ^ (seed >>> 15), 2246822507) >>> 0), seed / 2 ** 32);
+  const pool = QUESTS.filter((q) => q.eligible(c)).map((q) => ({ q, r: rnd() })).sort((a, b) => a.r - b.r).slice(0, 3);
+  return pool.map(({ q }) => ({ id: q.id, icon: q.icon, title: q.title(c), target: q.target(c), value: 0, done: false, xp: QUEST_XP }));
+}
+
+const emptyWeek = (): WeekStats => ({ visits: 0, sets: 0, volume: 0, prs: 0, legs: 0, groups: new Set(), weighIns: 0, maxMinutes: 0, weekend: 0, newEx: 0, maxExInSession: 0, visitsByThu: 0 });
+
+// ---------- Machine mastery (Battlefield weapon service stars) ----------
+export const MASTERY = [
+  { n: 5, name: 'Bronze', icon: '🥉' },
+  { n: 15, name: 'Silver', icon: '🥈' },
+  { n: 30, name: 'Gold', icon: '🥇' },
+  { n: 60, name: 'Platinum', icon: '💠' },
+  { n: 100, name: 'Diamond', icon: '💎' },
+  { n: 200, name: 'Master', icon: '👑' },
+];
+
+/** Mastery tier for an exercise from how many sessions you've done it. */
+export function masteryOf(sessions: number) {
+  let tier = -1;
+  MASTERY.forEach((m, i) => { if (sessions >= m.n) tier = i; });
+  const next = MASTERY[tier + 1];
+  const from = tier >= 0 ? MASTERY[tier].n : 0;
+  return { tier, current: tier >= 0 ? MASTERY[tier] : null, next, pct: next ? (sessions - from) / (next.n - from) : 1 };
+}
+
 // ---------- Engine ----------
 
 export interface XpItem {
@@ -360,6 +519,9 @@ export interface GameState {
   bestWeekStreak: number;
   thisWeekVisits: number;
   timeline: { date: string; xp: number }[]; // cumulative XP after each day with activity
+  quests: QuestStatus[]; // this week's
+  seasons: SeasonState[]; // oldest first
+  season: SeasonState; // the current one
 }
 
 export function e1rm(kg: number, reps: number): number {
@@ -454,12 +616,50 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     else timeline.push({ date, xp: totalXp });
   };
 
+  // --- seasons & weekly quests ---
+  const seasons = new Map<string, SeasonState>();
+  const seasonFor = (date: string) => {
+    const fresh = seasonOf(date, goal);
+    let ss = seasons.get(fresh.key);
+    if (!ss) { ss = fresh; seasons.set(ss.key, ss); }
+    return ss;
+  };
+  const weekVolume = new Map<string, number>();
+  let hasWatch = false;
+  let curWeek = '';
+  let week = emptyWeek();
+  let quests: QuestStatus[] = [];
+  const questCtx = (beforeWeek: string): QuestCtx => {
+    const recent = [...weekVolume.entries()].filter(([k, v]) => k < beforeWeek && v > 0).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 4);
+    const avgVol = recent.length >= 2 ? recent.reduce((a, [, v]) => a + v, 0) / recent.length : 0;
+    return { goal, avgVol, seen: seen.size, exTotal: exMap.size, hasWatch };
+  };
+  const enterWeek = (wk: string) => {
+    if (wk === curWeek) return;
+    curWeek = wk;
+    week = emptyWeek();
+    quests = pickQuests(wk, questCtx(wk));
+  };
+  const checkQuests = (award: (label: string, v: number) => void) => {
+    for (const q of quests) {
+      q.value = QUESTS.find((d) => d.id === q.id)!.value(week);
+      if (!q.done && q.value >= q.target) {
+        q.done = true;
+        award(`${q.icon} Quest: ${q.title}`, QUEST_XP);
+        if (quests.every((x) => x.done)) award('🎯 All weekly quests cleared', QUEST_ALL_BONUS);
+      }
+    }
+  };
+
   for (const ev of events) {
     if (ev.kind === 'w') {
       const w = ev.w;
       weighInCount++;
       let xp = 0;
       const wk = weekKey(w.date);
+      enterWeek(wk);
+      week.weighIns++;
+      checkQuests((_, v) => { xp += v; });
       if (!weighInWeeks.has(wk)) { weighInWeeks.add(wk); xp += RULES.weighInXp; }
       xp += unlock('body-first', w.date, null);
       if (weighInCount >= 10) xp += unlock('body-10', w.date, null);
@@ -480,6 +680,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     const visitsBefore = visitDays.size;
     const bw = bwAt(s.date);
     const wk = weekKey(s.date);
+    enterWeek(wk);
     const dow = parseDate(s.date).getDay(); // 0 = Sunday
 
     // --- base XP ---
@@ -609,11 +810,40 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     prCount += prs.length;
 
     // weekly goal reached with this visit
+    const season = seasonFor(s.date);
+    if (firstOfDay) season.visits++;
     if (firstOfDay && weekVisits.get(wk) === goal) {
       goalWeeks.add(wk);
+      seasonFor(wk).goalWeeks++;
       items.push({ label: `✅ Weekly goal (${goal}×) reached`, xp: RULES.weeklyGoalXp, kind: 'bonus' });
       xp += RULES.weeklyGoalXp;
     }
+    for (let i = season.tier + 1; i < SEASON_TIERS.length; i++) {
+      const t = SEASON_TIERS[i];
+      const ok = t.name === 'Champion' ? season.goalWeeks >= season.weeks : season.visits >= season.targets[i];
+      if (!ok) break;
+      season.tier = i;
+      items.push({ label: `${t.icon} ${season.label} season: ${t.name}`, xp: t.xp, kind: 'bonus' });
+      xp += t.xp;
+    }
+
+    // weekly quests
+    if (firstOfDay) {
+      week.visits++;
+      if (dow >= 1 && dow <= 4) week.visitsByThu++;
+      if (dow === 0 || dow === 6) week.weekend = 1;
+    }
+    week.sets += sets;
+    week.volume += volume;
+    week.prs += prs.length;
+    week.newEx += newExercises.length;
+    week.maxMinutes = Math.max(week.maxMinutes, minutes);
+    week.maxExInSession = Math.max(week.maxExInSession, s.exercises.filter((e) => e.sets.some((x) => x.reps > 0)).length);
+    for (const g of groups) week.groups.add(g);
+    if (groups.has('Legs')) week.legs = 1;
+    weekVolume.set(wk, (weekVolume.get(wk) ?? 0) + volume);
+    if (minutes > 0) hasWatch = true;
+    checkQuests((label, v) => { items.push({ label, xp: v, kind: 'bonus' }); xp += v; });
 
     totalVolume += volume;
     totalSets += sets;
@@ -688,6 +918,8 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
   const thisWeek = weekKey(today());
   const thisWeekVisits = weekVisits.get(thisWeek) ?? 0;
   const weekStreak = goalWeeks.has(thisWeek) ? consecutive(goalWeeks, thisWeek) : consecutive(goalWeeks, addDays(thisWeek, -7));
+  const thisWeekQuests = curWeek === thisWeek ? quests : pickQuests(thisWeek, questCtx(thisWeek));
+  const curSeasonKey = seasonOf(today(), goal).key;
 
   const progress: Record<string, number> = {};
   const metric: Record<string, number> = {
@@ -726,6 +958,9 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     bestWeekStreak: bestStreak,
     thisWeekVisits,
     timeline,
+    quests: thisWeekQuests,
+    seasons: [...seasons.values()].sort((a, b) => a.key.localeCompare(b.key)),
+    season: seasons.get(curSeasonKey) ?? seasonOf(today(), goal),
   };
 }
 

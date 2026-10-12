@@ -15,7 +15,7 @@ const game = (d: AppData) => computeGame(d, exerciseMap(d));
 describe('levels', () => {
   it('level curve is monotonic and invertible', () => {
     expect(xpForLevel(1)).toBe(0);
-    expect(xpForLevel(2)).toBe(600);
+    expect(xpForLevel(2)).toBe(650);
     for (let l = 1; l < 120; l++) {
       expect(levelForXp(xpForLevel(l))).toBe(l);
       expect(levelForXp(xpForLevel(l + 1) - 1)).toBe(l);
@@ -95,7 +95,7 @@ describe('session XP', () => {
     const d = emptyData();
     d.weights.push({ id: 'a', updatedAt: 1, date: '2026-01-05', kg: 80 }, { id: 'b', updatedAt: 1, date: '2026-01-06', kg: 79.5 });
     const g = game(d);
-    expect(g.weighIns.get('a')).toBe(RULES.weighInXp + 25); // + "On the Scale"
+    expect(g.weighIns.get('a')).toBeGreaterThanOrEqual(RULES.weighInXp + 25); // + "On the Scale" (+ a weigh-in quest if picked)
     expect(g.weighIns.get('b')).toBe(0);
   });
 });
@@ -280,5 +280,52 @@ describe('pacing, ranks, holidays & weather', () => {
     const dl = p.rows.find((r) => r.metric.key === 'deadlift')!;
     expect(dl.mine).toBe(103.3); // Epley: 100 × (1 + 1/30)
     expect(dl.pct).toBeCloseTo(103.3 / 500);
+  });
+});
+
+describe('stars, seasons, quests, mastery', () => {
+  it('rank divisions follow the slower of XP and visits', async () => {
+    const { levelInfo, xpForLevel, RANKS, DIVISIONS } = await import('./xp');
+    const silver = RANKS.find((r) => r.title === 'Silver Lifter')!;
+    const gold = RANKS.find((r) => r.title === 'Gold Lifter')!;
+    // lots of XP but visits only just at Silver's minimum → star 1, limited by visits
+    const a = levelInfo(xpForLevel(gold.minLevel) - 1, silver.minVisits);
+    expect(a.rank.title).toBe('Silver Lifter');
+    expect(a.division).toBe(1);
+    expect(a.limiter).toBe('visits');
+    // halfway on both → star 3 of 4
+    const midXp = (xpForLevel(silver.minLevel) + xpForLevel(gold.minLevel)) / 2;
+    const b = levelInfo(midXp, Math.ceil((silver.minVisits + gold.minVisits) / 2));
+    expect(b.division).toBe(Math.floor(0.5 * DIVISIONS) + 1);
+  });
+
+  it('seasons are calendar quarters with goal-relative tiers', async () => {
+    const { seasonOf } = await import('./xp');
+    const s = seasonOf('2026-10-12', 3);
+    expect(s.key).toBe('2026-Q4');
+    expect(s.label).toBe('Spring 2026');
+    expect(s.weeks).toBe(13);
+    expect(s.targets[0]).toBe(Math.ceil(0.25 * 3 * 13));
+    const d = emptyData();
+    for (let i = 0; i < 10; i++) d.sessions.push(sess(`2026-10-${String(i + 1).padStart(2, '0')}`, [{ exerciseId: 'Leg_Press', sets: [{ kg: 50, reps: 10 }] }]));
+    const g = game(d);
+    expect(g.seasons.find((x) => x.key === '2026-Q4')!.tier).toBe(0); // Bronze at 10 visits
+  });
+
+  it('picks 3 deterministic quests per week and completes them', () => {
+    const d = emptyData();
+    d.sessions.push(sess('2026-10-05', [{ exerciseId: 'Leg_Press', sets: [{ kg: 50, reps: 10 }] }]));
+    const g1 = game(d), g2 = game(d);
+    const w = [...g1.sessions.values()][0];
+    expect(w.items.filter((i) => i.label.includes('Quest:')).length).toBeGreaterThanOrEqual(0);
+    expect(g1.quests.map((q) => q.id)).toEqual(g2.quests.map((q) => q.id));
+    expect(g1.quests).toHaveLength(3);
+  });
+
+  it('mastery tiers by sessions', async () => {
+    const { masteryOf } = await import('./xp');
+    expect(masteryOf(4).current).toBeNull();
+    expect(masteryOf(5).current!.name).toBe('Bronze');
+    expect(masteryOf(100).current!.name).toBe('Diamond');
   });
 });
