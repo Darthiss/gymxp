@@ -1,0 +1,256 @@
+// One-off importer: builds src/data/exercises.json from the public-domain
+// free-exercise-db dataset (https://github.com/yuhonas/free-exercise-db, Unlicense)
+// and downloads the start/end photos into public/ex/.
+//
+// Usage: node scripts/import-exercises.mjs <path-to-exercises.json> [--no-images]
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const IMG_BASE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
+
+// Curated list of common gym machines & cable stations.
+// `src` = dataset id (for instructions/muscles/images). `look` = how to recognise the machine.
+const CURATED = [
+  // ---------- Chest ----------
+  { src: 'Machine_Bench_Press', name: 'Chest Press Machine', group: 'Chest', equipment: 'Machine',
+    aliases: ['Seated Chest Press', 'Machine Chest Press', 'Machine Bench Press'],
+    look: 'You sit upright with your back on a pad and push two handles forward from chest height. The weight comes from a stack of plates you select with a pin.' },
+  { src: 'Leverage_Chest_Press', name: 'Plate-Loaded Chest Press', group: 'Chest', equipment: 'Plate-loaded',
+    aliases: ['Hammer Strength Chest Press', 'Lever Chest Press', 'Iso-Lateral Chest Press'],
+    look: 'Same motion as the chest press, but the machine has big lever arms with "horns" where you slide weight plates on, instead of a pin stack.' },
+  { src: 'Leverage_Incline_Chest_Press', name: 'Incline Chest Press Machine', group: 'Chest', equipment: 'Machine',
+    aliases: ['Incline Press Machine', 'Incline Lever Press'],
+    look: 'The seat is reclined and the handles travel up and forward at an angle, toward the ceiling in front of you. Targets the upper chest.' },
+  { src: 'Butterfly', name: 'Pec Deck (Chest Fly Machine)', group: 'Chest', equipment: 'Machine',
+    aliases: ['Butterfly', 'Pec Fly', 'Chest Fly Machine', 'Pec Deck Fly'],
+    look: 'Seated with your back on the pad, arms out to the sides holding handles (or forearms on pads). You bring them together in front of your chest like a hug. Usually the same machine as the Reverse Pec Deck.' },
+  { src: 'Cable_Crossover', name: 'Cable Crossover (High Cable Fly)', group: 'Chest', equipment: 'Cable',
+    aliases: ['Cable Fly', 'Standing Cable Fly', 'Crossovers', 'High-to-Low Cable Fly'],
+    look: 'A big frame with two adjustable cable pulleys, one on each side (a "cable crossover station"). Pulleys set high; you stand in the middle and pull both handles down and together in front of you.' },
+  { src: 'Low_Cable_Crossover', name: 'Low-to-High Cable Fly', group: 'Chest', equipment: 'Cable',
+    aliases: ['Low Cable Crossover', 'Low Cable Fly'],
+    look: 'Same two-pulley cable station, but the pulleys are at the bottom. You sweep the handles up and together to chest height.' },
+  { src: 'Smith_Machine_Bench_Press', name: 'Smith Machine Bench Press', group: 'Chest', equipment: 'Smith machine',
+    aliases: ['Smith Bench', 'Smith Press'],
+    look: 'A barbell locked inside two vertical rails (the "Smith machine") so it only moves straight up and down. You lie on a flat bench under it and twist the bar to unhook it.' },
+  { src: 'Smith_Machine_Incline_Bench_Press', name: 'Smith Machine Incline Press', group: 'Chest', equipment: 'Smith machine',
+    aliases: ['Smith Incline Bench', 'Incline Smith Press'],
+    look: 'Smith machine (bar on rails) with an incline bench under it, so you press toward your upper chest.' },
+
+  // ---------- Back ----------
+  { src: 'Wide-Grip_Lat_Pulldown', name: 'Lat Pulldown', group: 'Back', equipment: 'Cable',
+    aliases: ['Wide-Grip Pulldown', 'Lat Pull-Down', 'Pulldown', 'Front Pulldown'],
+    look: 'You sit with your thighs locked under padded rollers and pull a long bar from above your head down to your upper chest. The cable comes from a pulley high above you.' },
+  { src: 'Close-Grip_Front_Lat_Pulldown', name: 'Close-Grip Lat Pulldown', group: 'Back', equipment: 'Cable',
+    aliases: ['Narrow-Grip Pulldown'],
+    look: 'Same lat pulldown machine, but your hands are close together on the bar (about shoulder-width or narrower).' },
+  { src: 'V-Bar_Pulldown', name: 'V-Bar Pulldown', group: 'Back', equipment: 'Cable',
+    aliases: ['Close-Grip V-Handle Pulldown', 'Neutral-Grip Pulldown'],
+    look: 'Lat pulldown machine with a small V-shaped double handle attached instead of the long bar. Palms face each other.' },
+  { src: 'Underhand_Cable_Pulldowns', name: 'Reverse-Grip Lat Pulldown', group: 'Back', equipment: 'Cable',
+    aliases: ['Underhand Pulldown', 'Supinated Pulldown', 'Chin-Up Grip Pulldown'],
+    look: 'Lat pulldown machine, holding the bar with palms facing you (underhand).' },
+  { src: 'Seated_Cable_Rows', name: 'Seated Cable Row', group: 'Back', equipment: 'Cable',
+    aliases: ['Low Row', 'Cable Row', 'Seated Row (cable)', 'Long Pull'],
+    look: 'A long low bench with a footplate at the end. You sit, put your feet on the plate, and pull a handle (often a V-handle) from a low pulley toward your belly.' },
+  { src: 'Leverage_Iso_Row', name: 'Seated Row Machine', group: 'Back', equipment: 'Plate-loaded',
+    aliases: ['Machine Row', 'Iso-Lateral Row', 'Hammer Strength Row', 'Chest-Supported Row Machine'],
+    look: 'You sit facing a chest pad and pull two handles toward you, elbows going back. Your chest stays on the pad the whole time. Can be plate-loaded (photos) or a pin stack.' },
+  { src: 'Leverage_High_Row', name: 'High Row Machine', group: 'Back', equipment: 'Plate-loaded',
+    aliases: ['Iso-Lateral High Row', 'Hammer Strength High Row'],
+    look: 'Seated with thighs under a pad. Handles start high and in front of you and you pull them down and back toward your chest, a mix between a pulldown and a row.' },
+  { src: 'Lying_T-Bar_Row', name: 'Chest-Supported T-Bar Row', group: 'Back', equipment: 'Plate-loaded',
+    aliases: ['T-Bar Row Machine', 'Incline Lever Row'],
+    look: 'You stand on a foot platform and lean your chest on an angled pad, then lift a lever arm with handles up toward your chest.' },
+  { src: 'Straight-Arm_Pulldown', name: 'Straight-Arm Pulldown', group: 'Back', equipment: 'Cable',
+    aliases: ['Lat Pushdown', 'Straight-Arm Lat Pulldown', 'Cable Pullover'],
+    look: 'Standing at a high cable pulley with a straight bar or rope. Your arms stay straight while you sweep the bar down to your thighs.' },
+  { id: 'Assisted_Pull-Up_Machine', src: 'Pullups', name: 'Assisted Pull-Up Machine', group: 'Back', equipment: 'Machine',
+    aliases: ['Gravitron', 'Assisted Chin-Up', 'Assisted Pull-Up'], assisted: true,
+    look: 'A tall machine with pull-up handles at the top and a knee pad (or step platform) that pushes you up. The weight you select HELPS you, so more weight = easier. (Photos show a regular pull-up; same movement.)',
+    instructions: [
+      'Select the assistance weight with the pin. More weight means more help, so start high.',
+      'Climb the steps, grab the top handles (palms forward, a bit wider than shoulders), and kneel/stand on the pad.',
+      'Pull yourself up until your chin is above the handles, driving your elbows down toward your ribs.',
+      'Lower yourself slowly until your arms are straight. Repeat.',
+      'As you get stronger, LOWER the assistance weight. GymXP counts your effective load as bodyweight minus assistance.',
+    ] },
+  { src: 'Hyperextensions_Back_Extensions', name: 'Back Extension (Roman Chair)', group: 'Back', equipment: 'Bench',
+    aliases: ['Hyperextension', '45° Back Extension', 'Roman Chair'], bwFactor: 0.5,
+    look: 'An angled bench where your hips rest on a pad and your ankles are locked under rollers. You bend forward at the waist and raise your torso back up. Log 0 kg if you use no extra plate.' },
+
+  // ---------- Shoulders ----------
+  { src: 'Machine_Shoulder_Military_Press', name: 'Shoulder Press Machine', group: 'Shoulders', equipment: 'Machine',
+    aliases: ['Seated Shoulder Press', 'Machine Overhead Press', 'Machine Military Press'],
+    look: 'Seated upright with back support and handles at shoulder height that you press straight up overhead.' },
+  { src: 'Leverage_Shoulder_Press', name: 'Plate-Loaded Shoulder Press', group: 'Shoulders', equipment: 'Plate-loaded',
+    aliases: ['Hammer Strength Shoulder Press', 'Lever Shoulder Press'],
+    look: 'Shoulder press with lever arms and horns for weight plates instead of a pin stack.' },
+  { src: 'Reverse_Machine_Flyes', name: 'Reverse Pec Deck (Rear Delt Fly)', group: 'Shoulders', equipment: 'Machine',
+    aliases: ['Rear Delt Machine', 'Reverse Fly Machine', 'Rear Delt Fly', 'Reverse Butterfly'],
+    look: 'Usually the same machine as the Pec Deck, but you sit FACING the pad (chest against it) and push the handles back and out to your sides.' },
+  { src: 'Standing_Low-Pulley_Deltoid_Raise', name: 'Cable Lateral Raise', group: 'Shoulders', equipment: 'Cable',
+    aliases: ['Single-Arm Cable Lateral Raise', 'Cable Side Raise'],
+    look: 'Standing sideways next to a low cable pulley, you raise one arm out to the side up to shoulder height.' },
+  { src: 'Face_Pull', name: 'Face Pull', group: 'Shoulders', equipment: 'Cable',
+    aliases: ['Rope Face Pull', 'Cable Face Pull'],
+    look: 'A rope attached to a cable pulley at about face height. You pull the rope toward your forehead, hands splitting apart, elbows high.' },
+  { src: 'Front_Cable_Raise', name: 'Cable Front Raise', group: 'Shoulders', equipment: 'Cable',
+    aliases: ['Front Raise (cable)'],
+    look: 'Facing away from a low pulley, you raise the handle straight in front of you to shoulder height.' },
+  { src: 'Upright_Cable_Row', name: 'Cable Upright Row', group: 'Shoulders', equipment: 'Cable',
+    aliases: ['Upright Row (cable)'],
+    look: 'Facing a low pulley with a short bar, you pull the bar straight up along your body to chest height, elbows leading.' },
+  { src: 'Smith_Machine_Overhead_Shoulder_Press', name: 'Smith Machine Shoulder Press', group: 'Shoulders', equipment: 'Smith machine',
+    aliases: ['Smith Overhead Press', 'Smith Military Press'],
+    look: 'Smith machine (bar on rails) with an upright bench under it; you press the bar overhead.' },
+  { src: 'Leverage_Shrug', name: 'Shrug Machine', group: 'Shoulders', equipment: 'Machine',
+    aliases: ['Lever Shrug', 'Machine Shrug', 'Trap Shrug'],
+    look: 'You hold handles at your sides (or have pads on your shoulders) and lift your shoulders straight up toward your ears.' },
+
+  // ---------- Arms ----------
+  { src: 'Machine_Bicep_Curl', name: 'Bicep Curl Machine', group: 'Arms', equipment: 'Machine',
+    aliases: ['Machine Curl', 'Seated Bicep Curl', 'Arm Curl Machine'],
+    look: 'Seated with the back of your upper arms resting on an angled pad. You curl the handles up toward your shoulders.' },
+  { src: 'Machine_Preacher_Curls', name: 'Preacher Curl Machine', group: 'Arms', equipment: 'Machine',
+    aliases: ['Machine Preacher Curl'],
+    look: 'Very similar to the bicep curl machine: arms rest on a sloped "preacher" pad in front of you while you curl the handle up.' },
+  { src: 'Standing_Biceps_Cable_Curl', name: 'Cable Bicep Curl', group: 'Arms', equipment: 'Cable',
+    aliases: ['Cable Curl', 'Straight-Bar Cable Curl'],
+    look: 'Standing facing a low pulley with a short straight or EZ bar attached. You curl the bar up to your chest.' },
+  { src: 'Cable_Hammer_Curls_-_Rope_Attachment', name: 'Cable Rope Hammer Curl', group: 'Arms', equipment: 'Cable',
+    aliases: ['Rope Hammer Curl', 'Rope Curl'],
+    look: 'Low pulley with a rope attached; palms face each other while you curl the rope up.' },
+  { src: 'Triceps_Pushdown', name: 'Triceps Pushdown (Bar)', group: 'Arms', equipment: 'Cable',
+    aliases: ['Cable Pushdown', 'Tricep Pushdown', 'Press-Down', 'Triceps Pressdown'],
+    look: 'Standing at a high pulley with a short bar. Keep your elbows tucked at your sides and push the bar down until your arms are straight.' },
+  { src: 'Triceps_Pushdown_-_Rope_Attachment', name: 'Triceps Rope Pushdown', group: 'Arms', equipment: 'Cable',
+    aliases: ['Rope Pushdown', 'Rope Pressdown'],
+    look: 'High pulley with a rope (two ends with knobs). Push down and spread the rope ends apart at the bottom.' },
+  { src: 'Triceps_Pushdown_-_V-Bar_Attachment', name: 'Triceps V-Bar Pushdown', group: 'Arms', equipment: 'Cable',
+    aliases: ['V-Bar Pressdown'],
+    look: 'High pulley with a small V-shaped handle; push down until your arms are straight.' },
+  { src: 'Cable_Rope_Overhead_Triceps_Extension', name: 'Overhead Cable Triceps Extension', group: 'Arms', equipment: 'Cable',
+    aliases: ['Overhead Rope Extension', 'Overhead Triceps Extension (cable)'],
+    look: 'Facing away from the cable with the rope behind your head; extend your arms forward and up until straight.' },
+  { src: 'Machine_Triceps_Extension', name: 'Triceps Extension Machine', group: 'Arms', equipment: 'Machine',
+    aliases: ['Machine Triceps Extension', 'Seated Triceps Extension'],
+    look: 'Seated with your elbows on a pad in front of you; you push the handles down/forward by straightening your arms.' },
+  { src: 'Dip_Machine', name: 'Seated Dip Machine', group: 'Arms', equipment: 'Machine',
+    aliases: ['Triceps Dip Machine', 'Seated Dip'],
+    look: 'Seated, hands on handles beside your hips. You push the handles down until your arms are straight.' },
+  { id: 'Assisted_Dip_Machine', src: 'Dips_-_Triceps_Version', name: 'Assisted Dip Machine', group: 'Arms', equipment: 'Machine',
+    aliases: ['Gravitron Dip', 'Assisted Dips'], assisted: true,
+    look: 'Same machine as the Assisted Pull-Up (Gravitron), using the lower parallel handles. The weight you select HELPS you, so more weight = easier. (Photos show a regular dip; same movement.)',
+    instructions: [
+      'Select the assistance weight with the pin. More weight means more help.',
+      'Grip the parallel dip handles and kneel/stand on the assist pad with arms straight.',
+      'Lower yourself by bending your elbows until your upper arms are about parallel to the floor.',
+      'Push back up until your arms are straight. Keep your torso fairly upright for triceps.',
+      'As you get stronger, LOWER the assistance weight. GymXP counts your effective load as bodyweight minus assistance.',
+    ] },
+
+  // ---------- Legs ----------
+  { src: 'Leg_Press', name: 'Leg Press', group: 'Legs', equipment: 'Plate-loaded',
+    aliases: ['45° Leg Press', 'Sled Leg Press', 'Seated Leg Press'],
+    look: 'You sit reclined with your feet on a big platform and push it away with your legs. Safety handles at your sides lock/unlock the sled.' },
+  { src: 'Hack_Squat', name: 'Hack Squat Machine', group: 'Legs', equipment: 'Plate-loaded',
+    aliases: ['Hack Squat', 'Machine Squat'],
+    look: 'You stand on an angled foot platform with your back against a pad and shoulders under pads, then squat down and up along rails.' },
+  { src: 'Leg_Extensions', name: 'Leg Extension', group: 'Legs', equipment: 'Machine',
+    aliases: ['Quad Extension', 'Knee Extension', 'Leg Extension Machine'],
+    look: 'Seated with a padded roller in front of your lower shins. You straighten your legs, lifting the roller up.' },
+  { src: 'Seated_Leg_Curl', name: 'Seated Leg Curl', group: 'Legs', equipment: 'Machine',
+    aliases: ['Seated Hamstring Curl', 'Leg Curl Machine'],
+    look: 'Seated, legs straight out over a roller pad with another pad locking your thighs. You bend your knees, pulling the roller down and under you.' },
+  { src: 'Lying_Leg_Curls', name: 'Lying Leg Curl', group: 'Legs', equipment: 'Machine',
+    aliases: ['Prone Leg Curl', 'Lying Hamstring Curl'],
+    look: 'Lying face down on a bench with your ankles under a padded roller. You curl your heels toward your butt.' },
+  { src: 'Standing_Leg_Curl', name: 'Standing Leg Curl', group: 'Legs', equipment: 'Machine',
+    aliases: ['Single-Leg Standing Curl'],
+    look: 'Standing on one leg, the back of the other ankle against a roller pad. You curl that heel up behind you.' },
+  { src: 'Thigh_Abductor', name: 'Hip Abduction Machine', group: 'Legs', equipment: 'Machine',
+    aliases: ['Abductor Machine', 'Outer Thigh Machine', 'Hip Abductor'],
+    look: 'Seated with pads on the OUTSIDE of your knees. You push your legs apart.' },
+  { src: 'Thigh_Adductor', name: 'Hip Adduction Machine', group: 'Legs', equipment: 'Machine',
+    aliases: ['Adductor Machine', 'Inner Thigh Machine', 'Hip Adductor'],
+    look: 'Seated with pads on the INSIDE of your knees. You squeeze your legs together. Often the same machine as abduction with the pads flipped.' },
+  { src: 'Smith_Machine_Squat', name: 'Smith Machine Squat', group: 'Legs', equipment: 'Smith machine',
+    aliases: ['Smith Squat'],
+    look: 'Bar on rails (Smith machine) resting on your upper back; you squat down and stand back up.' },
+  { src: 'Standing_Calf_Raises', name: 'Standing Calf Raise Machine', group: 'Legs', equipment: 'Machine',
+    aliases: ['Standing Calf Raise', 'Calf Machine'],
+    look: 'Standing with your shoulders under pads and the balls of your feet on the edge of a block. You rise up onto your toes.' },
+  { src: 'Seated_Calf_Raise', name: 'Seated Calf Raise Machine', group: 'Legs', equipment: 'Machine',
+    aliases: ['Seated Calf Raise'],
+    look: 'Seated with a pad pressing down on top of your knees and the balls of your feet on a block. You raise your heels.' },
+  { src: 'Calf_Press_On_The_Leg_Press_Machine', name: 'Calf Press (on Leg Press)', group: 'Legs', equipment: 'Plate-loaded',
+    aliases: ['Leg Press Calf Raise', 'Calf Press'],
+    look: 'On the leg press, only the balls of your feet are on the bottom edge of the platform. Legs stay straight and you push with your toes.' },
+
+  // ---------- Glutes ----------
+  { src: 'One-Legged_Cable_Kickback', name: 'Cable Glute Kickback', group: 'Glutes', equipment: 'Cable',
+    aliases: ['Cable Kickback', 'Glute Kickback'],
+    look: 'An ankle strap clipped to a low pulley. Facing the machine, you kick one leg straight back.' },
+  { src: 'Pull_Through', name: 'Cable Pull-Through', group: 'Glutes', equipment: 'Cable',
+    aliases: ['Rope Pull-Through'],
+    look: 'Facing away from a low pulley with a rope between your legs. Hinge at the hips, then stand up tall, squeezing your glutes.' },
+
+  // ---------- Core ----------
+  { src: 'Ab_Crunch_Machine', name: 'Ab Crunch Machine', group: 'Core', equipment: 'Machine',
+    aliases: ['Crunch Machine', 'Seated Ab Crunch', 'Abdominal Machine'],
+    look: 'Seated with handles or pads by your chest/shoulders and your feet hooked. You curl your torso forward and down.' },
+  { src: 'Cable_Crunch', name: 'Kneeling Cable Crunch', group: 'Core', equipment: 'Cable',
+    aliases: ['Rope Crunch', 'Cable Crunch'],
+    look: 'Kneeling in front of a high pulley, holding a rope beside your head, you crunch down toward the floor.' },
+  { src: 'Pallof_Press', name: 'Pallof Press', group: 'Core', equipment: 'Cable',
+    aliases: ['Anti-Rotation Press'],
+    look: 'Standing sideways to a cable at chest height, you press the handle straight out in front of you and resist being twisted.' },
+  { src: 'Standing_Cable_Wood_Chop', name: 'Cable Woodchopper', group: 'Core', equipment: 'Cable',
+    aliases: ['Wood Chop', 'Cable Chop'],
+    look: 'Standing sideways to a high pulley, you pull the handle diagonally across your body down to the opposite hip, like chopping wood.' },
+];
+
+const datasetPath = process.argv[2];
+if (!datasetPath) { console.error('Usage: node scripts/import-exercises.mjs <exercises.json> [--no-images]'); process.exit(1); }
+const noImages = process.argv.includes('--no-images');
+const dataset = JSON.parse(await fs.readFile(datasetPath, 'utf8'));
+const byId = new Map(dataset.map((e) => [e.id, e]));
+
+const cap = (s) => s.replace(/\b\w/g, (c) => c.toUpperCase());
+const out = [];
+for (const c of CURATED) {
+  const src = byId.get(c.src);
+  if (!src) throw new Error(`Missing dataset id ${c.src}`);
+  const id = c.id ?? c.src;
+  const images = [];
+  for (let i = 0; i < src.images.length && i < 2; i++) {
+    const rel = `ex/${id}/${i}.jpg`;
+    images.push(rel);
+    if (noImages) continue;
+    const dest = path.join(ROOT, 'public', rel);
+    try { await fs.access(dest); continue; } catch { /* download */ }
+    const res = await fetch(IMG_BASE + src.images[i]);
+    if (!res.ok) throw new Error(`Image ${src.images[i]}: HTTP ${res.status}`);
+    await fs.mkdir(path.dirname(dest), { recursive: true });
+    await fs.writeFile(dest, Buffer.from(await res.arrayBuffer()));
+  }
+  out.push({
+    id,
+    name: c.name,
+    aliases: c.aliases ?? [],
+    group: c.group,
+    equipment: c.equipment,
+    primaryMuscles: src.primaryMuscles.map(cap),
+    secondaryMuscles: src.secondaryMuscles.map(cap),
+    look: c.look,
+    instructions: c.instructions ?? src.instructions,
+    images,
+    ...(c.assisted ? { assisted: true } : {}),
+    ...(c.bwFactor ? { bwFactor: c.bwFactor } : {}),
+  });
+}
+await fs.writeFile(path.join(ROOT, 'src/data/exercises.json'), JSON.stringify(out, null, 1) + '\n');
+console.log(`Wrote ${out.length} exercises`);
