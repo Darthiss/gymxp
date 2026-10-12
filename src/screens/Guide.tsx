@@ -16,18 +16,18 @@ export function Guide() {
   const all = useMemo(() => allExercises(data), [data]);
   const list = useMemo(() => {
     const l = searchExercises(all, q);
-    return group === 'All' || q ? l : group === 'Mine' ? l.filter((e) => e.custom) : l.filter((e) => e.group === group);
+    return group === 'All' || q ? l : group === 'Mine' ? l.filter((e) => e.custom) : group === 'Dumbbells' ? l.filter((e) => e.equipment === 'Dumbbell') : l.filter((e) => e.group === group);
   }, [all, q, group]);
   const hasCustom = all.some((e) => e.custom);
 
   return (
     <div className="stack">
-      <PageHead title="Machine guide" right={<a className="btn sm" href="#/guide-edit/new">＋ My machine</a>} />
-      <p className="small dim">Find a machine by body part or any name your coach used. Each one has start/end photos and step-by-step instructions.</p>
+      <PageHead title="Exercise guide" right={<a className="btn sm" href="#/guide-edit/new">＋ My machine</a>} />
+      <p className="small dim">Find a machine or dumbbell exercise by body part or any name your coach used. Each one has start/end photos and step-by-step instructions.</p>
       <input className="input" placeholder="Search: pulldown, pec deck, leg…" value={q} onChange={(e) => setQ(e.target.value)} />
       {!q && (
         <div className="chips">
-          {['All', ...(hasCustom ? ['Mine'] : []), ...MUSCLE_GROUPS].map((g) => (
+          {['All', ...(hasCustom ? ['Mine'] : []), 'Dumbbells', ...MUSCLE_GROUPS].map((g) => (
             <button key={g} className={`chip${group === g ? ' on' : ''}`} onClick={() => setGroup(g)}>{g}</button>
           ))}
         </div>
@@ -69,7 +69,7 @@ export function GuideDetail({ id }: { id: string }) {
       <ExerciseInfo ex={ex} />
       <div className="card stack">
         <h3>My stats</h3>
-        <SettingNote exerciseId={id} value={settingFor(data, id)} />
+        <SettingNote exerciseId={id} value={settingFor(data, id)} equipment={ex.equipment} />
         {best ? (
           <a className="row between card-link" href={`#/lift/${encodeURIComponent(id)}`}>
             <span className="small dim">Best {best.maxKg} kg · {best.sessions} sessions · last {fmtDate(best.lastDate)}</span>

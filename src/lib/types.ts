@@ -94,6 +94,7 @@ export interface Exercise {
   images: string[]; // relative to app base (built-in) — custom exercises use `photo`
   assisted?: boolean;
   bwFactor?: number;
+  loadFactor?: number; // 2 = weight is logged per dumbbell, both count toward volume
   custom?: boolean;
   photo?: string;
 }

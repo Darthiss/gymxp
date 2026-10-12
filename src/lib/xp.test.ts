@@ -200,3 +200,16 @@ describe('backfill weight steps', () => {
     expect(kgs('20', '27.5')).toEqual([20, 22.5, 22.5, 25, 25, 27.5]);
   });
 });
+
+describe('dumbbells', () => {
+  it('two-dumbbell exercises count both dumbbells toward volume, PRs use the per-dumbbell weight', () => {
+    const d = emptyData();
+    d.sessions.push(sess('2026-10-01', [{ exerciseId: 'Dumbbell_Bicep_Curl', sets: [{ kg: 10, reps: 10 }] }]));
+    d.sessions.push(sess('2026-10-03', [{ exerciseId: 'Dumbbell_Bicep_Curl', sets: [{ kg: 12, reps: 10 }] }]));
+    d.sessions.push(sess('2026-10-05', [{ exerciseId: 'Standing_Dumbbell_Triceps_Extension', sets: [{ kg: 15, reps: 10 }] }]));
+    const g = game(d);
+    expect(g.sessions.get(d.sessions[0].id)!.volume).toBe(200);
+    expect(g.sessions.get(d.sessions[1].id)!.prs[0]).toMatchObject({ kind: 'weight', value: 12, prev: 10 });
+    expect(g.sessions.get(d.sessions[2].id)!.volume).toBe(150); // one dumbbell held with both hands
+  });
+});

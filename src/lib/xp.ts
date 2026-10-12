@@ -310,7 +310,7 @@ function bodyweightLookup(data: AppData): (date: string) => number {
 export function effectiveLoad(ex: Exercise | undefined, kg: number, bw: number): number {
   if (ex?.assisted) return Math.max(0, bw - kg);
   if (ex?.bwFactor) return kg + ex.bwFactor * bw;
-  return kg;
+  return kg * (ex?.loadFactor ?? 1);
 }
 
 export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameState {

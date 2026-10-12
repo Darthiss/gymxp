@@ -41,7 +41,8 @@ export function ExercisePicker({
       const byId = new Map(l.map((e) => [e.id, e]));
       return recentIds.map((id) => byId.get(id)).filter(Boolean) as Exercise[];
     }
-    if (activeGroup !== 'All') l = l.filter((e) => e.group === activeGroup);
+    if (activeGroup === 'Dumbbells') l = l.filter((e) => e.equipment === 'Dumbbell');
+    else if (activeGroup !== 'All') l = l.filter((e) => e.group === activeGroup);
     return l;
   }, [all, q, activeGroup, recentIds]);
 
@@ -72,7 +73,7 @@ export function ExercisePicker({
         <input className="input" placeholder="Search: leg, chest press, pulldown…" value={q} onChange={(e) => setQ(e.target.value)} autoFocus={matchMedia('(min-width: 900px)').matches} />
         {!q && (
           <div className="chips">
-            {[...(hasRecent ? ['Recent'] : []), 'All', ...MUSCLE_GROUPS].map((g) => (
+            {[...(hasRecent ? ['Recent'] : []), 'All', 'Dumbbells', ...MUSCLE_GROUPS].map((g) => (
               <button key={g} className={`chip${activeGroup === g ? ' on' : ''}`} onClick={() => setGroup(g)}>
                 {g}
               </button>

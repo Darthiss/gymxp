@@ -1485,6 +1485,548 @@
   ]
  },
  {
+  "id": "Dumbbell_Bicep_Curl",
+  "name": "Standing Dumbbell Curl",
+  "aliases": [
+   "Dumbbell Curl",
+   "DB Curl",
+   "Bicep Curl (dumbbells)"
+  ],
+  "group": "Arms",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Biceps"
+  ],
+  "secondaryMuscles": [
+   "Forearms"
+  ],
+  "look": "Standing, a dumbbell in each hand, arms straight down, palms facing forward. Curl both up toward your shoulders keeping your elbows pinned to your sides.",
+  "instructions": [
+   "Stand up straight with a dumbbell in each hand at arm's length. Keep your elbows close to your torso and rotate the palms of your hands until they are facing forward. This will be your starting position.",
+   "Now, keeping the upper arms stationary, exhale and curl the weights while contracting your biceps. Continue to raise the weights until your biceps are fully contracted and the dumbbells are at shoulder level. Hold the contracted position for a brief pause as you squeeze your biceps.",
+   "Then, inhale and slowly begin to lower the dumbbells back to the starting position.",
+   "Repeat for the recommended amount of repetitions."
+  ],
+  "images": [
+   "ex/Dumbbell_Bicep_Curl/0.jpg",
+   "ex/Dumbbell_Bicep_Curl/1.jpg"
+  ],
+  "loadFactor": 2
+ },
+ {
+  "id": "Hammer_Curls",
+  "name": "Dumbbell Hammer Curl",
+  "aliases": [
+   "Hammer Curl",
+   "Neutral-Grip Curl"
+  ],
+  "group": "Arms",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Biceps"
+  ],
+  "secondaryMuscles": [],
+  "look": "Like the dumbbell curl, but your palms face each other the whole time (holding the dumbbells like hammers).",
+  "instructions": [
+   "Stand up with your torso upright and a dumbbell on each hand being held at arms length. The elbows should be close to the torso.",
+   "The palms of the hands should be facing your torso. This will be your starting position.",
+   "Now, while holding your upper arm stationary, exhale and curl the weight forward while contracting the biceps. Continue to raise the weight until the biceps are fully contracted and the dumbbell is at shoulder level. Hold the contracted position for a brief moment as you squeeze the biceps. Tip: Focus on keeping the elbow stationary and only moving your forearm.",
+   "After the brief pause, inhale and slowly begin the lower the dumbbells back down to the starting position.",
+   "Repeat for the recommended amount of repetitions."
+  ],
+  "images": [
+   "ex/Hammer_Curls/0.jpg",
+   "ex/Hammer_Curls/1.jpg"
+  ],
+  "loadFactor": 2
+ },
+ {
+  "id": "Incline_Dumbbell_Curl",
+  "name": "Incline Dumbbell Curl",
+  "aliases": [
+   "Incline Curl",
+   "Incline Bench Curl"
+  ],
+  "group": "Arms",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Biceps"
+  ],
+  "secondaryMuscles": [],
+  "look": "Sitting back on an INCLINED bench (backrest tilted ~45-60°), arms hanging straight down behind your body with a dumbbell in each hand. You curl them up. The bench angle stretches the biceps more.",
+  "instructions": [
+   "Sit back on an incline bench with a dumbbell in each hand held at arms length. Keep your elbows close to your torso and rotate the palms of your hands until they are facing forward. This will be your starting position.",
+   "While holding the upper arm stationary, curl the weights forward while contracting the biceps as you breathe out. Only the forearms should move. Continue the movement until your biceps are fully contracted and the dumbbells are at shoulder level. Hold the contracted position for a second.",
+   "Slowly begin to bring the dumbbells back to starting position as your breathe in.",
+   "Repeat for the recommended amount of repetitions."
+  ],
+  "images": [
+   "ex/Incline_Dumbbell_Curl/0.jpg",
+   "ex/Incline_Dumbbell_Curl/1.jpg"
+  ],
+  "loadFactor": 2
+ },
+ {
+  "id": "Standing_Dumbbell_Triceps_Extension",
+  "name": "Dumbbell Overhead Triceps Extension",
+  "aliases": [
+   "Dumbbell Tricep Extension",
+   "Overhead Dumbbell Extension",
+   "French Press (dumbbell)"
+  ],
+  "group": "Arms",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Triceps"
+  ],
+  "secondaryMuscles": [],
+  "look": "Standing, holding ONE dumbbell with both hands above your head. Lower it behind your head by bending only the elbows, then push it back up. Log the weight of that one dumbbell.",
+  "instructions": [
+   "To begin, stand up with a dumbbell held by both hands. Your feet should be about shoulder width apart from each other. Slowly use both hands to grab the dumbbell and lift it over your head until both arms are fully extended.",
+   "The resistance should be resting in the palms of your hands with your thumbs around it. The palm of the hands should be facing up towards the ceiling. This will be your starting position.",
+   "Keeping your upper arms close to your head with elbows in and perpendicular to the floor, lower the resistance in a semicircular motion behind your head until your forearms touch your biceps. Tip: The upper arms should remain stationary and only the forearms should move. Breathe in as you perform this step.",
+   "Go back to the starting position by using the triceps to raise the dumbbell. Breathe out as you perform this step.",
+   "Repeat for the recommended amount of repetitions."
+  ],
+  "images": [
+   "ex/Standing_Dumbbell_Triceps_Extension/0.jpg",
+   "ex/Standing_Dumbbell_Triceps_Extension/1.jpg"
+  ]
+ },
+ {
+  "id": "Seated_Triceps_Press",
+  "name": "Seated Dumbbell Triceps Extension",
+  "aliases": [
+   "Seated Overhead Triceps Extension",
+   "Seated Tricep Extension"
+  ],
+  "group": "Arms",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Triceps"
+  ],
+  "secondaryMuscles": [],
+  "look": "Same as the overhead triceps extension (one dumbbell, both hands, lowered behind the head) but sitting on a bench with back support.",
+  "instructions": [
+   "Sit down on a bench with back support and grasp a dumbbell with both hands and hold it overhead at arm's length. Tip: a better way is to have somebody hand it to you especially if it is very heavy. The resistance should be resting in the palms of your hands with your thumbs around it. The palm of the hand should be facing inward. This will be your starting position.",
+   "Keeping your upper arms close to your head (elbows in) and perpendicular to the floor, lower the resistance in a semi-circular motion behind your head until your forearms touch your biceps. Tip: The upper arms should remain stationary and only the forearms should move. Breathe in as you perform this step.",
+   "Go back to the starting position by using the triceps to raise the dumbbell. Breathe out as you perform this step.",
+   "Repeat for the recommended amount of repetitions."
+  ],
+  "images": [
+   "ex/Seated_Triceps_Press/0.jpg",
+   "ex/Seated_Triceps_Press/1.jpg"
+  ]
+ },
+ {
+  "id": "Lying_Dumbbell_Tricep_Extension",
+  "name": "Lying Dumbbell Triceps Extension",
+  "aliases": [
+   "Dumbbell Skull Crusher",
+   "Lying Tricep Extension"
+  ],
+  "group": "Arms",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Triceps"
+  ],
+  "secondaryMuscles": [
+   "Chest",
+   "Shoulders"
+  ],
+  "look": "Lying on a flat bench with a dumbbell in each hand, arms straight up. Bend only the elbows to lower the dumbbells beside your head, then straighten your arms.",
+  "instructions": [
+   "Lie on a flat bench while holding two dumbbells directly in front of you. Your arms should be fully extended at a 90-degree angle from your torso and the floor. The palms should be facing in and the elbows should be tucked in. This is the starting position.",
+   "As you breathe in and you keep the upper arms stationary with the elbows in, slowly lower the weight until the dumbbells are near your ears.",
+   "At that point, while keeping the elbows in and the upper arms stationary, use the triceps to bring the weight back up to the starting position as you breathe out.",
+   "Repeat for the recommended amount of repetitions."
+  ],
+  "images": [
+   "ex/Lying_Dumbbell_Tricep_Extension/0.jpg",
+   "ex/Lying_Dumbbell_Tricep_Extension/1.jpg"
+  ],
+  "loadFactor": 2
+ },
+ {
+  "id": "Tricep_Dumbbell_Kickback",
+  "name": "Dumbbell Triceps Kickback",
+  "aliases": [
+   "Tricep Kickback",
+   "Kickbacks"
+  ],
+  "group": "Arms",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Triceps"
+  ],
+  "secondaryMuscles": [],
+  "look": "Bent forward (often a knee and hand on a bench), upper arm parallel to the floor. Straighten your elbow to push the dumbbell back. Log one dumbbell; GymXP assumes you do both arms.",
+  "instructions": [
+   "Start with a dumbbell in each hand and your palms facing your torso. Keep your back straight with a slight bend in the knees and bend forward at the waist. Your torso should be almost parallel to the floor. Make sure to keep your head up. Your upper arms should be close to your torso and parallel to the floor. Your forearms should be pointed towards the floor as you hold the weights. There should be a 90-degree angle formed between your forearm and upper arm. This is your starting position.",
+   "Now, while keeping your upper arms stationary, exhale and use your triceps to lift the weights until the arm is fully extended. Focus on moving the forearm.",
+   "After a brief pause at the top contraction, inhale and slowly lower the dumbbells back down to the starting position.",
+   "Repeat the movement for the prescribed amount of repetitions."
+  ],
+  "images": [
+   "ex/Tricep_Dumbbell_Kickback/0.jpg",
+   "ex/Tricep_Dumbbell_Kickback/1.jpg"
+  ],
+  "loadFactor": 2
+ },
+ {
+  "id": "Side_Lateral_Raise",
+  "name": "Dumbbell Lateral Raise",
+  "aliases": [
+   "Side Lateral Raise",
+   "Lateral Raise",
+   "Side Raise",
+   "DB Lateral Raise"
+  ],
+  "group": "Shoulders",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Shoulders"
+  ],
+  "secondaryMuscles": [],
+  "look": "Standing with a dumbbell in each hand at your sides. Raise both arms out to the sides up to shoulder height (like wings), slight bend in the elbows, then lower slowly.",
+  "instructions": [
+   "Pick a couple of dumbbells and stand with a straight torso and the dumbbells by your side at arms length with the palms of the hand facing you. This will be your starting position.",
+   "While maintaining the torso in a stationary position (no swinging), lift the dumbbells to your side with a slight bend on the elbow and the hands slightly tilted forward as if pouring water in a glass. Continue to go up until you arms are parallel to the floor. Exhale as you execute this movement and pause for a second at the top.",
+   "Lower the dumbbells back down slowly to the starting position as you inhale.",
+   "Repeat for the recommended amount of repetitions."
+  ],
+  "images": [
+   "ex/Side_Lateral_Raise/0.jpg",
+   "ex/Side_Lateral_Raise/1.jpg"
+  ],
+  "loadFactor": 2
+ },
+ {
+  "id": "Front_Dumbbell_Raise",
+  "name": "Dumbbell Front Raise",
+  "aliases": [
+   "Front Raise"
+  ],
+  "group": "Shoulders",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Shoulders"
+  ],
+  "secondaryMuscles": [],
+  "look": "Standing with dumbbells in front of your thighs. Raise them straight in front of you to shoulder height.",
+  "instructions": [
+   "Pick a couple of dumbbells and stand with a straight torso and the dumbbells on front of your thighs at arms length with the palms of the hand facing your thighs. This will be your starting position.",
+   "While maintaining the torso stationary (no swinging), lift the left dumbbell to the front with a slight bend on the elbow and the palms of the hands always facing down. Continue to go up until you arm is slightly above parallel to the floor. Exhale as you execute this portion of the movement and pause for a second at the top. Inhale after the second pause.",
+   "Now lower the dumbbell back down slowly to the starting position as you simultaneously lift the right dumbbell.",
+   "Continue alternating in this fashion until all of the recommended amount of repetitions have been performed for each arm."
+  ],
+  "images": [
+   "ex/Front_Dumbbell_Raise/0.jpg",
+   "ex/Front_Dumbbell_Raise/1.jpg"
+  ],
+  "loadFactor": 2
+ },
+ {
+  "id": "Dumbbell_Shoulder_Press",
+  "name": "Dumbbell Shoulder Press",
+  "aliases": [
+   "Seated Dumbbell Press",
+   "DB Shoulder Press",
+   "Dumbbell Overhead Press"
+  ],
+  "group": "Shoulders",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Shoulders"
+  ],
+  "secondaryMuscles": [
+   "Triceps"
+  ],
+  "look": "Sitting on an upright bench, dumbbells at shoulder height, palms forward. Press them up overhead until your arms are straight.",
+  "instructions": [
+   "While holding a dumbbell in each hand, sit on a military press bench or utility bench that has back support. Place the dumbbells upright on top of your thighs.",
+   "Now raise the dumbbells to shoulder height one at a time using your thighs to help propel them up into position.",
+   "Make sure to rotate your wrists so that the palms of your hands are facing forward. This is your starting position.",
+   "Now, exhale and push the dumbbells upward until they touch at the top.",
+   "Then, after a brief pause at the top contracted position, slowly lower the weights back down to the starting position while inhaling.",
+   "Repeat for the recommended amount of repetitions."
+  ],
+  "images": [
+   "ex/Dumbbell_Shoulder_Press/0.jpg",
+   "ex/Dumbbell_Shoulder_Press/1.jpg"
+  ],
+  "loadFactor": 2
+ },
+ {
+  "id": "Reverse_Flyes",
+  "name": "Dumbbell Rear Delt Fly",
+  "aliases": [
+   "Reverse Fly",
+   "Bent-Over Reverse Fly",
+   "Rear Delt Raise"
+  ],
+  "group": "Shoulders",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Shoulders"
+  ],
+  "secondaryMuscles": [],
+  "look": "Bent forward at the hips with a dumbbell in each hand hanging down. Raise both arms out to the sides, squeezing your shoulder blades.",
+  "instructions": [
+   "To begin, lie down on an incline bench with the chest and stomach pressing against the incline. Have the dumbbells in each hand with the palms facing each other (neutral grip).",
+   "Extend the arms in front of you so that they are perpendicular to the angle of the bench. The legs should be stationary while applying pressure with the ball of your toes. This is the starting position.",
+   "Maintaining the slight bend of the elbows, move the weights out and away from each other (to the side) in an arc motion while exhaling. Tip: Try to squeeze your shoulder blades together to get the best results from this exercise.",
+   "The arms should be elevated until they are parallel to the floor.",
+   "Feel the contraction and slowly lower the weights back down to the starting position while inhaling.",
+   "Repeat for the recommended amount of repetitions."
+  ],
+  "images": [
+   "ex/Reverse_Flyes/0.jpg",
+   "ex/Reverse_Flyes/1.jpg"
+  ],
+  "loadFactor": 2
+ },
+ {
+  "id": "Dumbbell_Shrug",
+  "name": "Dumbbell Shrug",
+  "aliases": [
+   "DB Shrug"
+  ],
+  "group": "Shoulders",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Traps"
+  ],
+  "secondaryMuscles": [],
+  "look": "Standing with heavy dumbbells at your sides; lift your shoulders straight up toward your ears and lower.",
+  "instructions": [
+   "Stand erect with a dumbbell on each hand (palms facing your torso), arms extended on the sides.",
+   "Lift the dumbbells by elevating the shoulders as high as possible while you exhale. Hold the contraction at the top for a second. Tip: The arms should remain extended at all times. Refrain from using the biceps to help lift the dumbbells. Only the shoulders should be moving up and down.",
+   "Lower the dumbbells back to the original position.",
+   "Repeat for the recommended amount of repetitions."
+  ],
+  "images": [
+   "ex/Dumbbell_Shrug/0.jpg",
+   "ex/Dumbbell_Shrug/1.jpg"
+  ],
+  "loadFactor": 2
+ },
+ {
+  "id": "Incline_Dumbbell_Press",
+  "name": "Incline Dumbbell Press",
+  "aliases": [
+   "Incline DB Press",
+   "Incline Dumbbell Bench Press",
+   "Incline Press (dumbbells)"
+  ],
+  "group": "Chest",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Chest"
+  ],
+  "secondaryMuscles": [
+   "Shoulders",
+   "Triceps"
+  ],
+  "look": "Lying back on an INCLINED bench (~30-45°) with a dumbbell in each hand at chest level. Press them up until your arms are straight above your upper chest.",
+  "instructions": [
+   "Lie back on an incline bench with a dumbbell in each hand atop your thighs. The palms of your hands will be facing each other.",
+   "Then, using your thighs to help push the dumbbells up, lift the dumbbells one at a time so that you can hold them at shoulder width.",
+   "Once you have the dumbbells raised to shoulder width, rotate your wrists forward so that the palms of your hands are facing away from you. This will be your starting position.",
+   "Be sure to keep full control of the dumbbells at all times. Then breathe out and push the dumbbells up with your chest.",
+   "Lock your arms at the top, hold for a second, and then start slowly lowering the weight. Tip Ideally, lowering the weights should take about twice as long as raising them.",
+   "Repeat the movement for the prescribed amount of repetitions.",
+   "When you are done, place the dumbbells back on your thighs and then on the floor. This is the safest manner to release the dumbbells."
+  ],
+  "images": [
+   "ex/Incline_Dumbbell_Press/0.jpg",
+   "ex/Incline_Dumbbell_Press/1.jpg"
+  ],
+  "loadFactor": 2
+ },
+ {
+  "id": "Incline_Dumbbell_Flyes",
+  "name": "Incline Dumbbell Fly",
+  "aliases": [
+   "Incline Fly",
+   "Incline Flyes"
+  ],
+  "group": "Chest",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Chest"
+  ],
+  "secondaryMuscles": [
+   "Shoulders"
+  ],
+  "look": "Lying on an incline bench, dumbbells above your chest, palms facing each other. Open your arms wide in an arc (slightly bent elbows), then bring them back together like a hug.",
+  "instructions": [
+   "Hold a dumbbell on each hand and lie on an incline bench that is set to an incline angle of no more than 30 degrees.",
+   "Extend your arms above you with a slight bend at the elbows.",
+   "Now rotate the wrists so that the palms of your hands are facing you. Tip: The pinky fingers should be next to each other. This will be your starting position.",
+   "As you breathe in, start to slowly lower the arms to the side while keeping the arms extended and while rotating the wrists until the palms of the hand are facing each other. Tip: At the end of the movement the arms will be by your side with the palms facing the ceiling.",
+   "As you exhale start to bring the dumbbells back up to the starting position by reversing the motion and rotating the hands so that the pinky fingers are next to each other again. Tip: Keep in mind that the movement will only happen at the shoulder joint and at the wrist. There is no motion that happens at the elbow joint.",
+   "Repeat for the recommended amount of repetitions."
+  ],
+  "images": [
+   "ex/Incline_Dumbbell_Flyes/0.jpg",
+   "ex/Incline_Dumbbell_Flyes/1.jpg"
+  ],
+  "loadFactor": 2
+ },
+ {
+  "id": "Dumbbell_Bench_Press",
+  "name": "Dumbbell Bench Press",
+  "aliases": [
+   "Flat Dumbbell Press",
+   "DB Bench Press"
+  ],
+  "group": "Chest",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Chest"
+  ],
+  "secondaryMuscles": [
+   "Shoulders",
+   "Triceps"
+  ],
+  "look": "Lying on a FLAT bench with a dumbbell in each hand at chest level. Press them up until your arms are straight.",
+  "instructions": [
+   "Lie down on a flat bench with a dumbbell in each hand resting on top of your thighs. The palms of your hands will be facing each other.",
+   "Then, using your thighs to help raise the dumbbells up, lift the dumbbells one at a time so that you can hold them in front of you at shoulder width.",
+   "Once at shoulder width, rotate your wrists forward so that the palms of your hands are facing away from you. The dumbbells should be just to the sides of your chest, with your upper arm and forearm creating a 90 degree angle. Be sure to maintain full control of the dumbbells at all times. This will be your starting position.",
+   "Then, as you breathe out, use your chest to push the dumbbells up. Lock your arms at the top of the lift and squeeze your chest, hold for a second and then begin coming down slowly. Tip: Ideally, lowering the weight should take about twice as long as raising it.",
+   "Repeat the movement for the prescribed amount of repetitions of your training program."
+  ],
+  "images": [
+   "ex/Dumbbell_Bench_Press/0.jpg",
+   "ex/Dumbbell_Bench_Press/1.jpg"
+  ],
+  "loadFactor": 2
+ },
+ {
+  "id": "Dumbbell_Flyes",
+  "name": "Dumbbell Fly",
+  "aliases": [
+   "Flat Dumbbell Fly",
+   "Chest Fly (dumbbells)"
+  ],
+  "group": "Chest",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Chest"
+  ],
+  "secondaryMuscles": [],
+  "look": "Lying on a flat bench, dumbbells above your chest. Open your arms wide in an arc, then bring them back together.",
+  "instructions": [
+   "Lie down on a flat bench with a dumbbell on each hand resting on top of your thighs. The palms of your hand will be facing each other.",
+   "Then using your thighs to help raise the dumbbells, lift the dumbbells one at a time so you can hold them in front of you at shoulder width with the palms of your hands facing each other. Raise the dumbbells up like you're pressing them, but stop and hold just before you lock out. This will be your starting position.",
+   "With a slight bend on your elbows in order to prevent stress at the biceps tendon, lower your arms out at both sides in a wide arc until you feel a stretch on your chest. Breathe in as you perform this portion of the movement. Tip: Keep in mind that throughout the movement, the arms should remain stationary; the movement should only occur at the shoulder joint.",
+   "Return your arms back to the starting position as you squeeze your chest muscles and breathe out. Tip: Make sure to use the same arc of motion used to lower the weights.",
+   "Hold for a second at the contracted position and repeat the movement for the prescribed amount of repetitions."
+  ],
+  "images": [
+   "ex/Dumbbell_Flyes/0.jpg",
+   "ex/Dumbbell_Flyes/1.jpg"
+  ],
+  "loadFactor": 2
+ },
+ {
+  "id": "One-Arm_Dumbbell_Row",
+  "name": "One-Arm Dumbbell Row",
+  "aliases": [
+   "Dumbbell Row",
+   "Single-Arm Row",
+   "DB Row"
+  ],
+  "group": "Back",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Middle Back"
+  ],
+  "secondaryMuscles": [
+   "Biceps",
+   "Lats",
+   "Shoulders"
+  ],
+  "look": "One knee and one hand on a flat bench, back flat. Pull a dumbbell from the floor up to your hip with the other arm. Log one dumbbell; GymXP assumes you do both sides.",
+  "instructions": [
+   "Choose a flat bench and place a dumbbell on each side of it.",
+   "Place the right leg on top of the end of the bench, bend your torso forward from the waist until your upper body is parallel to the floor, and place your right hand on the other end of the bench for support.",
+   "Use the left hand to pick up the dumbbell on the floor and hold the weight while keeping your lower back straight. The palm of the hand should be facing your torso. This will be your starting position.",
+   "Pull the resistance straight up to the side of your chest, keeping your upper arm close to your side and keeping the torso stationary. Breathe out as you perform this step. Tip: Concentrate on squeezing the back muscles once you reach the full contracted position. Also, make sure that the force is performed with the back muscles and not the arms. Finally, the upper torso should remain stationary and only the arms should move. The forearms should do no other work except for holding the dumbbell; therefore do not try to pull the dumbbell up using the forearms.",
+   "Lower the resistance straight down to the starting position. Breathe in as you perform this step.",
+   "Repeat the movement for the specified amount of repetitions.",
+   "Switch sides and repeat again with the other arm."
+  ],
+  "images": [
+   "ex/One-Arm_Dumbbell_Row/0.jpg",
+   "ex/One-Arm_Dumbbell_Row/1.jpg"
+  ],
+  "loadFactor": 2
+ },
+ {
+  "id": "Dumbbell_Lunges",
+  "name": "Dumbbell Lunge",
+  "aliases": [
+   "Lunges",
+   "DB Lunge"
+  ],
+  "group": "Legs",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Quadriceps"
+  ],
+  "secondaryMuscles": [
+   "Calves",
+   "Glutes",
+   "Hamstrings"
+  ],
+  "look": "Standing with a dumbbell in each hand at your sides. Step forward and lower until both knees are bent ~90°, then push back up.",
+  "instructions": [
+   "Stand with your torso upright holding two dumbbells in your hands by your sides. This will be your starting position.",
+   "Step forward with your right leg around 2 feet or so from the foot being left stationary behind and lower your upper body down, while keeping the torso upright and maintaining balance. Inhale as you go down. Note: As in the other exercises, do not allow your knee to go forward beyond your toes as you come down, as this will put undue stress on the knee joint. Make sure that you keep your front shin perpendicular to the ground.",
+   "Using mainly the heel of your foot, push up and go back to the starting position as you exhale.",
+   "Repeat the movement for the recommended amount of repetitions and then perform with the left leg."
+  ],
+  "images": [
+   "ex/Dumbbell_Lunges/0.jpg",
+   "ex/Dumbbell_Lunges/1.jpg"
+  ],
+  "loadFactor": 2
+ },
+ {
+  "id": "Stiff-Legged_Dumbbell_Deadlift",
+  "name": "Dumbbell Romanian Deadlift",
+  "aliases": [
+   "Dumbbell RDL",
+   "Stiff-Leg Deadlift",
+   "DB Deadlift"
+  ],
+  "group": "Legs",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Hamstrings"
+  ],
+  "secondaryMuscles": [
+   "Glutes",
+   "Lower Back"
+  ],
+  "look": "Standing with dumbbells in front of your thighs. Push your hips back and lower the dumbbells along your legs with a flat back, then stand up squeezing your glutes.",
+  "instructions": [
+   "Grasp a couple of dumbbells holding them by your side at arm's length.",
+   "Stand with your torso straight and your legs spaced using a shoulder width or narrower stance. The knees should be slightly bent. This is your starting position.",
+   "Keeping the knees stationary, lower the dumbbells to over the top of your feet by bending at the waist while keeping your back straight. Keep moving forward as if you were going to pick something from the floor until you feel a stretch on the hamstrings. Exhale as you perform this movement",
+   "Start bringing your torso up straight again by extending your hips and waist until you are back at the starting position. Inhale as you perform this movement.",
+   "Repeat for the recommended amount of repetitions."
+  ],
+  "images": [
+   "ex/Stiff-Legged_Dumbbell_Deadlift/0.jpg",
+   "ex/Stiff-Legged_Dumbbell_Deadlift/1.jpg"
+  ],
+  "loadFactor": 2
+ },
+ {
   "id": "Ab_Crunch_Machine",
   "name": "Ab Crunch Machine",
   "aliases": [

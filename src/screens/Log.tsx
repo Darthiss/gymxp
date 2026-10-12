@@ -251,11 +251,11 @@ export function Log({ route }: { route: Route }) {
               </div>
             )}
 
-            <SettingNote exerciseId={e.exerciseId} value={setting} />
+            <SettingNote exerciseId={e.exerciseId} value={setting} equipment={ex?.equipment} />
 
             <div className="set-row set-head">
               <span className="center">#</span>
-              <span className="center">{ex?.assisted ? 'Assist kg' : 'Weight'}</span>
+              <span className="center">{ex?.assisted ? 'Assist kg' : ex?.loadFactor === 2 ? 'kg each' : 'Weight'}</span>
               <span className="center">Reps</span>
               <span />
             </div>
@@ -345,14 +345,15 @@ export function Log({ route }: { route: Route }) {
 }
 
 /** Per-machine settings memo ("seat 4, back pad 2"), synced with your data. */
-export function SettingNote({ exerciseId, value }: { exerciseId: string; value: string }) {
+export function SettingNote({ exerciseId, value, equipment }: { exerciseId: string; value: string; equipment?: string }) {
+  const freeWeight = equipment === 'Dumbbell';
   const [edit, setEdit] = useState(false);
   const [v, setV] = useState(value);
   if (!edit)
     return (
       <button className="btn ghost sm" style={{ justifyContent: 'flex-start', padding: '4px 0', minHeight: 0, color: value ? 'var(--text-2)' : 'var(--muted)', fontWeight: 500 }}
         onClick={() => { setV(value); setEdit(true); }}>
-        ⚙️ {value || 'Add machine settings (seat height, pin…)'}
+        {freeWeight ? '📝' : '⚙️'} {value || (freeWeight ? 'Add a note (bench angle, grip…)' : 'Add machine settings (seat height, pin…)')}
       </button>
     );
   const saveIt = () => {
@@ -365,7 +366,7 @@ export function SettingNote({ exerciseId, value }: { exerciseId: string; value: 
   };
   return (
     <div className="row">
-      <input className="input" autoFocus value={v} placeholder="e.g. seat 4, back pad 2" onChange={(e) => setV(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && saveIt()} />
+      <input className="input" autoFocus value={v} placeholder={freeWeight ? 'e.g. bench at 30°' : 'e.g. seat 4, back pad 2'} onChange={(e) => setV(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && saveIt()} />
       <button className="btn sm primary" onClick={saveIt}>Save</button>
     </div>
   );
