@@ -105,6 +105,7 @@ p { margin: 0; }
 .card.tight { padding: 12px; }
 .card.flat { background: var(--surface-2); border-color: transparent; }
 .card-link { display: block; text-decoration: none; color: inherit; }
+.card-link.stack, .card-link.row { display: flex; } /* keep flex layout on clickable cards */
 .card-link:active { transform: scale(0.99); }
 .section-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 8px 0 -2px; }
 

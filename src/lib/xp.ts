@@ -1,8 +1,9 @@
 // GymXP game engine.
 // Everything is derived from the raw log, so editing or deleting a past session
 // recomputes XP, PRs, streaks and achievements consistently.
-import type { AppData, Exercise, Session } from './types';
-import { weekKey, addDays, today } from './util';
+import type { AppData, Exercise, MuscleGroup, Session } from './types';
+import { weekKey, addDays, today, parseDate } from './util';
+import { holidayOn } from './holidays';
 
 export const RULES = {
   visitXp: 100, // first session of a calendar day
@@ -18,23 +19,64 @@ export const RULES = {
   weighInXp: 10, // max one per week
   streakStepPct: 5, // +5% base XP per consecutive goal week…
   streakCapWeeks: 10, // …up to +50%
+  rainXp: 50, // went to the gym while it was raining
+  coldXp: 50, // ≤ 5 °C
+  freezingXp: 50, // extra at ≤ 0 °C
+  heatXp: 50, // ≥ 33 °C
+  holidayXp: 100, // Argentine national holiday
 };
 
 // ---------- Levels ----------
+// Total XP to reach a level grows as 600·(L−1)^1.9. Simulated at 3 solid workouts a week:
+// 1 month ≈ level 4, 1 year ≈ level 17, 3 years ≈ 32, 5 years ≈ 43, 10 years ≈ 60.
+
+const LEVEL_A = 600;
+const LEVEL_P = 1.9;
 
 /** Total XP required to reach `level` (level 1 = 0 XP). */
 export function xpForLevel(level: number): number {
-  const n = level - 1;
-  return 50 * n * n + 100 * n;
+  return Math.round(LEVEL_A * Math.max(0, level - 1) ** LEVEL_P);
 }
 
 export function levelForXp(xp: number): number {
-  const n = Math.floor((-100 + Math.sqrt(10000 + 200 * Math.max(0, xp))) / 100);
-  let level = n + 1;
+  let level = Math.floor((Math.max(0, xp) / LEVEL_A) ** (1 / LEVEL_P)) + 1;
   // Guard against float rounding at exact boundaries.
   while (xpForLevel(level + 1) <= xp) level++;
   while (level > 1 && xpForLevel(level) > xp) level--;
   return level;
+}
+
+export interface Rank {
+  minLevel: number;
+  minVisits: number; // ranks need XP *and* time in the gym
+  title: string;
+  color: string;
+}
+
+export const RANKS: Rank[] = [
+  { minLevel: 1, minVisits: 0, title: 'Rookie', color: '#9aa3b2' },
+  { minLevel: 2, minVisits: 3, title: 'Beginner', color: '#a3c4a8' },
+  { minLevel: 4, minVisits: 10, title: 'Regular', color: '#7bd389' },
+  { minLevel: 6, minVisits: 25, title: 'Committed', color: '#5fd0a0' },
+  { minLevel: 8, minVisits: 40, title: 'Iron Apprentice', color: '#6fb1d6' },
+  { minLevel: 10, minVisits: 60, title: 'Iron Adept', color: '#5a8dee' },
+  { minLevel: 12, minVisits: 90, title: 'Bronze Lifter', color: '#cd8a4f' },
+  { minLevel: 15, minVisits: 130, title: 'Silver Lifter', color: '#c7d0dc' },
+  { minLevel: 18, minVisits: 180, title: 'Gold Lifter', color: '#f5c542' },
+  { minLevel: 22, minVisits: 250, title: 'Platinum Lifter', color: '#7fe0d6' },
+  { minLevel: 26, minVisits: 330, title: 'Diamond Lifter', color: '#8fd3ff' },
+  { minLevel: 31, minVisits: 420, title: 'Athlete', color: '#9fe870' },
+  { minLevel: 36, minVisits: 520, title: 'Elite', color: '#b388ff' },
+  { minLevel: 41, minVisits: 640, title: 'Master', color: '#d17bff' },
+  { minLevel: 47, minVisits: 780, title: 'Grandmaster', color: '#ff7ad9' },
+  { minLevel: 53, minVisits: 900, title: 'Titan', color: '#ff7a59' },
+  { minLevel: 60, minVisits: 1050, title: 'Olympian', color: '#ffd166' },
+];
+
+export function rankFor(level: number, visits: number): Rank {
+  let r = RANKS[0];
+  for (const x of RANKS) if (level >= x.minLevel && visits >= x.minVisits) r = x;
+  return r;
 }
 
 export interface LevelInfo {
@@ -47,49 +89,30 @@ export interface LevelInfo {
   nextRank?: Rank;
 }
 
-export interface Rank {
-  minLevel: number;
-  title: string;
-  color: string;
-}
-
-export const RANKS: Rank[] = [
-  { minLevel: 1, title: 'Rookie', color: '#9aa3b2' },
-  { minLevel: 3, title: 'Beginner', color: '#a3c4a8' },
-  { minLevel: 5, title: 'Regular', color: '#7bd389' },
-  { minLevel: 8, title: 'Iron Apprentice', color: '#6fb1d6' },
-  { minLevel: 12, title: 'Iron Adept', color: '#5a8dee' },
-  { minLevel: 16, title: 'Bronze Lifter', color: '#cd8a4f' },
-  { minLevel: 20, title: 'Silver Lifter', color: '#c7d0dc' },
-  { minLevel: 25, title: 'Gold Lifter', color: '#f5c542' },
-  { minLevel: 30, title: 'Platinum Lifter', color: '#7fe0d6' },
-  { minLevel: 35, title: 'Diamond Lifter', color: '#8fd3ff' },
-  { minLevel: 40, title: 'Master', color: '#b388ff' },
-  { minLevel: 50, title: 'Grandmaster', color: '#e070ff' },
-  { minLevel: 60, title: 'Titan', color: '#ff7a59' },
-  { minLevel: 75, title: 'Mythic', color: '#ff4f81' },
-  { minLevel: 90, title: 'Legend', color: '#ffd166' },
-  { minLevel: 100, title: 'Olympian', color: '#fff3b0' },
-];
-
-export function rankFor(level: number): Rank {
-  let r = RANKS[0];
-  for (const x of RANKS) if (level >= x.minLevel) r = x;
-  return r;
-}
-
-export function levelInfo(xp: number): LevelInfo {
+export function levelInfo(xp: number, visits: number): LevelInfo {
   const level = levelForXp(xp);
   const base = xpForLevel(level);
   const span = xpForLevel(level + 1) - base;
   const into = xp - base;
-  const rank = rankFor(level);
-  return { level, xp, into, span, pct: span ? into / span : 0, rank, nextRank: RANKS.find((r) => r.minLevel > level) };
+  const rank = rankFor(level, visits);
+  return { level, xp, into, span, pct: span ? into / span : 0, rank, nextRank: RANKS[RANKS.indexOf(rank) + 1] };
+}
+
+/** What's still missing for the next rank, e.g. "level 8 · 12 more visits". */
+export function nextRankNeeds(info: LevelInfo, visits: number): string {
+  const r = info.nextRank;
+  if (!r) return '';
+  const parts: string[] = [];
+  if (info.level < r.minLevel) parts.push(`level ${r.minLevel}`);
+  if (visits < r.minVisits) parts.push(`${r.minVisits - visits} more visit${r.minVisits - visits === 1 ? '' : 's'}`);
+  return parts.join(' · ');
 }
 
 // ---------- Achievements ----------
 
-export type AchievementCategory = 'Visits' | 'Volume' | 'Streaks' | 'Records' | 'Explorer' | 'Sets' | 'Time' | 'Special' | 'Body';
+export type AchievementCategory =
+  | 'Visits' | 'Streaks' | 'Strength' | 'Records' | 'Volume' | 'Habits' | 'Explorer' | 'Sets'
+  | 'Time' | 'Burn' | 'Weather' | 'Holidays' | 'Special' | 'Body';
 
 export interface AchievementDef {
   id: string;
@@ -185,25 +208,76 @@ const TIME_TIERS: Tier[] = [
   { n: 30000, xp: 2500, title: '500 Hours', icon: '🕰️' },
 ];
 
+const BURN_TIERS: Tier[] = [
+  { n: 10_000, xp: 100, title: 'Pizza Party', desc: '≈ 35 slices of pizza', icon: '🍕' },
+  { n: 50_000, xp: 300, title: 'Furnace', desc: '≈ 25 days of eating', icon: '🔥' },
+  { n: 100_000, xp: 600, title: 'Inferno', desc: '≈ 400 empanadas', icon: '🥟' },
+  { n: 250_000, xp: 1500, title: 'Supernova', desc: '≈ 2,500 alfajores', icon: '☀️' },
+];
+
 const tierDefs = (prefix: string, category: AchievementCategory, tiers: Tier[], descFn: (t: Tier) => string): AchievementDef[] =>
   tiers.map((t) => ({ id: `${prefix}-${t.n}`, category, icon: t.icon ?? '🏅', title: t.title, desc: descFn(t), xp: t.xp, target: t.n }));
 
 const fmt = (n: number) => n.toLocaleString('en-US');
 
+// Barbell lifts used for strength standards (Smith machine & machines don't count).
+export const BENCH = 'Barbell_Bench_Press_-_Medium_Grip';
+export const SQUAT = 'Barbell_Squat';
+export const DEADLIFT = 'Barbell_Deadlift';
+export const PULLUP = 'Assisted_Pull-Up_Machine';
+
+interface StrengthDef { id: string; ex: string; kg?: number; xbw?: number; icon: string; title: string; desc: string; xp: number }
+const STRENGTH: StrengthDef[] = [
+  { id: 'str-bench-60', ex: BENCH, kg: 60, icon: '🥉', title: 'One-Plate Bench', desc: 'Bench press 60 kg (a 20 kg plate each side)', xp: 150 },
+  { id: 'str-bench-bw', ex: BENCH, xbw: 1, icon: '🪞', title: 'Bodyweight Bench', desc: 'Bench press your own bodyweight', xp: 300 },
+  { id: 'str-bench-100', ex: BENCH, kg: 100, icon: '🥈', title: 'Two-Plate Bench', desc: 'Bench press 100 kg', xp: 500 },
+  { id: 'str-bench-140', ex: BENCH, kg: 140, icon: '🥇', title: 'Three-Plate Bench', desc: 'Bench press 140 kg', xp: 1000 },
+  { id: 'str-squat-100', ex: SQUAT, kg: 100, icon: '🦵', title: 'Two-Plate Squat', desc: 'Squat 100 kg', xp: 300 },
+  { id: 'str-squat-1.5', ex: SQUAT, xbw: 1.5, icon: '🏋️', title: 'Squat 1.5× Bodyweight', desc: 'Squat one and a half times your bodyweight', xp: 500 },
+  { id: 'str-squat-140', ex: SQUAT, kg: 140, icon: '🗿', title: 'Three-Plate Squat', desc: 'Squat 140 kg', xp: 700 },
+  { id: 'str-dl-140', ex: DEADLIFT, kg: 140, icon: '⛓️', title: 'Three-Plate Deadlift', desc: 'Deadlift 140 kg', xp: 400 },
+  { id: 'str-dl-2', ex: DEADLIFT, xbw: 2, icon: '🐂', title: 'Deadlift 2× Bodyweight', desc: 'Deadlift double your bodyweight', xp: 600 },
+  { id: 'str-dl-180', ex: DEADLIFT, kg: 180, icon: '🦍', title: 'Four-Plate Deadlift', desc: 'Deadlift 180 kg', xp: 900 },
+];
+
 export const ACHIEVEMENTS: AchievementDef[] = [
   ...tierDefs('visits', 'Visits', VISIT_TIERS, (t) => `Go to the gym ${t.n === 1 ? 'for the first time' : `${fmt(t.n)} times`}`),
-  ...tierDefs('volume', 'Volume', VOLUME_TIERS, (t) => `Lift ${fmt(t.n / 1000)} t in total: ${t.desc}`),
   ...tierDefs('streak', 'Streaks', STREAK_TIERS, (t) => `Hit your weekly goal ${t.n} weeks in a row`),
+  ...STRENGTH.map((s) => ({ id: s.id, category: 'Strength' as const, icon: s.icon, title: s.title, desc: `${s.desc} (barbell, 1+ rep)`, xp: s.xp })),
+  { id: 'str-pullup', category: 'Strength', icon: '🦸', title: 'First Real Pull-up', desc: 'A pull-up with zero assistance (assisted machine at 0 kg)', xp: 250 },
+  { id: 'str-pullup-10', category: 'Strength', icon: '🕷️', title: 'Ten Strict Pull-ups', desc: '10 unassisted pull-ups in one set: superhero territory', xp: 600 },
   ...tierDefs('prs', 'Records', PR_TIERS, (t) => (t.n === 1 ? 'Set your first personal record' : `Set ${fmt(t.n)} personal records`)),
+  { id: 'hab-overload', category: 'Records', icon: '📶', title: 'Progressive Overload', desc: 'Weight PR on the same exercise 3 sessions in a row', xp: 200 },
+  ...tierDefs('volume', 'Volume', VOLUME_TIERS, (t) => `Lift ${fmt(t.n / 1000)} t in total: ${t.desc}`),
+  { id: 'hab-comeback', category: 'Habits', icon: '🔄', title: 'Comeback Kid', desc: 'Return after 14+ days away. Welcome back!', xp: 75 },
+  { id: 'hab-weekend', category: 'Habits', icon: '🏖️', title: 'Weekend Warrior', desc: 'Train Saturday AND Sunday of the same weekend', xp: 75 },
+  { id: 'hab-monday', category: 'Habits', icon: '📆', title: 'Monday Club', desc: 'Train on 10 Mondays', xp: 100, target: 10 },
+  { id: 'hab-legs', category: 'Habits', icon: '🍗', title: 'Never Skip Leg Day', desc: 'Train legs 8 weeks in a row', xp: 300, target: 8 },
+  { id: 'hab-fullbody', category: 'Habits', icon: '🧩', title: 'Full Body Week', desc: 'Chest, back, shoulders, arms and legs in one week', xp: 100 },
+  { id: 'hab-variety', category: 'Habits', icon: '🎨', title: 'Variety Pack', desc: '8+ different exercises in one workout', xp: 75 },
+  { id: 'hab-reps', category: 'Habits', icon: '🏭', title: 'Rep Factory', desc: '500+ reps in one workout', xp: 100 },
+  { id: 'hab-heart', category: 'Habits', icon: '❤️‍🔥', title: 'Heart of Steel', desc: 'Average 140+ bpm in a 45+ minute workout', xp: 100 },
+  { id: 'hab-anniversary', category: 'Habits', icon: '🎂', title: 'Iron Anniversary', desc: 'Still training one year after your first workout', xp: 1000 },
   ...tierDefs('explorer', 'Explorer', EXPLORER_TIERS, (t) => `Train ${t.n} different exercises`),
   ...tierDefs('sets', 'Sets', SET_TIERS, (t) => `Complete ${fmt(t.n)} sets`),
   ...tierDefs('time', 'Time', TIME_TIERS, (t) => `Log ${fmt(t.n / 60)} hours of workouts from your watch`),
+  ...tierDefs('burn', 'Burn', BURN_TIERS, (t) => `Burn ${fmt(t.n)} active kcal in total: ${t.desc}`),
+  { id: 'wx-rain-1', category: 'Weather', icon: '🌧️', title: 'Rainy Day Warrior', desc: 'Train while it rains', xp: 75 },
+  { id: 'wx-rain-10', category: 'Weather', icon: '⛈️', title: 'Storm Chaser', desc: 'Train in the rain 10 times', xp: 300, target: 10 },
+  { id: 'wx-cold', category: 'Weather', icon: '🥶', title: 'Frost Fighter', desc: 'Train when it is 5 °C or colder', xp: 75 },
+  { id: 'wx-freeze', category: 'Weather', icon: '🐻‍❄️', title: 'Polar Bear', desc: 'Train when it is 0 °C or below', xp: 150 },
+  { id: 'wx-heat', category: 'Weather', icon: '🥵', title: 'Heatwave Hero', desc: 'Train when it is 33 °C or hotter', xp: 75 },
+  { id: 'hol-1', category: 'Holidays', icon: '🎉', title: 'Patriot Pump', desc: 'Train on an Argentine national holiday', xp: 100 },
+  { id: 'hol-5', category: 'Holidays', icon: '🧉', title: 'Feriado Fiend', desc: 'Train on 5 national holidays', xp: 250, target: 5 },
+  { id: 'hol-10', category: 'Holidays', icon: '🗓️', title: 'Full Calendar', desc: 'Train on 10 different national holidays', xp: 750, target: 10 },
+  { id: 'hol-newyear', category: 'Holidays', icon: '🎆', title: 'New Year, Same Me', desc: 'Train in the first week of January', xp: 100 },
+  { id: 'hol-xmas', category: 'Holidays', icon: '🎄', title: 'Iron Navidad', desc: 'Train between Dec 24 and 26', xp: 100 },
   { id: 'special-marathon', category: 'Special', icon: '🏃', title: 'Marathon Session', desc: 'A workout of 90+ minutes', xp: 100 },
   { id: 'special-beast', category: 'Special', icon: '🦍', title: 'Volume Beast', desc: 'Move 10 t in a single session', xp: 150 },
   { id: 'special-early', category: 'Special', icon: '🌅', title: 'Early Bird', desc: 'Start a workout before 7:00', xp: 50 },
   { id: 'special-night', category: 'Special', icon: '🌙', title: 'Night Owl', desc: 'Start a workout at 21:00 or later', xp: 50 },
   { id: 'special-month', category: 'Special', icon: '📅', title: 'Iron Month', desc: 'Go 12+ days in one calendar month', xp: 300 },
-  { id: 'special-double', category: 'Special', icon: '⚡', title: 'Double PR', desc: 'Set 3+ records in one session', xp: 75 },
+  { id: 'special-double', category: 'Special', icon: '⚡', title: 'Triple PR', desc: 'Set 3+ records in one session', xp: 75 },
   { id: 'body-first', category: 'Body', icon: '⚖️', title: 'On the Scale', desc: 'Log your bodyweight for the first time', xp: 25 },
   { id: 'body-10', category: 'Body', icon: '📊', title: 'Tracking Pro', desc: 'Log your bodyweight 10 times', xp: 75, target: 10 },
   { id: 'body-goal', category: 'Body', icon: '🎯', title: 'Goal Weight', desc: 'Reach your goal bodyweight', xp: 500 },
@@ -239,6 +313,9 @@ export interface SessionResult {
   multiplier: number;
   xpBefore: number;
   xpAfter: number;
+  visitsBefore: number;
+  visitsAfter: number;
+  holiday?: string;
   achievements: UnlockedAchievement[];
 }
 
@@ -272,10 +349,13 @@ export interface GameState {
   totalVolume: number;
   totalSets: number;
   totalMinutes: number;
+  totalKcal: number;
   prCount: number;
   exercisesTried: number;
   bests: Map<string, ExerciseBest>;
   history: Map<string, ExerciseHistoryPoint[]>;
+  maxPullups: number; // most unassisted pull-ups in one set
+  bodyweight: number; // latest logged, 0 if none
   weekStreak: number; // current streak (weeks hitting goal), counting this week if already hit
   bestWeekStreak: number;
   thisWeekVisits: number;
@@ -339,7 +419,14 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
   const bests = new Map<string, ExerciseBest>();
   const history = new Map<string, ExerciseHistoryPoint[]>();
   const timeline: { date: string; xp: number }[] = [];
-  let totalVolume = 0, totalSets = 0, totalMinutes = 0, prCount = 0, weighInCount = 0, bestStreak = 0;
+  const weekGroups = new Map<string, Set<MuscleGroup>>();
+  const legWeeks = new Set<string>();
+  const prStreak = new Map<string, number>();
+  const holidayNames = new Set<string>();
+  let totalVolume = 0, totalSets = 0, totalMinutes = 0, totalKcal = 0, prCount = 0, weighInCount = 0, bestStreak = 0;
+  let mondays = 0, rainDays = 0, holidayDays = 0, maxPullups = 0, bestLegStreak = 0;
+  let lastVisit: string | undefined;
+  const firstVisit = sessions[0]?.date;
   const firstWeight = weights[0]?.kg;
 
   const unlock = (id: string, date: string, sink: XpItem[] | null, sessionId?: string) => {
@@ -347,8 +434,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     const def = ACH_BY_ID.get(id);
     if (!def) return 0;
     unlockedIds.add(id);
-    const u = { ...def, date, sessionId };
-    unlocked.push(u);
+    unlocked.push({ ...def, date, sessionId });
     sink?.push({ label: `${def.icon} ${def.title}`, xp: def.xp, kind: 'achievement' });
     return def.xp;
   };
@@ -357,10 +443,9 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     for (const t of tiers) if (value >= t.n) xp += unlock(`${prefix}-${t.n}`, date, sink, sessionId);
     return xp;
   };
-  const streakEndingAt = (wk: string) => {
+  const consecutive = (set: Set<string>, wk: string) => {
     let n = 0;
-    let w = wk;
-    while (goalWeeks.has(w)) { n++; w = addDays(w, -7); }
+    for (let w = wk; set.has(w); w = addDays(w, -7)) n++;
     return n;
   };
   const pushTimeline = (date: string) => {
@@ -392,45 +477,57 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     const s = ev.s;
     const items: XpItem[] = [];
     const xpBefore = totalXp;
+    const visitsBefore = visitDays.size;
     const bw = bwAt(s.date);
     const wk = weekKey(s.date);
+    const dow = parseDate(s.date).getDay(); // 0 = Sunday
 
     // --- base XP ---
     let base = 0;
     const firstOfDay = !visitDays.has(s.date);
+    const gapDays = lastVisit ? Math.round((parseDate(s.date).getTime() - parseDate(lastVisit).getTime()) / 86400000) : 0;
     if (firstOfDay) {
       visitDays.add(s.date);
       weekVisits.set(wk, (weekVisits.get(wk) ?? 0) + 1);
       const mk = s.date.slice(0, 7);
       monthVisits.set(mk, (monthVisits.get(mk) ?? 0) + 1);
+      if (dow === 1) mondays++;
       items.push({ label: 'Gym visit', xp: RULES.visitXp, kind: 'base' });
       base += RULES.visitXp;
     }
 
     let sets = 0;
     let volume = 0;
+    let reps = 0;
     const prs: PR[] = [];
     const newExercises: string[] = [];
+    const groups = weekGroups.get(wk) ?? new Set<MuscleGroup>();
+    weekGroups.set(wk, groups);
+    const strengthHits: { ex: string; kg: number }[] = [];
     for (const log of s.exercises) {
       const ex = exMap.get(log.exerciseId);
       const done = log.sets.filter((x) => x.reps > 0);
       if (!done.length) continue;
+      if (ex) groups.add(ex.group === 'Glutes' ? 'Legs' : ex.group);
       sets += done.length;
       let exVol = 0, bestKg = ex?.assisted ? Infinity : 0, bestE = 0;
       for (const st of done) {
+        reps += st.reps;
         exVol += effectiveLoad(ex, st.kg, bw) * st.reps;
         if (ex?.assisted) bestKg = Math.min(bestKg, st.kg);
         else { bestKg = Math.max(bestKg, st.kg); bestE = Math.max(bestE, e1rm(st.kg, st.reps)); }
+        if (log.exerciseId === PULLUP && st.kg <= 0) maxPullups = Math.max(maxPullups, st.reps);
       }
       volume += exVol;
+      if (!ex?.assisted) strengthHits.push({ ex: log.exerciseId, kg: bestKg });
 
       const prev = bests.get(log.exerciseId);
+      let weightPr = false;
       if (!seen.has(log.exerciseId)) {
         seen.add(log.exerciseId);
         newExercises.push(log.exerciseId);
         bests.set(log.exerciseId, { maxKg: bestKg, maxKgDate: s.date, maxE1rm: bestE, maxE1rmDate: s.date, sessions: 1, lastDate: s.date });
       } else if (prev) {
-        let weightPr = false;
         if (ex?.assisted) {
           if (bestKg < prev.maxKg) {
             prs.push({ exerciseId: log.exerciseId, kind: 'assist', value: bestKg, prev: prev.maxKg });
@@ -447,13 +544,15 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
         prev.sessions++;
         prev.lastDate = s.date;
       }
+      prStreak.set(log.exerciseId, weightPr ? (prStreak.get(log.exerciseId) ?? 0) + 1 : 0);
       const h = history.get(log.exerciseId) ?? [];
       h.push({ date: s.date, sessionId: s.id, bestKg: bestKg === Infinity ? 0 : bestKg, bestE1rm: bestE, volume: exVol, sets: done.map((d) => ({ kg: d.kg, reps: d.reps })) });
       history.set(log.exerciseId, h);
     }
+    if (groups.has('Legs')) legWeeks.add(wk);
 
     if (sets) {
-      items.push({ label: `${sets} sets`, xp: sets * RULES.setXp, kind: 'base' });
+      items.push({ label: `${sets} set${sets === 1 ? '' : 's'}`, xp: sets * RULES.setXp, kind: 'base' });
       base += sets * RULES.setXp;
     }
     const volXp = Math.floor(volume / RULES.volumeKgPerXp);
@@ -473,7 +572,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     }
 
     // --- streak multiplier: consecutive goal weeks before this week ---
-    const streakWeeks = streakEndingAt(addDays(wk, -7));
+    const streakWeeks = consecutive(goalWeeks, addDays(wk, -7));
     const pct = Math.min(streakWeeks, RULES.streakCapWeeks) * RULES.streakStepPct;
     const multiplier = 1 + pct / 100;
     let xp = base;
@@ -481,6 +580,19 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
       const bonus = Math.round((base * pct) / 100);
       items.push({ label: `🔥 ${streakWeeks}-week streak +${pct}%`, xp: bonus, kind: 'bonus' });
       xp += bonus;
+    }
+
+    // --- conditions bonuses (once per day) ---
+    const holiday = holidayOn(s.date);
+    const temp = s.weather?.tempC;
+    const rain = !!s.weather?.rain;
+    if (firstOfDay) {
+      const bonus = (label: string, v: number) => { items.push({ label, xp: v, kind: 'bonus' }); xp += v; };
+      if (holiday) { bonus(`🧉 Feriado: ${holiday}`, RULES.holidayXp); holidayDays++; holidayNames.add(holiday.replace(' (trasladado)', '')); }
+      if (rain) { bonus('🌧️ Trained in the rain', RULES.rainXp); rainDays++; }
+      if (temp !== undefined && temp <= 5) bonus(`🥶 Cold day (${temp} °C)`, RULES.coldXp);
+      if (temp !== undefined && temp <= 0) bonus('❄️ Freezing!', RULES.freezingXp);
+      if (temp !== undefined && temp >= 33) bonus(`🥵 Heatwave (${temp} °C)`, RULES.heatXp);
     }
 
     for (const id of newExercises) {
@@ -506,29 +618,68 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     totalVolume += volume;
     totalSets += sets;
     totalMinutes += minutes;
+    totalKcal += kcal;
 
     // --- achievements ---
     const achStart = unlocked.length;
+    const A = (id: string) => { xp += unlock(id, s.date, items, s.id); };
     xp += checkTiers('visits', VISIT_TIERS, visitDays.size, s.date, items, s.id);
     xp += checkTiers('volume', VOLUME_TIERS, totalVolume, s.date, items, s.id);
-    const curStreak = streakEndingAt(wk);
+    const curStreak = consecutive(goalWeeks, wk);
     bestStreak = Math.max(bestStreak, curStreak);
     xp += checkTiers('streak', STREAK_TIERS, curStreak, s.date, items, s.id);
     xp += checkTiers('prs', PR_TIERS, prCount, s.date, items, s.id);
     xp += checkTiers('explorer', EXPLORER_TIERS, seen.size, s.date, items, s.id);
     xp += checkTiers('sets', SET_TIERS, totalSets, s.date, items, s.id);
     xp += checkTiers('time', TIME_TIERS, totalMinutes, s.date, items, s.id);
-    if (minutes >= 90) xp += unlock('special-marathon', s.date, items, s.id);
-    if (volume >= 10000) xp += unlock('special-beast', s.date, items, s.id);
-    if (s.startTime && s.startTime < '07:00') xp += unlock('special-early', s.date, items, s.id);
-    if (s.startTime && s.startTime >= '21:00') xp += unlock('special-night', s.date, items, s.id);
-    if ((monthVisits.get(s.date.slice(0, 7)) ?? 0) >= 12) xp += unlock('special-month', s.date, items, s.id);
-    if (prs.length >= 3) xp += unlock('special-double', s.date, items, s.id);
+    xp += checkTiers('burn', BURN_TIERS, totalKcal, s.date, items, s.id);
+    // strength standards
+    for (const st of STRENGTH) {
+      const hit = strengthHits.find((h) => h.ex === st.ex);
+      if (!hit) continue;
+      if ((st.kg !== undefined && hit.kg >= st.kg) || (st.xbw !== undefined && bw > 0 && hit.kg >= st.xbw * bw)) A(st.id);
+    }
+    if (maxPullups >= 1) A('str-pullup');
+    if (maxPullups >= 10) A('str-pullup-10');
+    if ([...prStreak.values()].some((v) => v >= 3)) A('hab-overload');
+    // habits
+    if (firstOfDay && gapDays >= 14 && visitsBefore >= 3) A('hab-comeback');
+    if (dow === 0 && visitDays.has(addDays(s.date, -1))) A('hab-weekend');
+    if (mondays >= 10) A('hab-monday');
+    const legStreak = consecutive(legWeeks, wk);
+    bestLegStreak = Math.max(bestLegStreak, legStreak);
+    if (legStreak >= 8) A('hab-legs');
+    if ((['Chest', 'Back', 'Shoulders', 'Arms', 'Legs'] as MuscleGroup[]).every((g) => groups.has(g))) A('hab-fullbody');
+    if (s.exercises.filter((e) => e.sets.some((x) => x.reps > 0)).length >= 8) A('hab-variety');
+    if (reps >= 500) A('hab-reps');
+    if ((s.watch?.avgHr ?? 0) >= 140 && minutes >= 45) A('hab-heart');
+    if (firstVisit && s.date >= addDays(firstVisit, 365)) A('hab-anniversary');
+    // weather & holidays
+    if (rainDays >= 1) A('wx-rain-1');
+    if (rainDays >= 10) A('wx-rain-10');
+    if (temp !== undefined && temp <= 5) A('wx-cold');
+    if (temp !== undefined && temp <= 0) A('wx-freeze');
+    if (temp !== undefined && temp >= 33) A('wx-heat');
+    if (holidayDays >= 1) A('hol-1');
+    if (holidayDays >= 5) A('hol-5');
+    if (holidayNames.size >= 10) A('hol-10');
+    const md = s.date.slice(5);
+    if (md >= '01-01' && md <= '01-07') A('hol-newyear');
+    if (md >= '12-24' && md <= '12-26') A('hol-xmas');
+    // special
+    if (minutes >= 90) A('special-marathon');
+    if (volume >= 10000) A('special-beast');
+    if (s.startTime && s.startTime < '07:00') A('special-early');
+    if (s.startTime && s.startTime >= '21:00') A('special-night');
+    if ((monthVisits.get(s.date.slice(0, 7)) ?? 0) >= 12) A('special-month');
+    if (prs.length >= 3) A('special-double');
 
     totalXp += xp;
+    if (firstOfDay) lastVisit = s.date;
     results.set(s.id, {
       id: s.id, date: s.date, xp, items, volume, sets, prs, newExercises, streakWeeks, multiplier,
-      xpBefore, xpAfter: totalXp, achievements: unlocked.slice(achStart),
+      xpBefore, xpAfter: totalXp, visitsBefore, visitsAfter: visitDays.size, holiday,
+      achievements: unlocked.slice(achStart),
     });
     pushTimeline(s.date);
   }
@@ -536,22 +687,25 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
   // current streak as of today
   const thisWeek = weekKey(today());
   const thisWeekVisits = weekVisits.get(thisWeek) ?? 0;
-  const weekStreak = goalWeeks.has(thisWeek) ? streakEndingAt(thisWeek) : streakEndingAt(addDays(thisWeek, -7));
+  const weekStreak = goalWeeks.has(thisWeek) ? consecutive(goalWeeks, thisWeek) : consecutive(goalWeeks, addDays(thisWeek, -7));
 
   const progress: Record<string, number> = {};
   const metric: Record<string, number> = {
     visits: visitDays.size, volume: totalVolume, streak: bestStreak, prs: prCount,
-    explorer: seen.size, sets: totalSets, time: totalMinutes,
+    explorer: seen.size, sets: totalSets, time: totalMinutes, burn: totalKcal,
   };
   for (const a of ACHIEVEMENTS) {
     const prefix = a.id.split('-')[0];
     if (a.target && prefix in metric) progress[a.id] = metric[prefix];
   }
-  progress['body-10'] = weighInCount;
+  Object.assign(progress, {
+    'body-10': weighInCount, 'hab-monday': mondays, 'hab-legs': bestLegStreak,
+    'wx-rain-10': rainDays, 'hol-5': holidayDays, 'hol-10': holidayNames.size,
+  });
 
   return {
     totalXp,
-    level: levelInfo(totalXp),
+    level: levelInfo(totalXp, visitDays.size),
     sessions: results,
     weighIns,
     unlocked,
@@ -561,10 +715,13 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     totalVolume,
     totalSets,
     totalMinutes,
+    totalKcal,
     prCount,
     exercisesTried: seen.size,
     bests,
     history,
+    maxPullups,
+    bodyweight: weights[weights.length - 1]?.kg ?? 0,
     weekStreak,
     bestWeekStreak: bestStreak,
     thisWeekVisits,

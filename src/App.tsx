@@ -84,7 +84,7 @@ function Shell() {
   else if (p0 === 'guide' && p1) page = <GuideDetail id={p1} />;
   else if (p0 === 'guide') page = <Guide />;
   else if (p0 === 'guide-edit' && p1) page = <CustomExerciseEdit key={p1} id={p1} />;
-  else if (p0 === 'awards') page = <Awards />;
+  else if (p0 === 'awards') page = <Awards route={route} />;
   else if (p0 === 'settings') page = <Settings />;
   else if (p0 === 'import') page = <Backfill />;
   else if (p0 === 'routine' && p1) page = <RoutineEdit key={p1} id={p1} />;

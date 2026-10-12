@@ -24,6 +24,14 @@ export function SessionView({ id }: { id: string }) {
         <div className="stat"><div className="label">Volume</div><div className="value">{fmtKg(r.volume)}</div></div>
       </div>
 
+      {(s.weather || r.holiday) && (
+        <div className="card row between small">
+          {s.weather?.tempC !== undefined && <span>🌡️ {s.weather.tempC} °C</span>}
+          {s.weather && <span>{s.weather.rain ? '🌧️ Rain' : '☀️ Dry'}</span>}
+          {r.holiday && <span>🧉 {r.holiday}</span>}
+        </div>
+      )}
+
       {s.watch && (
         <div className="card row between small">
           <span>⌚ {s.watch.durationMin ? `${Math.round(s.watch.durationMin)} min` : '—'}</span>

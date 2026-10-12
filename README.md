@@ -13,7 +13,8 @@ A personal gym habit tracker that works like a game. Log the machines, weights a
 - The token is encrypted on each device with a key derived from your PIN (PBKDF2-SHA256, 600k iterations, then AES-256-GCM). The offline cache and the in-progress workout draft are encrypted the same way.
 - After 10 wrong PINs the device wipes its local copy. Your data stays safe in GitHub.
 - Auto-lock is configurable (default: 8 hours of inactivity).
-- A strict Content-Security-Policy only allows the app to talk to `api.github.com`.
+- A strict Content-Security-Policy only allows the app to talk to `api.github.com` and `api.open-meteo.com`.
+- Weather lookups (optional, only when you tap 📍) send a location rounded to ~10 km and the dates to Open-Meteo. No API key or account is involved, and you can always type the temperature by hand instead.
 - Setup refuses to use a data repo that is **public**.
 - Your real "2FA" is your GitHub account. Keep 2FA enabled on it. If a device is lost, revoke the token at <https://github.com/settings/personal-access-tokens> and create a new one.
 - Every save is a commit in the data repo, so you get full history and backups for free.

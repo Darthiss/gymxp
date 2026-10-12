@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { levelInfo, rankFor, type SessionResult } from '../lib/xp';
+import { levelInfo, type SessionResult } from '../lib/xp';
 import { Confetti, LevelBadge, Sheet, XpBar } from './ui';
 
 export function XpBreakdown({ result }: { result: SessionResult }) {
@@ -17,10 +17,10 @@ export function XpBreakdown({ result }: { result: SessionResult }) {
 
 /** Shown after saving a workout: XP counter, level-up, PRs, unlocked achievements. */
 export function Celebration({ result, onClose }: { result: SessionResult; onClose: () => void }) {
-  const before = levelInfo(result.xpBefore);
-  const after = levelInfo(result.xpAfter);
+  const before = levelInfo(result.xpBefore, result.visitsBefore);
+  const after = levelInfo(result.xpAfter, result.visitsAfter);
   const levelsGained = after.level - before.level;
-  const rankUp = rankFor(after.level).title !== rankFor(before.level).title;
+  const rankUp = after.rank.title !== before.rank.title;
   const [shown, setShown] = useState(0);
   const [barPct, setBarPct] = useState(levelsGained > 0 ? 0 : before.pct);
 

@@ -71,6 +71,12 @@ function ProfileCard() {
         </div>
       </label>
       <button className="btn primary" onClick={save}>Save profile</button>
+      {p.weatherLat != null && (
+        <div className="row between small dim">
+          <span>🌦️ Weather location saved (≈ {p.weatherLat}, {p.weatherLon}, rounded to ~10 km)</span>
+          <button className="btn ghost sm" onClick={() => getStore().update((d) => { d.profile = { ...d.profile, weatherLat: null, weatherLon: null, updatedAt: Date.now() }; }, 'Forget weather location')}>Forget</button>
+        </div>
+      )}
     </div>
   );
 }

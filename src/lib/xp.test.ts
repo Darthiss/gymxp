@@ -15,7 +15,7 @@ const game = (d: AppData) => computeGame(d, exerciseMap(d));
 describe('levels', () => {
   it('level curve is monotonic and invertible', () => {
     expect(xpForLevel(1)).toBe(0);
-    expect(xpForLevel(2)).toBe(150);
+    expect(xpForLevel(2)).toBe(600);
     for (let l = 1; l < 120; l++) {
       expect(levelForXp(xpForLevel(l))).toBe(l);
       expect(levelForXp(xpForLevel(l + 1) - 1)).toBe(l);
@@ -26,7 +26,7 @@ describe('levels', () => {
 describe('session XP', () => {
   it('awards visit, sets, volume, first-time and milestone XP', () => {
     const d = emptyData();
-    d.sessions.push(sess('2026-01-05', [{ exerciseId: 'Leg_Press', sets: [{ kg: 100, reps: 10 }, { kg: 100, reps: 10 }] }]));
+    d.sessions.push(sess('2026-01-13', [{ exerciseId: 'Leg_Press', sets: [{ kg: 100, reps: 10 }, { kg: 100, reps: 10 }] }]));
     const g = game(d);
     const r = g.sessions.get(d.sessions[0].id)!;
     // 100 visit + 2 sets*5 + 2000kg/50=40 + new exercise 15 + "First Rep" 50 + "1 Tonne" 50
@@ -220,5 +220,65 @@ describe('exercise search', () => {
     const r = searchExercises(BUILTIN, 'bench press').map((e) => e.name);
     expect(r.indexOf('Barbell Bench Press')).toBeLessThan(r.indexOf('Chest Press Machine'));
     expect(r[0]).toMatch(/Bench Press/);
+  });
+});
+
+describe('pacing, ranks, holidays & weather', () => {
+  it('a month of 3x/week lands around level 4-7 and rank needs visits too', async () => {
+    const { levelInfo, rankFor } = await import('./xp');
+    expect(levelInfo(6400, 12).level).toBeGreaterThanOrEqual(3);
+    expect(levelInfo(6400, 12).level).toBeLessThanOrEqual(5);
+    // high level but few visits is capped by visits
+    expect(rankFor(70, 20).title).toBe('Regular');
+    expect(rankFor(60, 1050).title).toBe('Olympian');
+  });
+
+  it('knows Argentine holidays, incl. Easter-based and moved ones', async () => {
+    const { holidayOn } = await import('./holidays');
+    expect(holidayOn('2026-07-09')).toBe('Día de la Independencia');
+    expect(holidayOn('2026-04-03')).toBe('Viernes Santo'); // Easter 2026 = Apr 5
+    expect(holidayOn('2026-02-16')).toBe('Carnaval');
+    expect(holidayOn('2026-10-12')).toBe('Día de la Diversidad Cultural');
+    expect(holidayOn('2026-11-20')).toBe('Día de la Soberanía Nacional'); // Friday…
+    expect(holidayOn('2026-11-23')).toContain('trasladado'); // …moved to Monday
+    expect(holidayOn('2026-10-13')).toBeUndefined();
+  });
+
+  it('gives holiday, rain and cold bonuses once per day', () => {
+    const d = emptyData();
+    d.sessions.push(sess('2026-07-09', [{ exerciseId: 'Leg_Press', sets: [{ kg: 50, reps: 10 }] }], { weather: { tempC: 3, rain: true } }));
+    d.sessions.push(sess('2026-07-09', [{ exerciseId: 'Leg_Extensions', sets: [{ kg: 20, reps: 10 }] }], { weather: { tempC: 3, rain: true } }));
+    const g = game(d);
+    const r1 = g.sessions.get(d.sessions[0].id)!;
+    const labels = r1.items.map((i) => i.label).join('|');
+    expect(labels).toContain('Feriado');
+    expect(labels).toContain('rain');
+    expect(labels).toContain('Cold day');
+    expect(g.unlockedIds.has('hol-1') && g.unlockedIds.has('wx-rain-1') && g.unlockedIds.has('wx-cold')).toBe(true);
+    const r2 = g.sessions.get(d.sessions[1].id)!;
+    expect(r2.items.some((i) => i.label.includes('Feriado') || i.label.includes('rain'))).toBe(false);
+  });
+
+  it('strength standards and habit awards', () => {
+    const d = emptyData();
+    d.weights.push({ id: 'w', updatedAt: 1, date: '2026-01-01', kg: 70 });
+    d.sessions.push(sess('2026-01-03', [{ exerciseId: 'Barbell_Bench_Press_-_Medium_Grip', sets: [{ kg: 72.5, reps: 1 }] }])); // Saturday
+    d.sessions.push(sess('2026-01-04', [{ exerciseId: 'Barbell_Squat', sets: [{ kg: 105, reps: 3 }] }])); // Sunday
+    d.sessions.push(sess('2026-01-06', [{ exerciseId: 'Leg_Press', sets: [{ kg: 50, reps: 10 }] }]));
+    d.sessions.push(sess('2026-01-30', [{ exerciseId: 'Leg_Press', sets: [{ kg: 50, reps: 10 }] }])); // 24-day gap
+    const g = game(d);
+    for (const id of ['str-bench-60', 'str-bench-bw', 'str-squat-100', 'str-squat-1.5', 'hab-weekend', 'hab-comeback', 'hol-newyear'])
+      expect(g.unlockedIds.has(id), id).toBe(true);
+    expect(g.unlockedIds.has('str-bench-100')).toBe(false);
+  });
+
+  it('legend comparison uses barbell e1RM and visits', async () => {
+    const { compare, LEGENDS } = await import('./legends');
+    const d = emptyData();
+    d.sessions.push(sess('2026-01-03', [{ exerciseId: 'Barbell_Deadlift', sets: [{ kg: 100, reps: 1 }] }]));
+    const p = compare(game(d), LEGENDS.find((l) => l.id === 'eddie')!);
+    const dl = p.rows.find((r) => r.metric.key === 'deadlift')!;
+    expect(dl.mine).toBe(103.3); // Epley: 100 × (1 + 1/30)
+    expect(dl.pct).toBeCloseTo(103.3 / 500);
   });
 });

@@ -15,6 +15,8 @@ export interface Profile extends Rec {
   birthYear: number | null;
   weeklyGoal: number; // target gym visits per week
   goalWeightKg: number | null;
+  weatherLat?: number | null; // rounded to 0.1° (~10 km), only used for weather lookups
+  weatherLon?: number | null;
 }
 
 export interface SetEntry {
@@ -34,11 +36,17 @@ export interface WatchStats {
   avgHr?: number;
 }
 
+export interface SessionWeather {
+  tempC?: number;
+  rain?: boolean;
+}
+
 export interface Session extends Rec {
   date: string; // YYYY-MM-DD (local)
   startTime?: string; // HH:MM
   exercises: ExerciseLog[];
   watch?: WatchStats;
+  weather?: SessionWeather;
   note?: string;
   createdAt: number;
   estimated?: boolean; // back-filled from memory via Import past workouts

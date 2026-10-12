@@ -1,7 +1,9 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { getStore, useData } from '../lib/store';
 import { settingFor, useExerciseMap } from '../lib/game';
-import { computeGame, levelInfo, sortSessions, type SessionResult } from '../lib/xp';
+import { computeGame, levelInfo, RULES, sortSessions, type SessionResult } from '../lib/xp';
+import { holidayOn } from '../lib/holidays';
+import { WeatherField } from '../components/WeatherField';
 import { navigate, type Route } from '../lib/router';
 import { num, nowTime, parseWatchText, today, uid, type WatchImport } from '../lib/util';
 import type { AppData, Session, SetEntry } from '../lib/types';
@@ -21,6 +23,8 @@ interface Draft {
   durationMin: string;
   kcal: string;
   avgHr: string;
+  tempC?: string;
+  rain?: boolean;
   note: string;
   createdAt: number;
 }
@@ -35,6 +39,7 @@ function fromSession(s: Session): Draft {
   return {
     id: s.id, date: s.date, startTime: s.startTime ?? '', createdAt: s.createdAt, note: s.note ?? '',
     durationMin: str(s.watch?.durationMin), kcal: str(s.watch?.kcal), avgHr: str(s.watch?.avgHr),
+    tempC: s.weather?.tempC !== undefined ? String(s.weather.tempC) : '', rain: !!s.weather?.rain,
     exercises: s.exercises.map((e) => ({ exerciseId: e.exerciseId, note: e.note, sets: e.sets.map((x) => ({ kg: String(x.kg), reps: String(x.reps) })) })),
   };
 }
@@ -43,6 +48,8 @@ function toSession(d: Draft, prev?: Session): Session {
   const sets = (xs: DraftSet[]): SetEntry[] =>
     xs.map((x) => ({ kg: Math.max(0, num(x.kg)), reps: Math.max(0, Math.round(num(x.reps))) })).filter((x) => x.reps > 0);
   const watch = { durationMin: num(d.durationMin) || undefined, kcal: num(d.kcal) || undefined, avgHr: num(d.avgHr) || undefined };
+  const hasTemp = (d.tempC ?? '').trim() !== '' && Number.isFinite(parseFloat((d.tempC ?? '').replace(',', '.')));
+  const weather = { ...(hasTemp ? { tempC: Math.round(num(d.tempC ?? '')) } : {}), ...(d.rain ? { rain: true } : {}) };
   return {
     id: d.id,
     updatedAt: Date.now(),
@@ -53,6 +60,7 @@ function toSession(d: Draft, prev?: Session): Session {
     note: d.note.trim() || undefined,
     exercises: d.exercises.map((e) => ({ exerciseId: e.exerciseId, sets: sets(e.sets), ...(e.note ? { note: e.note } : {}) })).filter((e) => e.sets.length),
     ...(watch.durationMin || watch.kcal || watch.avgHr ? { watch } : {}),
+    ...(Object.keys(weather).length ? { weather } : {}),
   };
 }
 
@@ -193,8 +201,8 @@ export function Log({ route }: { route: Route }) {
     navigate('progress', true);
   };
 
-  const pBefore = preview ? levelInfo(preview.xpBefore) : null;
-  const pAfter = preview ? levelInfo(preview.xpAfter) : null;
+  const pBefore = preview ? levelInfo(preview.xpBefore, preview.visitsBefore) : null;
+  const pAfter = preview ? levelInfo(preview.xpAfter, preview.visitsAfter) : null;
   const infoEx = info ? exMap.get(info) : undefined;
 
   return (
@@ -224,6 +232,11 @@ export function Log({ route }: { route: Route }) {
           <input className="input" type="time" value={draft.startTime} onChange={(e) => set((d) => ({ ...d, startTime: e.target.value }))} />
         </label>
       </div>
+
+      {holidayOn(draft.date) && (
+        <div className="notice good small">🧉 <b>{holidayOn(draft.date)}</b>: training on a feriado earns +{RULES.holidayXp} XP!</div>
+      )}
+      <WeatherField date={draft.date} startTime={draft.startTime} tempC={draft.tempC ?? ''} rain={!!draft.rain} onChange={(w) => set((d) => ({ ...d, ...w }))} />
 
       {draft.exercises.map((e, i) => {
         const ex = exMap.get(e.exerciseId);
@@ -361,7 +374,7 @@ export function Log({ route }: { route: Route }) {
 
 /** Per-machine settings memo ("seat 4, back pad 2"), synced with your data. */
 export function SettingNote({ exerciseId, value, equipment }: { exerciseId: string; value: string; equipment?: string }) {
-  const freeWeight = equipment === 'Dumbbell';
+  const freeWeight = equipment === 'Dumbbell' || equipment === 'Barbell' || equipment === 'EZ bar';
   const [edit, setEdit] = useState(false);
   const [v, setV] = useState(value);
   if (!edit)

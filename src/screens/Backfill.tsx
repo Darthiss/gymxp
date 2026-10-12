@@ -5,7 +5,9 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { getStore, IMPORT_DRAFT_KEY, useData } from '../lib/store';
 import { useExerciseMap, useGame } from '../lib/game';
-import { computeGame, levelInfo, rankFor } from '../lib/xp';
+import { computeGame, RULES, type LevelInfo } from '../lib/xp';
+import { holidayOn } from '../lib/holidays';
+import { lookupWeather } from '../components/WeatherField';
 import { navigate } from '../lib/router';
 import { addDays, fmtDate, fmtNum, parseWorkoutLine, plural, today, uid } from '../lib/util';
 import type { AppData } from '../lib/types';
@@ -22,7 +24,8 @@ export function Backfill() {
   const [picker, setPicker] = useState(false);
   const [paste, setPaste] = useState('');
   const [showPaste, setShowPaste] = useState(false);
-  const [done, setDone] = useState<{ before: number; after: number; count: number; achievements: string[] } | null>(null);
+  const [fetchingWx, setFetchingWx] = useState(false);
+  const [done, setDone] = useState<{ before: LevelInfo; after: LevelInfo; count: number; achievements: string[] } | null>(null);
   const loaded = useRef(false);
 
   useEffect(() => {
@@ -105,6 +108,20 @@ export function Backfill() {
     toast(`Added ${plural(parsed.length, 'day')}${failed ? ` · ${failed} line${failed === 1 ? '' : 's'} without a date skipped` : ''}`);
   };
 
+  const fetchAllWeather = async () => {
+    setFetchingWx(true);
+    try {
+      const valid = draft.rows.filter((r) => /^d{4}-d{2}-d{2}$/.test(r.date) && r.date <= today());
+      const wx = await lookupWeather(valid.map((r) => ({ date: r.date })));
+      set((d) => ({ ...d, rows: d.rows.map((r) => { const w = wx.get(r.date); return w ? { ...r, tempC: String(w.tempC), rain: w.rain } : r; }) }));
+      toast(`🌦️ Weather filled for ${plural(wx.size, 'day')}`);
+    } catch (e) {
+      toast(e instanceof Error ? e.message : String(e));
+    } finally {
+      setFetchingWx(false);
+    }
+  };
+
   const rotatePlans = () =>
     set((d) => {
       const sorted = [...d.rows].sort((a, b) => a.date.localeCompare(b.date));
@@ -115,20 +132,19 @@ export function Backfill() {
   const doImport = () => {
     const sessions = preview.sessions;
     if (!sessions.length) return toast('Add at least one day with machines or watch stats');
-    const before = g.totalXp;
-    const ids = new Set(sessions.map((s) => s.id));
+      const ids = new Set(sessions.map((s) => s.id));
     getStore().update((d) => {
       d.sessions = [...d.sessions.filter((s) => !ids.has(s.id)), ...sessions];
     }, `Import ${sessions.length} past workouts`);
     void getStore().saveDraft(null, IMPORT_DRAFT_KEY);
     const achievements = preview.after.unlocked.filter((a) => a.sessionId && ids.has(a.sessionId)).map((a) => `${a.icon} ${a.title}`);
-    setDone({ before, after: preview.after.totalXp, count: sessions.length, achievements });
+    setDone({ before: g.level, after: preview.after.level, count: sessions.length, achievements });
   };
 
   if (done) return <ImportDone {...done} />;
 
   const rows = [...draft.rows].sort((a, b) => a.date.localeCompare(b.date));
-  const Lb = levelInfo(g.totalXp);
+  const Lb = g.level;
   const La = preview.after.level;
 
   return (
@@ -228,11 +244,24 @@ export function Backfill() {
               <input className="input center" inputMode="numeric" placeholder="kcal" value={r.kcal} onChange={(e) => setRow(r.id, { kcal: e.target.value })} aria-label="Active kcal" />
               <input className="input center" inputMode="numeric" placeholder="♥ bpm" value={r.hr} onChange={(e) => setRow(r.id, { hr: e.target.value })} aria-label="Average heart rate" />
             </div>
+            <div className="row" style={{ gap: 6 }}>
+              <div className="unit-input" style={{ flex: 1 }}>
+                <input className="input" inputMode="decimal" placeholder="temp" value={r.tempC ?? ''} onChange={(e) => setRow(r.id, { tempC: e.target.value.replace(/[^d.,-]/g, '') })} aria-label="Temperature" />
+                <span>°C</span>
+              </div>
+              <button className={`btn sm${r.rain ? ' primary' : ''}`} style={{ flex: 1, minHeight: 44 }} aria-pressed={!!r.rain} onClick={() => setRow(r.id, { rain: !r.rain })}>{r.rain ? '🌧️ Rain' : '☀️ No rain'}</button>
+            </div>
+            {holidayOn(r.date) && <span className="tiny accent">🧉 {holidayOn(r.date)}: +{RULES.holidayXp} XP</span>}
             {loggedDates.has(r.date) && <span className="tiny" style={{ color: 'var(--fire)' }}>You already logged a workout on {fmtDate(r.date)}; this adds a second one.</span>}
             {r.date > today() && <span className="tiny danger">Date is in the future and will be skipped.</span>}
           </div>
         ))}
         <button className="btn block" style={{ borderStyle: 'dashed' }} onClick={addRow}>＋ Add a day</button>
+        {draft.rows.length > 0 && (
+          <button className="btn block" disabled={fetchingWx} onClick={fetchAllWeather}>
+            {fetchingWx ? <span className="spinner" /> : '🌦️ Fill in the weather for all days (approx. 7 pm unless set)'}
+          </button>
+        )}
       </div>
 
       {/* ---------- 3. Preview ---------- */}
@@ -264,10 +293,8 @@ export function Backfill() {
   );
 }
 
-function ImportDone({ before, after, count, achievements }: { before: number; after: number; count: number; achievements: string[] }) {
-  const L0 = levelInfo(before);
-  const L1 = levelInfo(after);
-  const rankUp = rankFor(L1.level).title !== rankFor(L0.level).title;
+function ImportDone({ before: L0, after: L1, count, achievements }: { before: LevelInfo; after: LevelInfo; count: number; achievements: string[] }) {
+  const rankUp = L1.rank.title !== L0.rank.title;
   const close = () => navigate('', true);
   return (
     <>
@@ -276,7 +303,7 @@ function ImportDone({ before, after, count, achievements }: { before: number; af
         <div className="celebrate stack-lg">
           <div className="stack" style={{ alignItems: 'center' }}>
             <div className="muted small">{plural(count, 'workout')} imported</div>
-            <div className="big-xp">+{fmtNum(after - before)} XP</div>
+            <div className="big-xp">+{fmtNum(L1.xp - L0.xp)} XP</div>
             {L1.level > L0.level && <div className="levelup">LEVEL {L0.level} → {L1.level}!</div>}
             {rankUp && <div className="tag gold" style={{ fontSize: '0.9rem', padding: '4px 12px' }}>Rank: {L1.rank.title}</div>}
           </div>

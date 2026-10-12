@@ -4,7 +4,7 @@ import { num, parseDuration, today, uid } from './util';
 
 export interface PlanItem { exerciseId: string; sets: string; reps: string; startKg: string; endKg: string }
 export interface Plan { id: string; name: string; items: PlanItem[] }
-export interface Row { id: string; date: string; planId: string; dur: string; kcal: string; hr: string }
+export interface Row { id: string; date: string; planId: string; dur: string; kcal: string; hr: string; tempC?: string; rain?: boolean }
 export interface ImportDraft { plans: Plan[]; rows: Row[] }
 
 export const PLAN_NAMES = ['Workout A', 'Workout B', 'Workout C', 'Workout D', 'Workout E'];
@@ -52,6 +52,7 @@ export function buildSessions(draft: ImportDraft): Session[] {
         exercises,
         estimated: true,
         ...(watch ? { watch } : {}),
+        ...(r.tempC?.trim() || r.rain ? { weather: { ...(r.tempC?.trim() ? { tempC: Math.round(num(r.tempC)) } : {}), ...(r.rain ? { rain: true } : {}) } } : {}),
       });
     });
   }

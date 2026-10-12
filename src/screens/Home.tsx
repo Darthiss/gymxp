@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
 import { useData } from '../lib/store';
 import { useGame } from '../lib/game';
-import { nextVisitMilestone, sortSessions } from '../lib/xp';
+import { nextRankNeeds, nextVisitMilestone, sortSessions } from '../lib/xp';
+import { compare, heroGoal } from '../lib/legends';
+import { holidayOn } from '../lib/holidays';
 import { fmtDate, fmtKg, fmtNum, plural, today } from '../lib/util';
 import { LevelBadge, SyncBadge, XpBar } from '../components/ui';
 
@@ -21,6 +23,8 @@ export function Home() {
   const latestAch = g.unlocked.slice(-3).reverse();
   const routines = data.routines.filter((r) => !r.deleted);
   const trainedToday = data.sessions.some((s) => !s.deleted && s.date === today());
+  const hero = compare(g, heroGoal(g.bodyweight));
+  const feriado = holidayOn(today());
 
   return (
     <div className="stack-lg">
@@ -39,7 +43,7 @@ export function Home() {
           <div className="grow stack" style={{ gap: 4 }}>
             <div className="rank-title" style={{ color: L.rank.color }}>{L.rank.title}</div>
             <div className="small dim num">{fmtNum(g.totalXp)} XP total</div>
-            {L.nextRank && <div className="tiny muted">Next rank: {L.nextRank.title} at level {L.nextRank.minLevel}</div>}
+            {L.nextRank && <div className="tiny muted">Next rank: {L.nextRank.title} · needs {nextRankNeeds(L, g.visits)}</div>}
           </div>
         </div>
         <XpBar pct={L.pct} />
@@ -49,6 +53,7 @@ export function Home() {
         </div>
       </a>
 
+      {feriado && !trainedToday && <div className="notice good small">🧉 Today is <b>{feriado}</b>: a workout today earns +100 holiday XP!</div>}
       <a href="#/log" className="btn primary big block">
         {trainedToday ? '＋ Add another workout today' : '🏋️ Start today’s workout'}
       </a>
@@ -101,6 +106,15 @@ export function Home() {
         <div className="stat"><div className="label">Lifted</div><div className="value">{fmtKg(g.totalVolume)}</div></div>
         <div className="stat"><div className="label">PRs</div><div className="value">{fmtNum(g.prCount)}</div></div>
       </div>
+
+      <a href="#/awards?tab=legends" className="card card-link row" style={{ gap: 14 }}>
+        <span style={{ fontSize: '2rem' }}>🦸</span>
+        <div className="grow stack" style={{ gap: 6 }}>
+          <div className="row between"><span className="bold">Hero Physique goal</span><span className="bold num accent">{Math.round(hero.pct * 100)}%</span></div>
+          <XpBar thin pct={hero.pct} />
+          <div className="tiny muted">Compare yourself with Arnold & other legends →</div>
+        </div>
+      </a>
 
       {latestAch.length > 0 && (
         <div className="stack">
