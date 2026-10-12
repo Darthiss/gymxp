@@ -16,6 +16,8 @@ export function SessionView({ id }: { id: string }) {
     <div className="stack-lg">
       <PageHead title={fmtDate(s.date, { weekday: 'long', day: 'numeric', month: 'long' })} backTo="progress" right={<a className="btn sm" href={`#/log/${s.id}`}>Edit</a>} />
 
+      {s.estimated && <div className="notice small">≈ Imported from memory: weights and reps are estimates. Edit it anytime if you remember better.</div>}
+
       <div className="grid-3">
         <div className="stat"><div className="label">XP earned</div><div className="value accent">+{fmtNum(r.xp)}</div></div>
         <div className="stat"><div className="label">Sets</div><div className="value">{r.sets}</div></div>

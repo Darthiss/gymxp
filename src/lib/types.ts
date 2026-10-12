@@ -41,6 +41,7 @@ export interface Session extends Rec {
   watch?: WatchStats;
   note?: string;
   createdAt: number;
+  estimated?: boolean; // back-filled from memory via Import past workouts
 }
 
 export interface WeightEntry extends Rec {

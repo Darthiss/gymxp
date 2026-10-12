@@ -10,6 +10,7 @@ import { uid } from './util';
 
 const DATA_PATH = 'data.json';
 const DRAFT_KEY = 'gymxp:draft';
+export const IMPORT_DRAFT_KEY = 'gymxp:import';
 
 export type SyncStatus = 'loading' | 'synced' | 'saving' | 'offline' | 'error';
 
@@ -92,11 +93,11 @@ export class Store {
 
   /** Replace the encryption key (after a PIN change) and re-encrypt the cache. */
   async rekey(key: CryptoKey, cfg: GhConfig) {
-    const draft = await this.loadDraft();
+    const drafts = await Promise.all([DRAFT_KEY, IMPORT_DRAFT_KEY].map(async (k) => [k, await this.loadDraft(k)] as const));
     this.key = key;
     this.cfg = cfg;
     await this.writeCache();
-    if (draft) await this.saveDraft(draft);
+    for (const [k, d] of drafts) if (d) await this.saveDraft(d, k);
   }
 
   // ---- cache ----
@@ -222,16 +223,16 @@ export class Store {
   }
 
   // ---- in-progress workout draft (encrypted, this device only) ----
-  async saveDraft(draft: unknown | null) {
+  async saveDraft(draft: unknown | null, slot = DRAFT_KEY) {
     try {
-      if (draft === null) localStorage.removeItem(DRAFT_KEY);
-      else localStorage.setItem(DRAFT_KEY, JSON.stringify(await seal(this.key, draft)));
+      if (draft === null) localStorage.removeItem(slot);
+      else localStorage.setItem(slot, JSON.stringify(await seal(this.key, draft)));
     } catch { /* ignore */ }
   }
 
-  async loadDraft<T>(): Promise<T | null> {
+  async loadDraft<T>(slot = DRAFT_KEY): Promise<T | null> {
     try {
-      const raw = localStorage.getItem(DRAFT_KEY);
+      const raw = localStorage.getItem(slot);
       return raw ? await unseal<T>(this.key, JSON.parse(raw) as Sealed) : null;
     } catch {
       return null;

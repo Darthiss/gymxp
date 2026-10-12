@@ -3,7 +3,7 @@ import { computeGame, levelForXp, xpForLevel, RULES } from './xp';
 import { exerciseMap } from './exercises';
 import { emptyData, type AppData, type Session } from './types';
 import { mergeData } from './merge';
-import { parseDuration, parseWatchText, weekKey } from './util';
+import { parseDuration, parseWatchText, parseWorkoutLine, weekKey } from './util';
 import { deriveKey, seal, unseal } from './crypto';
 
 let n = 0;
@@ -129,6 +129,24 @@ describe('util', () => {
   });
 });
 
+describe('backfill line parsing', () => {
+  const T = '2026-10-12';
+  it('understands common date formats', () => {
+    expect(parseWorkoutLine('2026-09-02 62 410 128', T)).toEqual({ date: '2026-09-02', dur: 62, kcal: 410, hr: 128 });
+    expect(parseWorkoutLine('2/9 62 410 128', T)).toEqual({ date: '2026-09-02', dur: 62, kcal: 410, hr: 128 });
+    expect(parseWorkoutLine('02/09/2026 1:02:15 410 128', T)).toEqual({ date: '2026-09-02', dur: 62, kcal: 410, hr: 128 });
+    expect(parseWorkoutLine('Sep 4 · 58 min · 380 kcal · 121 bpm', T)).toEqual({ date: '2026-09-04', dur: 58, kcal: 380, hr: 121 });
+    expect(parseWorkoutLine('5 sept 70 min 455 kcal', T)).toEqual({ date: '2026-09-05', dur: 70, kcal: 455 });
+    expect(parseWorkoutLine('Tuesday, September 9th, 2026', T)).toEqual({ date: '2026-09-09' });
+  });
+  it('picks last year for dates that would be in the future', () => {
+    expect(parseWorkoutLine('20/12 60', T)?.date).toBe('2025-12-20');
+  });
+  it('returns null without a date', () => {
+    expect(parseWorkoutLine('62 min 410 kcal', T)).toBeNull();
+  });
+});
+
 describe('crypto', () => {
   it('round-trips and rejects the wrong key', async () => {
     const salt = btoa('0123456789abcdef');
@@ -137,5 +155,48 @@ describe('crypto', () => {
     const s = await seal(k1, { token: 'github_pat_x' });
     expect(await unseal(k1, s)).toEqual({ token: 'github_pat_x' });
     await expect(unseal(k2, s)).rejects.toThrow();
+  });
+});
+
+describe('backfill', () => {
+  it('spreads weights from start to end over each plan and tags sessions as estimated', async () => {
+    const { buildSessions } = await import('./backfill');
+    const draft = {
+      plans: [
+        { id: 'A', name: 'A', items: [{ exerciseId: 'Leg_Press', sets: '3', reps: '10', startKg: '80', endKg: '100' }] },
+        { id: 'B', name: 'B', items: [{ exerciseId: 'Butterfly', sets: '3', reps: '12', startKg: '30', endKg: '' }] },
+      ],
+      rows: [
+        { id: '1', date: '2026-09-01', planId: 'A', dur: '60', kcal: '400', hr: '125' },
+        { id: '2', date: '2026-09-03', planId: 'B', dur: '1:05:00', kcal: '', hr: '' },
+        { id: '3', date: '2026-09-05', planId: 'A', dur: '', kcal: '', hr: '' },
+        { id: '4', date: '2026-09-08', planId: 'A', dur: '', kcal: '', hr: '' },
+      ],
+    };
+    const ss = buildSessions(draft);
+    expect(ss.map((s) => s.date)).toEqual(['2026-09-01', '2026-09-03', '2026-09-05', '2026-09-08']);
+    const lp = ss.filter((s) => s.exercises[0].exerciseId === 'Leg_Press').map((s) => s.exercises[0].sets[0].kg);
+    expect(lp).toEqual([80, 90, 100]);
+    expect(ss[1].exercises[0].sets).toHaveLength(3);
+    expect(ss[1].exercises[0].sets[0]).toEqual({ kg: 30, reps: 12 });
+    expect(ss[1].watch?.durationMin).toBe(65);
+    expect(ss.every((s) => s.estimated)).toBe(true);
+    // PRs show up as the weight climbs
+    const d = emptyData();
+    d.sessions = ss;
+    const g = game(d);
+    expect(g.prCount).toBe(2);
+    expect(g.visits).toBe(4);
+  });
+});
+
+describe('backfill weight steps', () => {
+  it('snaps in-between weights to 5 / 2.5 kg machine steps', async () => {
+    const { buildSessions } = await import('./backfill');
+    const rows = Array.from({ length: 6 }, (_, i) => ({ id: String(i), date: `2026-09-0${i + 1}`, planId: 'A', dur: '', kcal: '', hr: '' }));
+    const kgs = (startKg: string, endKg: string) =>
+      buildSessions({ plans: [{ id: 'A', name: 'A', items: [{ exerciseId: 'Leg_Press', sets: '1', reps: '10', startKg, endKg }] }], rows }).map((s) => s.exercises[0].sets[0].kg);
+    expect(kgs('80', '110')).toEqual([80, 85, 90, 100, 105, 110]);
+    expect(kgs('20', '27.5')).toEqual([20, 22.5, 22.5, 25, 25, 27.5]);
   });
 });

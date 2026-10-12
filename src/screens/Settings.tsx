@@ -290,6 +290,7 @@ function DataCard() {
         {st.lastSync ? ` · last synced ${fmtDate(toISODate(new Date(st.lastSync)), { day: 'numeric', month: 'short' })} ${new Date(st.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
       </p>
       <p className="tiny muted">Every save is a commit in your private repo, so GitHub keeps the full history of your data as a free backup.</p>
+      <a className="btn primary" href="#/import">📥 Import past workouts (from memory)</a>
       <div className="row-wrap">
         <button className="btn grow" onClick={() => void getStore().syncNow()}>⟳ Sync now</button>
         <button className="btn grow" onClick={exportJson}>⬇ Export JSON</button>

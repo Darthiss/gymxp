@@ -123,7 +123,7 @@ export function Home() {
           {recent.length > 0 && <a className="small" href="#/progress">See all</a>}
         </div>
         {recent.length === 0 ? (
-          <div className="card dim small">No workouts yet. Hit the button above at the gym and earn your first XP.</div>
+          <div className="card dim small stack">No workouts yet. Hit the button above at the gym and earn your first XP.<a className="btn sm" href="#/import">📥 Already training? Import past workouts</a></div>
         ) : (
           <div className="card tight stack" style={{ gap: 2 }}>
             {recent.map((s) => {

@@ -95,6 +95,56 @@ export function parseWatchText(text: string): WatchImport {
   return out;
 }
 
+const MONTHS: Record<string, number> = {
+  jan: 1, ene: 1, feb: 2, mar: 3, apr: 4, abr: 4, may: 5, jun: 6, jul: 7, aug: 8, ago: 8,
+  sep: 9, set: 9, oct: 10, nov: 11, dec: 12, dic: 12,
+};
+const MONTH_RE = '(jan|ene|feb|mar|apr|abr|may|jun|jul|aug|ago|sep|set|oct|nov|dec|dic)[a-zñ]*\\.?';
+
+/**
+ * Find a date in free text: "2026-09-02", "2/9", "02/09/2026" (day first), "Sep 2", "2 sept".
+ * Without a year, uses the most recent such date that isn't in the future.
+ * Returns the ISO date and the text with the date removed.
+ */
+export function extractDate(text: string, todayIso = today()): { date: string; rest: string } | null {
+  const mk = (y: number | undefined, m: number, d: number) => {
+    if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+    const ty = Number(todayIso.slice(0, 4));
+    let year = y === undefined ? ty : y < 100 ? 2000 + y : y;
+    let iso = `${year}-${pad(m)}-${pad(d)}`;
+    if (y === undefined && iso > todayIso) iso = `${--year}-${pad(m)}-${pad(d)}`;
+    return iso;
+  };
+  const tries: [RegExp, (m: RegExpMatchArray) => string | null][] = [
+    [/(\d{4})-(\d{1,2})-(\d{1,2})/, (m) => mk(+m[1], +m[2], +m[3])],
+    [/\b(\d{1,2})[/.](\d{1,2})(?:[/.](\d{2,4}))?\b/, (m) => mk(m[3] ? +m[3] : undefined, +m[2], +m[1])],
+    [new RegExp(`\\b(\\d{1,2})\\s+(?:de\\s+)?${MONTH_RE}(?:\\s+(\\d{4}))?`, 'i'), (m) => mk(m[3] ? +m[3] : undefined, MONTHS[m[2].toLowerCase()], +m[1])],
+    [new RegExp(`\\b${MONTH_RE}\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?`, 'i'), (m) => mk(m[3] ? +m[3] : undefined, MONTHS[m[1].toLowerCase()], +m[2])],
+  ];
+  for (const [re, fn] of tries) {
+    const m = text.match(re);
+    const date = m && fn(m);
+    if (m && date) return { date, rest: text.replace(m[0], ' ') };
+  }
+  return null;
+}
+
+/**
+ * Parse one pasted workout line: a date plus optional watch stats, either with units
+ * ("Sep 2 · 1:02:15 · 410 kcal · 128 bpm") or as bare numbers in the order minutes, kcal, bpm ("2/9 62 410 128").
+ */
+export function parseWorkoutLine(line: string, todayIso = today()): ({ date: string } & WatchImport) | null {
+  const found = extractDate(line, todayIso);
+  if (!found) return null;
+  if (/kcal|cal\b|bpm|min|=/i.test(found.rest)) return { date: found.date, ...parseWatchText(found.rest) };
+  const nums = found.rest.match(/\d+(?::\d{2}){1,2}|\d+(?:[.,]\d+)?/g) ?? [];
+  const out: { date: string } & WatchImport = { date: found.date };
+  if (nums[0]) out.dur = Math.round(parseDuration(nums[0]));
+  if (nums[1]) out.kcal = Math.round(num(nums[1]));
+  if (nums[2]) out.hr = Math.round(num(nums[2]));
+  return out;
+}
+
 /** Parse a number typed by a human: accepts "42,5" as well as "42.5". */
 export function num(v: string): number {
   const n = parseFloat(v.replace(',', '.'));

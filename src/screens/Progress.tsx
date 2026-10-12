@@ -60,7 +60,7 @@ function Workouts() {
     return [...m.entries()];
   }, [sessions]);
 
-  if (!sessions.length) return <Empty icon="📒" title="No workouts yet">Your history, weekly chart and XP growth will show up here.</Empty>;
+  if (!sessions.length) return <Empty icon="📒" title="No workouts yet">Your history, weekly chart and XP growth will show up here.<div style={{ marginTop: 12 }}><a className="btn sm" href="#/import">📥 Import past workouts</a></div></Empty>;
 
   return (
     <div className="stack-lg">
@@ -71,6 +71,8 @@ function Workouts() {
         </div>
         <ColumnChart bars={weeks} refLine={{ y: goal, label: 'goal' }} label="Gym visits per week, last 12 weeks" format={(v) => `${v} visit${v === 1 ? '' : 's'}`} />
       </div>
+
+      <a className="small" href="#/import" style={{ alignSelf: 'flex-end', marginTop: -8 }}>📥 Import past workouts</a>
 
       {g.timeline.length > 1 && (
         <div className="card stack">
@@ -88,7 +90,7 @@ function Workouts() {
               return (
                 <a key={s.id} className="list-item" href={`#/session/${s.id}`}>
                   <div className="grow">
-                    <div className="bold">{fmtDate(s.date)}</div>
+                    <div className="bold">{fmtDate(s.date)}{s.estimated && <span className="tag" style={{ marginLeft: 8 }}>≈ estimated</span>}</div>
                     <div className="tiny muted">
                       {plural(s.exercises.length, 'exercise')} · {plural(r?.sets ?? 0, 'set')} · {fmtKg(r?.volume ?? 0)}
                       {s.watch?.durationMin ? ` · ${Math.round(s.watch.durationMin)} min` : ''}

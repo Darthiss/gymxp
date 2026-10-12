@@ -48,6 +48,7 @@ function toSession(d: Draft, prev?: Session): Session {
     date: d.date || today(),
     startTime: d.startTime || undefined,
     createdAt: prev?.createdAt ?? d.createdAt,
+    ...(prev?.estimated ? { estimated: true } : {}),
     note: d.note.trim() || undefined,
     exercises: d.exercises.map((e) => ({ exerciseId: e.exerciseId, sets: sets(e.sets), ...(e.note ? { note: e.note } : {}) })).filter((e) => e.sets.length),
     ...(watch.durationMin || watch.kcal || watch.avgHr ? { watch } : {}),

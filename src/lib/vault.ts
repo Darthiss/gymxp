@@ -86,7 +86,7 @@ export async function updateConfig(current: Unlocked, cfg: GhConfig): Promise<Un
 }
 
 export async function wipeDevice(): Promise<void> {
-  for (const k of [VAULT_KEY, FAILS_KEY, CACHE_KEY, 'gymxp:draft']) localStorage.removeItem(k);
+  for (const k of [VAULT_KEY, FAILS_KEY, CACHE_KEY, 'gymxp:draft', 'gymxp:import']) localStorage.removeItem(k);
   await forgetKey();
 }
 
