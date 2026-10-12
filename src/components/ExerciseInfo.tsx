@@ -24,6 +24,7 @@ export function ExerciseInfo({ ex }: { ex: Exercise }) {
         <span className="tag">{ex.equipment}</span>
         {ex.assisted && <span className="tag gold">Assisted: more weight = easier</span>}
         {ex.loadFactor === 2 && <span className="tag gold">Log the weight of ONE dumbbell</span>}
+        {ex.barKg !== undefined && <span className="tag gold">Log the TOTAL: bar (~{ex.barKg} kg) + all plates</span>}
         {ex.primaryMuscles.filter((m) => m !== ex.group).map((m) => (
           <span key={m} className="tag">{m}</span>
         ))}

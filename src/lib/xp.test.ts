@@ -213,3 +213,12 @@ describe('dumbbells', () => {
     expect(g.sessions.get(d.sessions[2].id)!.volume).toBe(150); // one dumbbell held with both hands
   });
 });
+
+describe('exercise search', () => {
+  it('ranks name matches first', async () => {
+    const { BUILTIN, searchExercises } = await import('./exercises');
+    const r = searchExercises(BUILTIN, 'bench press').map((e) => e.name);
+    expect(r.indexOf('Barbell Bench Press')).toBeLessThan(r.indexOf('Chest Press Machine'));
+    expect(r[0]).toMatch(/Bench Press/);
+  });
+});

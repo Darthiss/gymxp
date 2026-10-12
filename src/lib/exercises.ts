@@ -44,11 +44,25 @@ const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,
 export function searchExercises(list: Exercise[], query: string): Exercise[] {
   const words = norm(query).split(' ').filter(Boolean);
   if (!words.length) return list;
-  return list.filter((e) => {
-    const hay = norm([e.name, ...e.aliases, e.group, e.equipment, ...e.primaryMuscles, ...e.secondaryMuscles].join(' '));
-    return words.every((w) => hay.includes(w));
-  });
+  const phrase = words.join(' ');
+  // Best matches first: the whole phrase in the name, then in an alias, then scattered words.
+  const score = (e: Exercise) => (norm(e.name).includes(phrase) ? 0 : e.aliases.some((a) => norm(a).includes(phrase)) ? 1 : 2);
+  return list
+    .filter((e) => {
+      const hay = norm([e.name, ...e.aliases, e.group, e.equipment, ...e.primaryMuscles, ...e.secondaryMuscles].join(' '));
+      return words.every((w) => hay.includes(w));
+    })
+    .map((e, i) => ({ e, i, s: score(e) }))
+    .sort((a, b) => a.s - b.s || a.i - b.i)
+    .map((x) => x.e);
 }
+
+/** Equipment filter chips shown next to the muscle-group chips. */
+export const EQUIPMENT_CHIPS: Record<string, (e: Exercise) => boolean> = {
+  Dumbbells: (e) => e.equipment === 'Dumbbell',
+  Barbells: (e) => e.barKg !== undefined,
+  Machines: (e) => ['Machine', 'Plate-loaded', 'Cable', 'Smith machine'].includes(e.equipment),
+};
 
 export function imgUrl(rel: string): string {
   return import.meta.env.BASE_URL + rel;

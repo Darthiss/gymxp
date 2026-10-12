@@ -95,6 +95,7 @@ export interface Exercise {
   assisted?: boolean;
   bwFactor?: number;
   loadFactor?: number; // 2 = weight is logged per dumbbell, both count toward volume
+  barKg?: number; // free barbell: weight logged is the total (bar + plates); typical empty bar
   custom?: boolean;
   photo?: string;
 }

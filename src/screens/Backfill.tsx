@@ -169,8 +169,8 @@ export function Backfill() {
                 <div className="grid-2" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
                   <label className="field tiny">Sets<input className="input center" inputMode="numeric" value={it.sets} onChange={(e) => setItem(i, { sets: e.target.value })} /></label>
                   <label className="field tiny">Reps<input className="input center" inputMode="numeric" value={it.reps} onChange={(e) => setItem(i, { reps: e.target.value })} /></label>
-                  <label className="field tiny">{ex?.assisted ? 'Assist kg' : ex?.loadFactor === 2 ? 'Start kg each' : 'Start kg'}<input className="input center" inputMode="decimal" value={it.startKg} placeholder="kg" onChange={(e) => setItem(i, { startKg: e.target.value })} /></label>
-                  <label className="field tiny">{ex?.assisted ? 'End assist' : ex?.loadFactor === 2 ? 'End kg each' : 'End kg'}<input className="input center" inputMode="decimal" value={it.endKg} placeholder={it.startKg || 'kg'} onChange={(e) => setItem(i, { endKg: e.target.value })} /></label>
+                  <label className="field tiny">{ex?.assisted ? 'Assist kg' : ex?.loadFactor === 2 ? 'Start kg each' : ex?.barKg !== undefined ? 'Start total' : 'Start kg'}<input className="input center" inputMode="decimal" value={it.startKg} placeholder="kg" onChange={(e) => setItem(i, { startKg: e.target.value })} /></label>
+                  <label className="field tiny">{ex?.assisted ? 'End assist' : ex?.loadFactor === 2 ? 'End kg each' : ex?.barKg !== undefined ? 'End total' : 'End kg'}<input className="input center" inputMode="decimal" value={it.endKg} placeholder={it.startKg || 'kg'} onChange={(e) => setItem(i, { endKg: e.target.value })} /></label>
                 </div>
               </div>
             );

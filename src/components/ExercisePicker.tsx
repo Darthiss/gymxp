@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { allExercises, searchExercises } from '../lib/exercises';
+import { allExercises, EQUIPMENT_CHIPS, searchExercises } from '../lib/exercises';
 import { useData } from '../lib/store';
 import { MUSCLE_GROUPS, type Exercise } from '../lib/types';
 import { sortSessions } from '../lib/xp';
@@ -41,7 +41,7 @@ export function ExercisePicker({
       const byId = new Map(l.map((e) => [e.id, e]));
       return recentIds.map((id) => byId.get(id)).filter(Boolean) as Exercise[];
     }
-    if (activeGroup === 'Dumbbells') l = l.filter((e) => e.equipment === 'Dumbbell');
+    if (EQUIPMENT_CHIPS[activeGroup]) l = l.filter(EQUIPMENT_CHIPS[activeGroup]);
     else if (activeGroup !== 'All') l = l.filter((e) => e.group === activeGroup);
     return l;
   }, [all, q, activeGroup, recentIds]);
@@ -73,7 +73,7 @@ export function ExercisePicker({
         <input className="input" placeholder="Search: leg, chest press, pulldown…" value={q} onChange={(e) => setQ(e.target.value)} autoFocus={matchMedia('(min-width: 900px)').matches} />
         {!q && (
           <div className="chips">
-            {[...(hasRecent ? ['Recent'] : []), 'All', 'Dumbbells', ...MUSCLE_GROUPS].map((g) => (
+            {[...(hasRecent ? ['Recent'] : []), 'All', ...Object.keys(EQUIPMENT_CHIPS), ...MUSCLE_GROUPS].map((g) => (
               <button key={g} className={`chip${activeGroup === g ? ' on' : ''}`} onClick={() => setGroup(g)}>
                 {g}
               </button>

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { getStore, useData } from '../lib/store';
-import { allExercises, searchExercises } from '../lib/exercises';
+import { allExercises, EQUIPMENT_CHIPS, searchExercises } from '../lib/exercises';
 import { settingFor, useExerciseMap, useGame } from '../lib/game';
 import { navigate } from '../lib/router';
 import { MUSCLE_GROUPS, type MuscleGroup } from '../lib/types';
@@ -16,18 +16,18 @@ export function Guide() {
   const all = useMemo(() => allExercises(data), [data]);
   const list = useMemo(() => {
     const l = searchExercises(all, q);
-    return group === 'All' || q ? l : group === 'Mine' ? l.filter((e) => e.custom) : group === 'Dumbbells' ? l.filter((e) => e.equipment === 'Dumbbell') : l.filter((e) => e.group === group);
+    return group === 'All' || q ? l : group === 'Mine' ? l.filter((e) => e.custom) : EQUIPMENT_CHIPS[group] ? l.filter(EQUIPMENT_CHIPS[group]) : l.filter((e) => e.group === group);
   }, [all, q, group]);
   const hasCustom = all.some((e) => e.custom);
 
   return (
     <div className="stack">
       <PageHead title="Exercise guide" right={<a className="btn sm" href="#/guide-edit/new">＋ My machine</a>} />
-      <p className="small dim">Find a machine or dumbbell exercise by body part or any name your coach used. Each one has start/end photos and step-by-step instructions.</p>
+      <p className="small dim">Find a machine, dumbbell or barbell exercise by body part or any name your coach used. Each one has start/end photos and step-by-step instructions.</p>
       <input className="input" placeholder="Search: pulldown, pec deck, leg…" value={q} onChange={(e) => setQ(e.target.value)} />
       {!q && (
         <div className="chips">
-          {['All', ...(hasCustom ? ['Mine'] : []), 'Dumbbells', ...MUSCLE_GROUPS].map((g) => (
+          {['All', ...(hasCustom ? ['Mine'] : []), ...Object.keys(EQUIPMENT_CHIPS), ...MUSCLE_GROUPS].map((g) => (
             <button key={g} className={`chip${group === g ? ' on' : ''}`} onClick={() => setGroup(g)}>{g}</button>
           ))}
         </div>

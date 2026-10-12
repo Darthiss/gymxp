@@ -6,6 +6,7 @@ import { navigate, type Route } from '../lib/router';
 import { num, nowTime, parseWatchText, today, uid, type WatchImport } from '../lib/util';
 import type { AppData, Session, SetEntry } from '../lib/types';
 import { ExercisePicker } from '../components/ExercisePicker';
+import { PlateCalc } from '../components/PlateCalc';
 import { ExerciseInfo } from '../components/ExerciseInfo';
 import { Celebration } from '../components/Celebration';
 import { ExerciseThumb, PageHead, Sheet, toast, XpBar } from '../components/ui';
@@ -88,6 +89,7 @@ export function Log({ route }: { route: Route }) {
   const [draft, setDraft] = useState<Draft | null>(editing ? fromSession(editing) : null);
   const [picker, setPicker] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
+  const [plates, setPlates] = useState<number | null>(null); // index of exercise whose plate calculator is open
   const [celebrate, setCelebrate] = useState<SessionResult | null>(null);
   const [showWatch, setShowWatch] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -255,7 +257,7 @@ export function Log({ route }: { route: Route }) {
 
             <div className="set-row set-head">
               <span className="center">#</span>
-              <span className="center">{ex?.assisted ? 'Assist kg' : ex?.loadFactor === 2 ? 'kg each' : 'Weight'}</span>
+              <span className="center">{ex?.assisted ? 'Assist kg' : ex?.loadFactor === 2 ? 'kg each' : ex?.barKg !== undefined ? 'Total kg' : 'Weight'}</span>
               <span className="center">Reps</span>
               <span />
             </div>
@@ -282,6 +284,7 @@ export function Log({ route }: { route: Route }) {
                   ↺ Same as last time
                 </button>
               )}
+              {ex?.barKg !== undefined && <button className="btn sm" onClick={() => setPlates(i)}>🧮 Plates</button>}
             </div>
           </div>
         );
@@ -329,6 +332,18 @@ export function Log({ route }: { route: Route }) {
       )}
       {!editing && draft.exercises.length === 0 && <p className="small muted center">Not sure what a machine is called? Tap “Add exercise”, then ⓘ to see photos.</p>}
 
+      {plates !== null && draft.exercises[plates] && (
+        <PlateCalc
+          barKg={exMap.get(draft.exercises[plates].exerciseId)?.barKg ?? 20}
+          current={num(draft.exercises[plates].sets.find((x) => x.kg)?.kg ?? '')}
+          sets={draft.exercises[plates].sets.length}
+          onClose={() => setPlates(null)}
+          onApply={(kg, which) => {
+            setEx(plates, (x) => ({ ...x, sets: x.sets.map((y, m) => (which === 'all' || which === m ? { ...y, kg: String(kg) } : y)) }));
+            setPlates(null);
+          }}
+        />
+      )}
       {picker && <ExercisePicker exclude={draft.exercises.map((e) => e.exerciseId)} onClose={() => setPicker(false)} onPick={(id) => addExercise([id])} onPickMany={addExercise} />}
       {infoEx && (
         <Sheet onClose={() => setInfo(null)}>
