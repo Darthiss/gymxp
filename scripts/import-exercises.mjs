@@ -380,6 +380,56 @@ const CURATED = [
   { src: 'Standing_Cable_Wood_Chop', name: 'Cable Woodchopper', group: 'Core', equipment: 'Cable',
     aliases: ['Wood Chop', 'Cable Chop'],
     look: 'Standing sideways to a high pulley, you pull the handle diagonally across your body down to the opposite hip, like chopping wood.' },
+
+  // ---------- Core (bodyweight abs) ----------
+  // hold = timed hold: the "reps" column is seconds. Volume counts 1 rep per 3 s, at bwFactor × bodyweight.
+  { src: 'Plank', name: 'Plank', group: 'Core', equipment: 'Bodyweight', bwFactor: 0.5, hold: true,
+    aliases: ['Front Plank', 'Forearm Plank', 'Plancha'],
+    look: 'Face down on a mat, resting on your forearms (elbows under your shoulders) and toes. Your body makes one straight line from head to heels. Log the seconds you hold; add a plate on your back in the + kg column if you use one.',
+    instructions: [
+      'Kneel on a mat and put your forearms down, elbows right under your shoulders.',
+      'Step your feet back so you are on your toes, body straight from head to heels.',
+      "Squeeze your glutes and brace your abs like someone is about to poke your belly. Don't let your hips sag or pike up.",
+      'Breathe and hold. Stop when your form breaks, not when you feel like quitting.',
+      'In GymXP log each hold in seconds. Too easy at 60 s? Hold longer, or have someone put a plate on your upper back and log its kg.',
+    ] },
+  { src: 'Side_Bridge', name: 'Side Plank', group: 'Core', equipment: 'Bodyweight', bwFactor: 0.35, hold: true,
+    aliases: ['Side Bridge', 'Plancha lateral'],
+    look: 'Lying on your side, propped up on one forearm with your feet stacked, hips lifted so your body is a straight line. Works the obliques (the sides of your waist). Log the seconds per side.',
+    instructions: [
+      'Lie on your side with your elbow right under your shoulder and your legs straight, feet stacked.',
+      'Lift your hips off the floor until your body is straight from head to feet.',
+      'Hold without letting your hips drop. Keep your head in line with your spine.',
+      'Switch sides and hold the same time. In GymXP log one set per side (or the time of one side), in seconds.',
+      'Too hard? Bend your knees and rest on them instead of your feet.',
+    ] },
+  { src: 'Crunches', name: 'Crunch', group: 'Core', equipment: 'Bodyweight', bwFactor: 0.2,
+    aliases: ['Crunches', 'Abdominal Crunch', 'Floor Crunch'],
+    look: 'Lying on your back, knees bent and feet flat. You curl just your head and shoulders up off the floor toward your knees, then lower. Smaller than a sit-up: your lower back stays down.' },
+  { src: 'Reverse_Crunch', name: 'Reverse Crunch', group: 'Core', equipment: 'Bodyweight', bwFactor: 0.25,
+    aliases: ['Reverse Crunches'],
+    look: 'Lying on your back, arms on the floor, knees bent up over your hips. You curl your hips off the floor, bringing your knees toward your chest, then lower slowly. Great for the lower abs.' },
+  { src: 'Air_Bike', name: 'Bicycle Crunch', group: 'Core', equipment: 'Bodyweight', bwFactor: 0.2,
+    aliases: ['Bicycle', 'Air Bike', 'Bicicleta'],
+    look: 'Lying on your back, hands by your head, legs up. You pedal your legs while twisting to bring each elbow toward the opposite knee. Count every touch (left + right = 2 reps).' },
+  { src: 'Russian_Twist', name: 'Russian Twist', group: 'Core', equipment: 'Bodyweight', bwFactor: 0.15,
+    aliases: ['Seated Twist', 'Plate Twist'],
+    look: 'Sitting with knees bent, leaning back so your body makes a V, feet on the floor or lifted. You rotate your hands (often holding a plate or dumbbell) from one hip to the other. Log the weight you hold in + kg; count every side.' },
+  { src: 'Dead_Bug', name: 'Dead Bug', group: 'Core', equipment: 'Bodyweight', bwFactor: 0.15,
+    aliases: ['Deadbug'],
+    look: 'Lying on your back, arms pointing at the ceiling and knees bent up at 90°, like a bug on its back. You slowly lower one arm and the opposite leg toward the floor while keeping your lower back pressed down, then switch.' },
+  { src: 'Flat_Bench_Lying_Leg_Raise', name: 'Lying Leg Raise', group: 'Core', equipment: 'Bodyweight', bwFactor: 0.25,
+    aliases: ['Leg Raise (lying)', 'Bench Leg Raise', 'Elevaciones de piernas'],
+    look: 'Lying flat on a bench (or the floor), holding the bench behind your head. You raise your straight legs up to vertical, then lower them slowly without touching down.' },
+  { src: 'Knee_Hip_Raise_On_Parallel_Bars', name: "Captain's Chair Knee Raise", group: 'Core', equipment: 'Bodyweight', bwFactor: 0.3,
+    aliases: ["Captain's Chair", 'Vertical Knee Raise', 'Roman Chair Leg Raise', 'Knee Raise Station'],
+    look: 'A tall station with a back pad and two padded armrests with handles (often part of the dip / pull-up tower). Your forearms rest on the pads, legs hanging, and you lift your knees up toward your chest.' },
+  { src: 'Decline_Crunch', name: 'Decline Bench Crunch', group: 'Core', equipment: 'Bench', bwFactor: 0.3,
+    aliases: ['Decline Sit-up Bench', 'Decline Crunch', 'Ab Bench'],
+    look: 'An angled bench with rollers at the high end to hook your feet under, so your head is lower than your hips. You lie back and crunch up. Harder than a floor crunch; steeper = harder.' },
+  { src: 'Dumbbell_Side_Bend', name: 'Dumbbell Side Bend', group: 'Core', equipment: 'Dumbbell',
+    aliases: ['Side Bend', 'Oblique Side Bend'],
+    look: 'Standing tall with one dumbbell hanging in one hand. You bend sideways toward the dumbbell, then use the opposite side of your waist to stand back up. Do both sides; log the weight of the one dumbbell.' },
 ];
 
 const datasetPath = process.argv[2];
@@ -423,6 +473,7 @@ for (const c of CURATED) {
     ...(c.barKg ? { barKg: c.barKg } : {}),
     ...(c.benchmark ? { benchmark: c.benchmark } : {}),
     ...(c.vestMult ? { vestMult: c.vestMult } : {}),
+    ...(c.hold ? { hold: true } : {}),
   });
 }
 await fs.writeFile(path.join(ROOT, 'src/data/exercises.json'), JSON.stringify(out, null, 1) + '\n');

@@ -1,5 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { getStore, useData } from '../lib/store';
+import { fmtSet } from '../lib/exercises';
 import { settingFor, useExerciseMap } from '../lib/game';
 import { computeGame, levelInfo, RULES, sortSessions, type PR, type SessionResult } from '../lib/xp';
 import { holidayOn } from '../lib/holidays';
@@ -93,6 +94,7 @@ const prText = (p: PR) =>
   p.kind === 'weight' ? `🏆 New weight PR: ${p.value} kg (was ${p.prev})`
   : p.kind === 'assist' ? `🏆 PR: less assistance (${p.value} kg)`
   : p.kind === 'reps' ? `🏆 Rep PR: ${p.value} reps (was ${p.prev})`
+  : p.kind === 'hold' ? `🏆 Longest hold: ${p.value} s (was ${p.prev})`
   : p.kind === 'rounds' ? `🏆 PR: ${p.value} rounds (was ${p.prev})`
   : p.kind === 'rungs' ? `🏆 PR: ${p.value} rungs (was ${p.prev})`
   : p.kind === 'time' ? `🏆 Fastest ladder: ${p.value} min`
@@ -102,6 +104,7 @@ const prText = (p: PR) =>
 function cols(ex?: Exercise) {
   if (ex?.benchmark === 'ladder') return { kg: 'Minutes', reps: 'Rungs /19', kgUnit: 'min', repsUnit: 'rungs' };
   if (ex?.benchmark === 'cindy') return { kg: 'Vest kg', reps: 'Rounds', kgUnit: 'kg', repsUnit: 'rnds' };
+  if (ex?.hold) return { kg: '+ kg (plate)', reps: 'Seconds', kgUnit: 'kg', repsUnit: 'sec' };
   if (ex?.bwFactor) return { kg: '+ kg (vest)', reps: 'Reps', kgUnit: 'kg', repsUnit: 'reps' };
   if (ex?.assisted) return { kg: 'Assist kg', reps: 'Reps', kgUnit: 'kg', repsUnit: 'reps' };
   if (ex?.loadFactor === 2) return { kg: 'kg each', reps: 'Reps', kgUnit: 'kg', repsUnit: 'reps' };
@@ -334,7 +337,7 @@ export function Log({ route }: { route: Route }) {
                 <ExerciseThumb ex={ex} className="thumb sm" />
                 <div className="grow">
                   <div className="name">{ex?.name ?? 'Unknown exercise'}</div>
-                  <div className="last ellipsis">{last ? `Last: ${last.map((s) => `${s.kg}×${s.reps}`).join(' · ')}` : 'First time · sets your baseline'}</div>
+                  <div className="last ellipsis">{last ? `Last: ${last.map((s) => fmtSet(ex, s)).join(' · ')}` : 'First time · sets your baseline'}</div>
                 </div>
               </button>
               {e.target && <span className="tag accent num" title="Your routine's target">{fmtTarget(e.target)}</span>}

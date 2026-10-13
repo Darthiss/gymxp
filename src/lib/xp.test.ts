@@ -435,3 +435,24 @@ describe('routines', () => {
     expect(upNextRoutine([a], done)).toBeNull(); // nothing to rotate
   });
 });
+
+describe('timed holds (plank)', () => {
+  it('logs seconds: gentle volume, no reps, hold PRs instead of rep PRs', () => {
+    const d = emptyData();
+    d.weights = [{ id: 'w', updatedAt: 1, date: '2026-01-01', kg: 70 }];
+    const plank = (date: string, secs: number[]) => sess(date, [{ exerciseId: 'Plank', sets: secs.map((reps) => ({ kg: 0, reps })) }]);
+    d.sessions = [plank('2026-01-05', [60, 60, 60]), plank('2026-01-07', [90, 60])];
+    const g = game(d);
+    // 3 × 60 s = 60 rep-equivalents at 50 % of 70 kg
+    expect(g.history.get('Plank')![0].volume).toBeCloseTo(60 * 0.5 * 70);
+    const second = g.sessions.get(d.sessions[1].id)!;
+    expect(second.prs).toEqual([{ exerciseId: 'Plank', kind: 'hold', value: 90, prev: 60 }]);
+    expect(g.bests.get('Plank')!.maxReps).toBe(90);
+  });
+
+  it('long holds do not count toward the 500-rep award', () => {
+    const d = emptyData();
+    d.sessions = [sess('2026-01-05', [{ exerciseId: 'Plank', sets: [{ kg: 0, reps: 300 }, { kg: 0, reps: 300 }] }])];
+    expect(game(d).unlocked.some((a) => a.id === 'hab-reps')).toBe(false); // 600 s would be 600 "reps"
+  });
+});

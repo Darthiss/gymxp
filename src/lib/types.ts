@@ -117,6 +117,7 @@ export interface Exercise {
   barKg?: number; // free barbell: weight logged is the total (bar + plates); typical empty bar
   benchmark?: 'ladder' | 'cindy'; // Hero benchmark workouts with special logging
   vestMult?: number; // reps per logged unit that carry the vest weight (Cindy: 30 per round)
+  hold?: boolean; // timed hold (plank): the reps column is seconds
   custom?: boolean;
   photo?: string;
 }

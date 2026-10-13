@@ -1,4 +1,5 @@
 import { useData } from '../lib/store';
+import { fmtSet } from '../lib/exercises';
 import { useExerciseMap, useGame } from '../lib/game';
 import { sessionTitle } from '../lib/today';
 import { fmtDate, fmtKg, fmtNum } from '../lib/util';
@@ -62,7 +63,7 @@ export function SessionView({ id }: { id: string }) {
                 <ExerciseThumb ex={ex} className="thumb sm" />
                 <div className="grow">
                   <div className="cell-title">{ex?.name ?? 'Unknown'} {pr && <span className="tag gold">🏆 PR</span>}</div>
-                  <div className="cell-sub num">{e.sets.map((x) => `${x.kg}×${x.reps}`).join('  ·  ')}</div>
+                  <div className="cell-sub num">{e.sets.map((x) => fmtSet(ex, x)).join('  ·  ')}</div>
                 </div>
                 <Icon name="chevR" size={16} stroke={2.4} className="chev" />
               </a>

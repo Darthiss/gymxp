@@ -1,5 +1,5 @@
 import raw from '../data/exercises.json';
-import type { AppData, Exercise } from './types';
+import type { AppData, Exercise, SetEntry } from './types';
 
 export const BUILTIN: Exercise[] = raw as Exercise[];
 
@@ -64,6 +64,12 @@ export const EQUIPMENT_CHIPS: Record<string, (e: Exercise) => boolean> = {
   Bodyweight: (e) => e.equipment === 'Bodyweight' || e.equipment === 'Benchmark' || !!e.assisted,
   Machines: (e) => ['Machine', 'Plate-loaded', 'Cable', 'Smith machine'].includes(e.equipment),
 };
+
+/** One logged set: "40×10", or "60 s" / "5 kg · 60 s" for a timed hold. */
+export function fmtSet(ex: Exercise | undefined, s: SetEntry): string {
+  if (ex?.hold) return s.kg ? `${s.kg} kg · ${s.reps} s` : `${s.reps} s`;
+  return `${s.kg}×${s.reps}`;
+}
 
 export function imgUrl(rel: string): string {
   return import.meta.env.BASE_URL + rel;

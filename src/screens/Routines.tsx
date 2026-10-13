@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { getStore, useData } from '../lib/store';
+import { fmtSet } from '../lib/exercises';
 import { settingFor, useExerciseMap } from '../lib/game';
 import { navigate } from '../lib/router';
 import { logHref } from '../lib/today';
@@ -114,7 +115,7 @@ export function RoutineGuide({ id }: { id: string }) {
                 <div className="kicker">{finished ? '✓ Done' : `Exercise ${i + 1}`}</div>
                 <div className="name">{ex?.name ?? 'Unknown exercise'}</div>
                 <div className="row" style={{ gap: 8, marginTop: 2 }}>
-                  <span className="target">{fmtTarget(it)}</span>
+                  <span className="target">{fmtTarget(it)}{ex?.hold && it.reps ? ' s' : ''}</span>
                   {!!it.restSec && <span className="tag"><Icon name="clock" size={11} stroke={2.4} /> rest {fmtRest(it.restSec)}</span>}
                 </div>
               </div>
@@ -122,14 +123,14 @@ export function RoutineGuide({ id }: { id: string }) {
             </button>
             {it.note && <div className="coach-note">“{it.note}”</div>}
             <SettingNote exerciseId={it.exerciseId} value={settingFor(data, it.exerciseId)} equipment={ex?.equipment} />
-            <div className="small dim num">{last ? `Last time: ${last.map((s) => `${s.kg}×${s.reps}`).join(' · ')}` : 'First time · pick a weight you can do with good form'}</div>
-            {hitTarget(it, last) && <span className="tag gold" style={{ alignSelf: 'flex-start' }}>⬆ You hit every target last time · try {ex?.assisted ? 'less assistance' : 'a bit heavier'}</span>}
+            <div className="small dim num">{last ? `Last time: ${last.map((s) => fmtSet(ex, s)).join(' · ')}` : ex?.hold ? 'First time · hold as long as your form stays solid' : 'First time · pick a weight you can do with good form'}</div>
+            {hitTarget(it, last) && <span className="tag gold" style={{ alignSelf: 'flex-start' }}>⬆ You hit every target last time · try {ex?.hold ? 'holding longer' : ex?.assisted ? 'less assistance' : 'a bit heavier'}</span>}
             <div className="set-dots" role="group" aria-label={`${ex?.name ?? 'Exercise'} sets`}>
               {Array.from({ length: it.sets }, (_, k) => {
                 const reps = repsForSet(it.reps, k);
                 return (
                   <button key={k} className={`set-dot${k < n ? ' done' : ''}`} onClick={() => tap(it, k)} aria-pressed={k < n} aria-label={`Set ${k + 1}${reps ? `, ${reps} reps` : ''}`}>
-                    {k < n ? <Icon name="check" size={18} stroke={3.2} /> : <><b>{reps || k + 1}</b>{reps && <small>reps</small>}</>}
+                    {k < n ? <Icon name="check" size={18} stroke={3.2} /> : <><b>{reps || k + 1}</b>{reps && <small>{ex?.hold ? 'sec' : 'reps'}</small>}</>}
                   </button>
                 );
               })}
@@ -219,8 +220,8 @@ export function RoutineEdit({ id }: { id: string }) {
                 </div>
               </div>
               <label className="field">
-                Reps
-                <input className="input center" value={it.reps} placeholder="10" onChange={(e) => setItem(i, { reps: e.target.value })} aria-label={`${ex?.name} reps per set`} />
+                {ex?.hold ? 'Seconds' : 'Reps'}
+                <input className="input center" value={it.reps} placeholder={ex?.hold ? '30' : '10'} onChange={(e) => setItem(i, { reps: e.target.value })} aria-label={`${ex?.name} reps per set`} />
               </label>
               <label className="field">
                 Rest
@@ -243,7 +244,7 @@ export function RoutineEdit({ id }: { id: string }) {
         <ExercisePicker
           exclude={items.map((it) => it.exerciseId)}
           onClose={() => setPicker(false)}
-          onPick={(eid) => { setItems((l) => [...l, { exerciseId: eid, sets: 3, reps: '10', restSec: '', note: '' }]); setPicker(false); }}
+          onPick={(eid) => { setItems((l) => [...l, { exerciseId: eid, sets: 3, reps: exMap.get(eid)?.hold ? '30' : '10', restSec: '', note: '' }]); setPicker(false); }}
         />
       )}
     </div>

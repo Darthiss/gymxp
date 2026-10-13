@@ -467,7 +467,7 @@ export interface XpItem {
 
 export interface PR {
   exerciseId: string;
-  kind: 'weight' | 'e1rm' | 'assist' | 'reps' | 'rounds' | 'rungs' | 'time';
+  kind: 'weight' | 'e1rm' | 'assist' | 'reps' | 'rounds' | 'rungs' | 'time' | 'hold';
   value: number;
   prev: number;
 }
@@ -565,6 +565,9 @@ function bodyweightLookup(data: AppData): (date: string) => number {
     return bw;
   };
 }
+
+/** Timed holds (plank) count one rep of volume per this many seconds held. */
+export const HOLD_SECONDS_PER_REP = 3;
 
 export function effectiveLoad(ex: Exercise | undefined, kg: number, bw: number): number {
   if (ex?.assisted) return Math.max(0, bw - kg);
@@ -792,8 +795,13 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
           if (st.reps >= 19 && st.kg > 0) fullLadderMin = fullLadderMin ? Math.min(fullLadderMin, st.kg) : st.kg;
           continue;
         }
-        reps += bench === 'cindy' ? st.reps * 30 : st.reps;
         const load = effectiveLoad(ex, st.kg, bw || (ex?.bwFactor || ex?.assisted ? 70 : 0));
+        if (ex?.hold) { // seconds, not reps: no rep count or strength estimate, gentle volume
+          exVol += load * (st.reps / HOLD_SECONDS_PER_REP);
+          bestKg = Math.max(bestKg, st.kg);
+          continue;
+        }
+        reps += bench === 'cindy' ? st.reps * 30 : st.reps;
         exVol += load * st.reps;
         effE = Math.max(effE, e1rm(load, st.reps));
         if (ex?.assisted) bestKg = Math.min(bestKg, st.kg);
@@ -846,7 +854,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
             prs.push({ exerciseId: log.exerciseId, kind: 'weight', value: bestKg, prev: prev.maxKg });
             prev.maxKg = bestKg; prev.maxKgDate = s.date; weightPr = true;
           } else if (bestReps > prev.maxReps) {
-            prs.push({ exerciseId: log.exerciseId, kind: 'reps', value: bestReps, prev: prev.maxReps });
+            prs.push({ exerciseId: log.exerciseId, kind: ex?.hold ? 'hold' : 'reps', value: bestReps, prev: prev.maxReps });
             weightPr = true;
           }
           if (bestE > prev.maxE1rm) { prev.maxE1rm = bestE; prev.maxE1rmDate = s.date; }
@@ -925,7 +933,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     for (const pr of prs) {
       const name = exMap.get(pr.exerciseId)?.name ?? 'Unknown';
       const v = pr.kind === 'e1rm' ? RULES.e1rmPrXp : RULES.weightPrXp;
-      const what = pr.kind === 'weight' ? `${pr.value} kg` : pr.kind === 'assist' ? `less assist (${pr.value} kg)` : pr.kind === 'reps' ? `${pr.value} reps`
+      const what = pr.kind === 'weight' ? `${pr.value} kg` : pr.kind === 'assist' ? `less assist (${pr.value} kg)` : pr.kind === 'reps' ? `${pr.value} reps` : pr.kind === 'hold' ? `${pr.value} s hold`
         : pr.kind === 'rounds' ? `${pr.value} rounds` : pr.kind === 'rungs' ? `${pr.value} rungs` : pr.kind === 'time' ? `${pr.value} min` : 'best set';
       items.push({ label: `🏆 PR ${name}: ${what}`, xp: v, kind: 'pr' });
       xp += v;

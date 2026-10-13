@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { getStore, useData } from '../lib/store';
+import { fmtSet } from '../lib/exercises';
 import { useExerciseMap, useGame } from '../lib/game';
 import { masteryOf, MASTERY, sortSessions } from '../lib/xp';
 import { addDays, fmtDate, fmtNum, num, plural, today, uid, weekKey } from '../lib/util';
@@ -138,7 +139,7 @@ function Lifts() {
                 <div className="cell-sub">{m.current ? `${m.current.icon} ${m.current.name} · ` : ''}{plural(b.sessions, 'session')} · {fmtDate(b.lastDate, { day: 'numeric', month: 'short' })}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div className="display" style={{ fontSize: '1.1rem' }}>{reps ? b.maxReps : fmtNum(b.maxKg, 1)}<span className="tiny dim" style={{ fontFamily: 'var(--font)', fontWeight: 600 }}> {reps ? (ex?.benchmark === 'ladder' ? 'rungs' : ex?.benchmark === 'cindy' ? 'rnds' : 'reps') : 'kg'}</span></div>
+                <div className="display" style={{ fontSize: '1.1rem' }}>{reps ? b.maxReps : fmtNum(b.maxKg, 1)}<span className="tiny dim" style={{ fontFamily: 'var(--font)', fontWeight: 600 }}> {reps ? (ex?.benchmark === 'ladder' ? 'rungs' : ex?.benchmark === 'cindy' ? 'rnds' : ex?.hold ? 'sec' : 'reps') : 'kg'}</span></div>
                 <div className="tiny muted">{ex?.assisted ? 'least assist' : 'best'}</div>
               </div>
             </a>
@@ -155,9 +156,9 @@ export function LiftDetail({ id }: { id: string }) {
   const ex = exMap.get(id);
   const hist = g.history.get(id) ?? [];
   const best = g.bests.get(id);
-  // Bodyweight moves and Hero benchmarks are about reps / rounds / rungs, not kilos.
+  // Bodyweight moves and Hero benchmarks are about reps / rounds / rungs (seconds for holds), not kilos.
   const repMode = !!(ex?.bwFactor || ex?.benchmark);
-  const repUnit = ex?.benchmark === 'ladder' ? 'rungs' : ex?.benchmark === 'cindy' ? 'rounds' : 'reps';
+  const repUnit = ex?.benchmark === 'ladder' ? 'rungs' : ex?.benchmark === 'cindy' ? 'rounds' : ex?.hold ? 'seconds' : 'reps';
   const [metric, setMetric] = useState<'kg' | 'e1rm' | 'volume' | 'reps'>(repMode ? 'reps' : 'kg');
   // One point per day (two workouts on the same day: best value for metrics, summed volume).
   const byDay = new Map<string, number>();
@@ -216,7 +217,7 @@ export function LiftDetail({ id }: { id: string }) {
           ) : !ex?.assisted ? (
             <div><div className="label">Est. 1RM</div><div className="value">{fmtNum(best.maxE1rm, 1)}<small>kg</small></div></div>
           ) : (
-            <div><div className="label">Most reps</div><div className="value">{best.maxReps}</div></div>
+            <div><div className="label">{ex?.hold ? 'Longest hold' : 'Most reps'}</div><div className="value">{best.maxReps}</div></div>
           )}
           <div><div className="label">Sessions</div><div className="value">{best.sessions}</div></div>
           <div><div className="label">Last</div><div className="value" style={{ fontSize: '1.05rem', paddingTop: 4 }}>{fmtDate(best.lastDate, { day: 'numeric', month: 'short' })}</div></div>
@@ -229,7 +230,7 @@ export function LiftDetail({ id }: { id: string }) {
         <div className="section-title">History</div>
         <div className="group">
           {[...hist].reverse().map((h) => (
-            <Cell key={h.sessionId} href={`#/session/${h.sessionId}`} title={fmtDate(h.date)} sub={<span className="num">{h.sets.map((s) => `${s.kg}×${s.reps}`).join('  ·  ')}</span>} />
+            <Cell key={h.sessionId} href={`#/session/${h.sessionId}`} title={fmtDate(h.date)} sub={<span className="num">{h.sets.map((s) => fmtSet(ex, s)).join('  ·  ')}</span>} />
           ))}
           {hist.length === 0 && <Cell title="Not logged yet" sub="Your first time earns bonus XP" />}
         </div>
