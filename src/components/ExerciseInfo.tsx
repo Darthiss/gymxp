@@ -1,6 +1,7 @@
 import type { Exercise } from '../lib/types';
 import { imgUrl, videoSearchUrl } from '../lib/exercises';
 import { RepoPhoto } from './ui';
+import { Icon } from './Icon';
 
 /** The "what is this machine and how do I use it" panel, shared by the guide and the picker. */
 export function ExerciseInfo({ ex }: { ex: Exercise }) {
@@ -31,21 +32,21 @@ export function ExerciseInfo({ ex }: { ex: Exercise }) {
       </div>
 
       {ex.aliases.length > 0 && (
-        <p className="small dim">
-          <b className="muted">Also called: </b>
+        <p className="small dim" style={{ lineHeight: 1.5 }}>
+          <span className="kicker" style={{ marginRight: 6 }}>Also called</span>
           {ex.aliases.join(' · ')}
         </p>
       )}
 
       {ex.look && (
-        <div className="notice">
-          <b>{ex.custom ? 'My notes' : 'How to recognise it'}</b>
-          <div className="dim" style={{ marginTop: 4, whiteSpace: 'pre-wrap' }}>{ex.look}</div>
+        <div className="card stack" style={{ gap: 6 }}>
+          <div className="row" style={{ gap: 8 }}><Icon name="search" size={16} style={{ color: 'var(--accent)' }} /><b>{ex.custom ? 'My notes' : 'How to recognise it'}</b></div>
+          <div className="dim small" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{ex.look}</div>
         </div>
       )}
 
       {ex.instructions.length > 0 && (
-        <div className="stack" style={{ gap: 8 }}>
+        <div className="stack" style={{ gap: 12 }}>
           <h3>How to do it</h3>
           <ol className="steps">
             {ex.instructions.map((s, i) => (
@@ -58,7 +59,7 @@ export function ExerciseInfo({ ex }: { ex: Exercise }) {
       {ex.secondaryMuscles.length > 0 && <p className="small muted">Also works: {ex.secondaryMuscles.join(', ')}</p>}
 
       <a className="btn" href={videoSearchUrl(ex)} target="_blank" rel="noopener noreferrer">
-        ▶ Watch videos of this exercise
+        <Icon name="play" size={14} fill stroke={0} /> Watch form videos <Icon name="external" size={14} style={{ opacity: 0.6 }} />
       </a>
     </div>
   );

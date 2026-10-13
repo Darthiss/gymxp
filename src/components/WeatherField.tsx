@@ -3,6 +3,7 @@ import { getStore, useData } from '../lib/store';
 import { fetchWeather, hourOf, locate, savedLocation, type Weather } from '../lib/weather';
 import { RULES } from '../lib/xp';
 import { toast } from './ui';
+import { Icon } from './Icon';
 
 /** Get (and remember, rounded to ~10 km) the location used for weather lookups. */
 export async function weatherLocation(): Promise<{ lat: number; lon: number }> {
@@ -47,24 +48,23 @@ export function WeatherField({ date, startTime, tempC, rain, onChange }: {
   };
 
   return (
-    <div className="card stack" style={{ gap: 10 }}>
-      <div className="row between">
-        <span className="bold">🌦️ Weather</span>
-        <span className="tiny muted">rain +{RULES.rainXp} · ≤5 °C +{RULES.coldXp} · ≥33 °C +{RULES.heatXp}</span>
+    <div className="row" style={{ gap: 12 }}>
+      <span className="cell-icon" style={{ background: '#0a84ff' }}><Icon name={rain ? 'rain' : 'sun'} size={17} stroke={2.2} /></span>
+      <div className="grow">
+        <div className="cell-title">Weather</div>
+        <div className="cell-sub">+{RULES.rainXp} XP for rain, cold or heat</div>
       </div>
-      <div className="row">
-        <div className="unit-input" style={{ flex: 1 }}>
-          <input className="input" inputMode="decimal" placeholder="temp" value={tempC} aria-label="Temperature in °C"
-            onChange={(e) => onChange({ tempC: e.target.value.replace(/[^\d.,-]/g, ''), rain })} />
-          <span>°C</span>
-        </div>
-        <button className={`btn${rain ? ' primary' : ''}`} style={{ flex: 1 }} aria-pressed={rain} onClick={() => onChange({ tempC, rain: !rain })}>
-          {rain ? '🌧️ Raining' : '☀️ No rain'}
-        </button>
-        <button className="icon-btn" onClick={auto} disabled={busy} aria-label="Fetch the weather automatically" title={hasLoc ? 'Fetch weather' : 'Fetch weather (asks for your location once)'}>
-          {busy ? <span className="spinner" style={{ width: 16, height: 16 }} /> : '📍'}
-        </button>
+      <div className="unit-input" style={{ width: 82 }}>
+        <input className="input" inputMode="decimal" placeholder="—" value={tempC} aria-label="Temperature in °C" style={{ minHeight: 36, paddingLeft: 8, paddingRight: 28 }}
+          onChange={(e) => onChange({ tempC: e.target.value.replace(/[^\d.,-]/g, ''), rain })} />
+        <span>°C</span>
       </div>
+      <button className={`icon-btn${rain ? '' : ' plain'}`} style={rain ? { background: 'var(--info)', color: '#000' } : undefined} aria-pressed={rain} onClick={() => onChange({ tempC, rain: !rain })} aria-label={rain ? 'Raining' : 'No rain'} title={rain ? 'Raining' : 'Mark as raining'}>
+        <Icon name="rain" size={18} />
+      </button>
+      <button className="icon-btn" onClick={auto} disabled={busy} aria-label="Fetch the weather automatically" title={hasLoc ? 'Fetch weather' : 'Fetch weather (asks for your location once)'}>
+        {busy ? <span className="spinner" style={{ width: 16, height: 16 }} /> : <Icon name="pin" size={17} />}
+      </button>
     </div>
   );
 }

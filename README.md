@@ -37,7 +37,7 @@ Settings → ⌚ Apple Watch has step-by-step instructions for an iOS Shortcut. 
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173
+npm run dev      # http://localhost:5173  (add ?demo for sample data, no GitHub needed; ?demo&draft adds a workout in progress)
 npm test         # XP engine, merge, crypto, parsing
 npm run build
 ```

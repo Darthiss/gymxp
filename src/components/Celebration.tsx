@@ -51,32 +51,30 @@ export function Celebration({ result, onClose }: { result: SessionResult; onClos
     <>
       {big && <Confetti burst={levelsGained > 0 ? 220 : 120} />}
       <Sheet onClose={onClose}>
-        <div className="celebrate stack-lg">
-          <div className="stack" style={{ alignItems: 'center' }}>
-            <div className="muted small">Workout saved</div>
-            <div className="big-xp">+{shown} XP</div>
-            {levelsGained > 0 && <div className="levelup">LEVEL UP! → {after.level}</div>}
-            {rankUp && (
-              <div className="tag gold" style={{ fontSize: '0.9rem', padding: '4px 12px' }}>
-                🎖️ New rank: {after.rank.title}
-              </div>
-            )}
-            {starUp && (
-              <div className="tag gold" style={{ fontSize: '0.9rem', padding: '4px 12px' }}>
-                ⭐ New star: {rankLabel(after)}
-              </div>
-            )}
-            {rpGain > 0 && <div className="small muted">+{rpGain} rank points toward your next star</div>}
+        <div className="celebrate stack-lg" style={{ paddingTop: 8 }}>
+          <div className="stack" style={{ alignItems: 'center', gap: 10 }}>
+            <div className="kicker">Workout saved</div>
+            <div className="big-xp">+{shown}<span style={{ fontSize: '0.4em', marginLeft: 6 }}>XP</span></div>
+            {levelsGained > 0 && <div className="levelup">LEVEL UP · {after.level}</div>}
+            <div className="row-wrap" style={{ justifyContent: 'center' }}>
+              {rankUp && <span className="tag gold" style={{ fontSize: '0.85rem', padding: '5px 12px' }}>🎖️ New rank: {after.rank.title}</span>}
+              {starUp && <span className="tag gold" style={{ fontSize: '0.85rem', padding: '5px 12px' }}>⭐ {rankLabel(after)}</span>}
+              {result.prs.length > 0 && <span className="tag gold" style={{ fontSize: '0.85rem', padding: '5px 12px' }}>🏆 {result.prs.length} record{result.prs.length === 1 ? '' : 's'}</span>}
+              {result.streakWeeks > 0 && <span className="tag fire" style={{ fontSize: '0.85rem', padding: '5px 12px' }}>🔥 {result.streakWeeks}-week streak</span>}
+            </div>
           </div>
 
-          <div className="row" style={{ textAlign: 'left' }}>
-            <LevelBadge info={after} size={64} />
+          <div className="card row" style={{ textAlign: 'left', gap: 14 }}>
+            <LevelBadge info={after} size={64} pct={barPct} />
             <div className="grow stack" style={{ gap: 6 }}>
               <div className="row between small">
                 <span className="bold" style={{ color: after.rank.color }}>{after.rank.title} <Stars info={after} /></span>
-                <span className="muted num">{after.into.toLocaleString()} / {after.span.toLocaleString()} XP</span>
               </div>
               <XpBar pct={barPct} />
+              <div className="tiny dim num">
+                {after.into.toLocaleString()} / {after.span.toLocaleString()} XP
+                {rpGain > 0 && ` · +${rpGain} rank points`}
+              </div>
             </div>
           </div>
 

@@ -1,104 +1,196 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { useGame } from '../lib/game';
 import { ACHIEVEMENTS, RANKS, RULES, SEASON_TIERS, xpForLevel, type AchievementCategory } from '../lib/xp';
-import { RankProgress, SeasonCard, Stars } from '../components/Progression';
+import { PlayerCard, SeasonCard, Stars } from '../components/Progression';
 import { compare, LEGENDS, type LegendProgress } from '../lib/legends';
-import { fmtDate, fmtNum, plural } from '../lib/util';
+import { fmtProgress } from '../lib/today';
+import { fmtDate, fmtKg, fmtNum, plural } from '../lib/util';
 import { navigate, type Route } from '../lib/router';
-import { LevelBadge, PageHead, XpBar } from '../components/ui';
+import { Icon } from '../components/Icon';
+import { Cell, LargeTitle, Ring, Segmented, SectionHead, Sheet, XpBar } from '../components/ui';
 
-const CATS: AchievementCategory[] = ['Visits', 'Streaks', 'Strength', 'Records', 'Habits', 'Volume', 'Explorer', 'Sets', 'Time', 'Burn', 'Weather', 'Holidays', 'Special', 'Body'];
+const CATS: AchievementCategory[] = ['Visits', 'Streaks', 'Strength', 'Records', 'Habits', 'Volume', 'Explorer', 'Sets', 'Time', 'Burn', 'Weather', 'Holidays', 'Special', 'Body', 'Hero'];
 
-const fmtProgress = (cat: AchievementCategory, v: number) =>
-  cat === 'Volume' ? `${fmtNum(v / 1000, 1)} t` : cat === 'Time' ? `${fmtNum(v / 60, 1)} h` : fmtNum(v);
-
-type Tab = 'achievements' | 'ranks' | 'legends';
+type Tab = 'overview' | 'achievements' | 'legends';
 
 export function Awards({ route }: { route: Route }) {
   const g = useGame();
+  const q = route.query.get('tab');
+  const tab: Tab = q === 'achievements' || q === 'legends' ? q : 'overview';
+  const [help, setHelp] = useState(false);
+
+  return (
+    <div className="stack-lg fade-in">
+      <LargeTitle
+        eyebrow={`Level ${g.level.level} · ${plural(g.visits, 'visit')}`}
+        title="Career"
+        actions={<button className="icon-btn" aria-label="How progression works" onClick={() => setHelp(true)}><Icon name="info" size={19} /></button>}
+      />
+      <PlayerCard g={g} big />
+      <Segmented<Tab>
+        value={tab}
+        options={[['overview', 'Overview'], ['achievements', `Awards ${g.unlocked.length}`], ['legends', 'Legends']]}
+        onChange={(t) => navigate(t === 'overview' ? 'awards' : `awards?tab=${t}`, true)}
+      />
+      {tab === 'overview' && <Overview />}
+      {tab === 'achievements' && <Achievements />}
+      {tab === 'legends' && <Legends />}
+      {help && <HowItWorks onClose={() => setHelp(false)} />}
+    </div>
+  );
+}
+
+function Overview() {
+  const g = useGame();
   const L = g.level;
-  const tab = (route.query.get('tab') as Tab) || 'achievements';
+  const [allRanks, setAllRanks] = useState(false);
+  const past = g.seasons.filter((x) => x.key !== g.season.key).reverse();
+  const idx = RANKS.indexOf(L.rank);
+  const shown = allRanks ? RANKS : RANKS.slice(Math.max(0, idx - 1), idx + 3);
+  const h = g.hero;
+  const focus = [...h.pillars].filter((p) => p.id !== 'training').sort((a, b) => b.weight * (1 - b.score) - a.weight * (1 - a.score))[0];
 
   return (
     <div className="stack-lg">
-      <PageHead title="Awards" right={<span className="small muted">{g.unlocked.length}/{ACHIEVEMENTS.length}</span>} />
-
-      <div className="card level-card stack" style={{ '--rank-color': L.rank.color } as React.CSSProperties}>
-        <div className="row" style={{ gap: 16 }}>
-          <LevelBadge info={L} size={88} />
-          <div className="grow stack" style={{ gap: 4 }}>
-            <div className="rank-title" style={{ color: L.rank.color }}>{L.rank.title} <Stars info={L} /></div>
-            <div className="small dim num">{fmtNum(g.totalXp)} XP · level {L.level} · {plural(g.visits, 'visit')}</div>
-            <XpBar pct={L.pct} />
-            <div className="tiny muted num">{fmtNum(L.span - L.into)} XP to level {L.level + 1}</div>
+      <div className="stack">
+        <SectionHead title="Season" />
+        <div className="card"><SeasonCard s={g.season} /></div>
+        {past.length > 0 && (
+          <div className="chips">
+            {past.map((x) => {
+              const t = x.tier >= 0 ? SEASON_TIERS[x.tier] : null;
+              return <span key={x.key} className="chip" style={{ cursor: 'default' }}>{t?.icon ?? '🌱'} {x.label} · <span style={{ color: t?.color ?? 'var(--text-2)' }}>{t?.name ?? 'Unranked'}</span></span>;
+            })}
           </div>
+        )}
+      </div>
+
+      <div className="stack">
+        <SectionHead title="Hero Physique" link="#/hero" linkLabel="Details" />
+        <a href="#/hero" className="card card-link row" style={{ gap: 16 }}>
+          <Ring pct={h.pct} size={76} stroke={7}>
+            <span className="display" style={{ fontSize: '1.2rem' }}>{Math.round(h.pct * 100)}%</span>
+          </Ring>
+          <div className="grow stack" style={{ gap: 4 }}>
+            <div className="bold" style={{ fontSize: '1.05rem' }}>{h.stage.icon} {h.stage.name}</div>
+            {h.next && <div className="tiny dim">Next: {h.next.icon} {h.next.name} at {Math.round(h.next.min * 100)}% · +{h.next.xp} XP</div>}
+            {focus && <div className="tiny accent">Focus: {focus.icon} {focus.name}</div>}
+          </div>
+          <Icon name="chevR" size={18} className="chev" style={{ color: 'var(--muted)' }} />
+        </a>
+      </div>
+
+      <div className="stack">
+        <SectionHead title="Rank ladder" onLink={() => setAllRanks((v) => !v)} linkLabel={allRanks ? 'Show less' : `All ${RANKS.length}`} />
+        <div className="group ladder">
+          {shown.map((r) => {
+            const i = RANKS.indexOf(r);
+            const current = r === L.rank;
+            const reached = i <= idx;
+            return (
+              <div key={r.title} className={`rung${current ? ' current' : ''}`} style={{ opacity: reached ? 1 : 0.5 }}>
+                <span className="dot" style={{ background: r.color }}>{reached && !current && <Icon name="check" size={11} stroke={3.5} />}</span>
+                <span className="grow">
+                  <span className="bold" style={{ color: current ? r.color : undefined }}>{r.title}</span>
+                  {current && <span style={{ marginLeft: 8 }}><Stars info={L} size="0.8rem" /></span>}
+                </span>
+                <span className="tiny dim num" style={{ textAlign: 'right' }}>
+                  Lv {r.minLevel} · {fmtNum(r.minVisits)} visits
+                  <br />
+                  <span className="muted">{fmtNum(xpForLevel(r.minLevel))} XP</span>
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      <div className="tabs">
-        {(['achievements', 'ranks', 'legends'] as Tab[]).map((t) => (
-          <button key={t} className={tab === t ? 'on' : ''} onClick={() => navigate(`awards?tab=${t}`, true)}>
-            {t === 'achievements' ? 'Achievements' : t === 'ranks' ? 'Rank & Season' : 'Legends'}
-          </button>
-        ))}
+      <div className="stack">
+        <SectionHead title="Lifetime" />
+        <div className="passport">
+          <Stat label="Gym visits" value={fmtNum(g.visits)} />
+          <Stat label="Weight moved" value={fmtKg(g.totalVolume)} />
+          <Stat label="Sets" value={fmtNum(g.totalSets)} />
+          <Stat label="Time trained" value={`${fmtNum(g.totalMinutes / 60, 1)} h`} />
+          <Stat label="Personal records" value={fmtNum(g.prCount)} />
+          <Stat label="Exercises tried" value={fmtNum(g.exercisesTried)} />
+          <Stat label="Active kcal" value={fmtNum(g.totalKcal)} />
+          <Stat label="Best streak" value={`${g.bestWeekStreak} wk`} />
+        </div>
       </div>
+    </div>
+  );
+}
 
-      {tab === 'achievements' && <Achievements />}
-      {tab === 'ranks' && <Ranks />}
-      {tab === 'legends' && <Legends />}
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="label">{label}</div>
+      <div className="value">{value}</div>
     </div>
   );
 }
 
 function Achievements() {
   const g = useGame();
-  const [showRules, setShowRules] = useState(false);
+  const [cat, setCat] = useState<AchievementCategory | 'All'>('All');
   const unlockedById = new Map(g.unlocked.map((a) => [a.id, a]));
+  const latest = g.unlocked.slice(-8).reverse();
+  const cats = cat === 'All' ? CATS : [cat];
   return (
     <div className="stack-lg">
-      <button className="btn block" onClick={() => setShowRules((v) => !v)}>{showRules ? 'Hide' : '📜 How XP works'}</button>
-      {showRules && (
-        <div className="card stack small dim" style={{ lineHeight: 1.5 }}>
-          <div><b className="accent">+{RULES.visitXp}</b> per gym day (first workout of the day)</div>
-          <div><b className="accent">+{RULES.setXp}</b> per completed set</div>
-          <div><b className="accent">+1</b> per {RULES.volumeKgPerXp} kg moved (weight × reps; dumbbells count both, assisted machines count bodyweight − assistance)</div>
-          <div><b className="accent">+1</b> per workout minute (max {RULES.watchMinCap}) and <b className="accent">+1</b> per {RULES.kcalPerXp} active kcal (max {RULES.kcalXpCap}) from your watch</div>
-          <div><b className="gold">+{RULES.weightPrXp}</b> for a weight PR, <b className="gold">+{RULES.e1rmPrXp}</b> for a best set (more reps at a weight)</div>
-          <div><b className="accent">+{RULES.newExerciseXp}</b> the first time you try an exercise</div>
-          <div><b className="accent">+{RULES.weeklyGoalXp}</b> when you hit your weekly goal</div>
-          <div>🔥 <b>Streak bonus:</b> +{RULES.streakStepPct}% base XP for every consecutive week you hit your goal (up to +{RULES.streakStepPct * RULES.streakCapWeeks}%)</div>
-          <div>🌧️ <b className="accent">+{RULES.rainXp}</b> rain · 🥶 <b className="accent">+{RULES.coldXp}</b> at ≤5 °C (+{RULES.freezingXp} more at ≤0 °C) · 🥵 <b className="accent">+{RULES.heatXp}</b> at ≥33 °C</div>
-          <div>🧉 <b className="accent">+{RULES.holidayXp}</b> for training on an Argentine national holiday</div>
-          <div><b className="accent">+{RULES.weighInXp}</b> for a weigh-in (once per week)</div>
-          <div>🏅 Achievements give one-time bonus XP. Ranks need both a level <i>and</i> a number of gym visits.</div>
-          <div className="muted">Everything is recalculated from your log, so editing an old workout updates XP and records correctly.</div>
+      <div className="card row" style={{ gap: 16 }}>
+        <Ring pct={g.unlocked.length / ACHIEVEMENTS.length} size={64} stroke={6} color="var(--gold)">
+          <Icon name="trophy" size={24} style={{ color: 'var(--gold)' }} />
+        </Ring>
+        <div className="grow">
+          <div className="display" style={{ fontSize: '1.7rem' }}>{g.unlocked.length}<span className="dim" style={{ fontSize: '1rem' }}> / {ACHIEVEMENTS.length}</span></div>
+          <div className="tiny dim" style={{ marginTop: 4 }}>Achievements unlocked · each one pays bonus XP once</div>
+        </div>
+      </div>
+
+      {latest.length > 0 && (
+        <div className="stack">
+          <div className="section-title">Recently unlocked</div>
+          <div className="chips">
+            {latest.map((a) => (
+              <span key={a.id} className="chip" style={{ cursor: 'default', background: 'var(--gold-soft)', color: 'var(--gold)' }}>
+                {a.icon} {a.title} <span className="tiny" style={{ opacity: 0.7 }}>{fmtDate(a.date, { day: 'numeric', month: 'short' })}</span>
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
-      {CATS.map((cat) => {
-        const defs = ACHIEVEMENTS.filter((a) => a.category === cat);
+      <div className="chips">
+        {(['All', ...CATS] as const).map((c) => (
+          <button key={c} className={`chip${cat === c ? ' on' : ''}`} onClick={() => setCat(c)}>{c}</button>
+        ))}
+      </div>
+
+      {cats.map((c) => {
+        const defs = ACHIEVEMENTS.filter((a) => a.category === c);
+        if (!defs.length) return null;
         const done = defs.filter((a) => unlockedById.has(a.id)).length;
         return (
-          <div key={cat} className="stack">
-            <div className="section-title">{cat} · {done}/{defs.length}</div>
+          <div key={c} className="stack">
+            <div className="section-title">{c} · {done}/{defs.length}</div>
             <div className="ach-grid">
               {defs.map((a) => {
                 const u = unlockedById.get(a.id);
                 const prog = g.progress[a.id];
                 return (
                   <div key={a.id} className={`ach ${u ? 'unlocked' : 'locked'}`}>
-                    <div className="row between">
-                      <span className="icon">{a.icon}</span>
-                      <span className={`tiny bold ${u ? 'gold' : 'muted'}`}>+{fmtNum(a.xp)}</span>
-                    </div>
+                    <span className={`xp-chip xp${u ? ' gold' : ''}`}>+{fmtNum(a.xp)}</span>
+                    <div className="medal">{a.icon}</div>
                     <div className="title">{a.title}</div>
-                    <div className="tiny muted">{a.desc}</div>
+                    <div className="tiny dim" style={{ lineHeight: 1.35 }}>{a.desc}</div>
                     {u ? (
-                      <div className="tiny gold">✓ {fmtDate(u.date, { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                      <div className="tiny gold bold" style={{ marginTop: 4 }}>✓ {fmtDate(u.date, { day: 'numeric', month: 'short', year: 'numeric' })}</div>
                     ) : a.target && prog !== undefined ? (
-                      <div className="stack" style={{ gap: 4, marginTop: 2 }}>
+                      <div className="stack" style={{ gap: 4, marginTop: 6 }}>
                         <XpBar thin gold pct={prog / a.target} />
-                        <div className="tiny muted num">{fmtProgress(cat, prog)} / {fmtProgress(cat, a.target)}</div>
+                        <div className="tiny muted num">{fmtProgress(c, prog)} / {fmtProgress(c, a.target)}</div>
                       </div>
                     ) : null}
                   </div>
@@ -112,107 +204,28 @@ function Achievements() {
   );
 }
 
-function Ranks() {
-  const g = useGame();
-  const L = g.level;
-  const past = g.seasons.filter((x) => x.key !== g.season.key).reverse();
+function LegendCard({ p }: { p: LegendProgress }) {
+  const [open, setOpen] = useState(false);
   return (
-    <div className="stack-lg">
-      <div className="card stack small dim" style={{ lineHeight: 1.5 }}>
-        <b className="accent" style={{ fontSize: '1rem' }}>How progression works</b>
-        <div>⚡ <b>Level</b>: every workout adds XP. Early levels come every few weeks; later ones take months.</div>
-        <div>🎖️ <b>Rank</b> needs a level <i>and</i> enough gym visits, so it can't be rushed. Each rank has <b>4 stars</b>; rank points (RP) fill toward the next star with every workout. Your slower side (XP or visits) sets the pace.</div>
-        <div>🌦️ <b>Seasons</b> reset every 3 months: earn Bronze → Champion for staying consistent <i>now</i>. Your rank never resets.</div>
-        <div>🎯 <b>Weekly quests</b>: 3 small healthy challenges every Monday.</div>
-        <div>🏅 <b>Machine mastery</b>: each exercise earns Bronze → Master as you keep training it (see Progress → Strength).</div>
-        <div>👑 Past <b>Olympian</b> you keep earning service stars forever.</div>
-      </div>
-
-      <div className="stack">
-        <div className="section-title">Rank ladder</div>
-        <div className="card stack" style={{ gap: 10, '--rank-color': L.rank.color } as React.CSSProperties}>
-          <div className="row between">
-            <span className="bold" style={{ color: L.rank.color }}>{L.rank.title} <Stars info={L} /></span>
-            <span className="tiny muted">{Math.round(L.rankPct * 100)}% through this rank</span>
-          </div>
-          <RankProgress info={L} visits={g.visits} />
-        </div>
-        <div className="card tight ladder">
-          {RANKS.map((r) => {
-            const current = r === L.rank;
-            const reached = RANKS.indexOf(r) <= RANKS.indexOf(L.rank);
-            return (
-              <div key={r.title} className={`rung${current ? ' current' : ''}`} style={{ opacity: reached ? 1 : 0.55 }}>
-                <span className="dot" style={{ background: r.color }} />
-                <span className="grow bold" style={{ color: current ? r.color : undefined }}>
-                  {r.title}
-                  {current && <span style={{ marginLeft: 6 }}><Stars info={L} size="0.8rem" /></span>}
-                </span>
-                <span className="tiny muted num" style={{ textAlign: 'right' }}>
-                  Lv {r.minLevel} · {fmtNum(xpForLevel(r.minLevel))} XP<br />{fmtNum(r.minVisits)} visits
-                </span>
-                <span style={{ width: 16 }}>{reached ? '✓' : ''}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="stack">
-        <div className="section-title">Season</div>
-        <div className="card"><SeasonCard s={g.season} /></div>
-        <div className="card tight stack small dim" style={{ gap: 4, padding: 12 }}>
-          {SEASON_TIERS.map((t, i) => (
-            <div key={t.name} className="row between">
-              <span>{t.icon} {t.name}</span>
-              <span className="num">{t.name === 'Champion' ? 'weekly goal hit every week' : `${g.season.targets[i]} visits`} · +{t.xp} XP</span>
-            </div>
-          ))}
-        </div>
-        {past.length > 0 && (
-          <>
-            <div className="section-title">Past seasons</div>
-            <div className="ach-grid">
-              {past.map((x) => {
-                const t = x.tier >= 0 ? SEASON_TIERS[x.tier] : null;
-                return (
-                  <div key={x.key} className={`ach ${t ? 'unlocked' : 'locked'}`}>
-                    <span className="icon">{t?.icon ?? '🌱'}</span>
-                    <div className="title">{x.label}</div>
-                    <div className="tiny" style={{ color: t?.color ?? 'var(--muted)' }}>{t?.name ?? 'Unranked'} · {plural(x.visits, 'visit')}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function LegendCard({ p, hero }: { p: LegendProgress; hero?: boolean }) {
-  const [open, setOpen] = useState(!!hero);
-  return (
-    <div className="card stack" style={hero ? { borderColor: 'rgba(110, 240, 154, 0.4)' } : undefined}>
-      <button className="row" style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', width: '100%', textAlign: 'left' }} onClick={() => setOpen((v) => !v)}>
-        <span style={{ fontSize: '1.8rem' }}>{p.legend.icon}</span>
+    <div className="card stack">
+      <button className="row" style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', width: '100%', textAlign: 'left' }} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+        <Ring pct={p.pct} size={52} stroke={4.5} color="var(--gold)"><span style={{ fontSize: '1.4rem' }}>{p.legend.icon}</span></Ring>
         <div className="grow stack" style={{ gap: 2 }}>
           <span className="bold">{p.legend.name}</span>
-          <span className="tiny muted">{p.legend.blurb}</span>
+          <span className="tiny dim">{p.legend.blurb}</span>
         </div>
-        <span className="bold num" style={{ fontSize: '1.3rem', color: hero ? 'var(--accent)' : 'var(--gold)' }}>{Math.round(p.pct * 100)}%</span>
+        <span className="display gold" style={{ fontSize: '1.2rem' }}>{Math.round(p.pct * 100)}%</span>
+        <Icon name={open ? 'chevU' : 'chevD'} size={16} style={{ color: 'var(--muted)' }} />
       </button>
-      <XpBar pct={p.pct} gold={!hero} />
       {open && (
-        <div className="stack" style={{ gap: 8 }}>
+        <div className="stack" style={{ gap: 10, marginTop: 4 }}>
           {p.rows.map((r) => (
-            <div key={r.metric.key} className="stack" style={{ gap: 3 }}>
+            <div key={r.metric.key} className="stack" style={{ gap: 5 }}>
               <div className="row between small">
                 <span className="dim">{r.metric.label}</span>
-                <span className="num">{fmtNum(r.mine, 1)} / {fmtNum(r.metric.target)} {r.metric.unit}</span>
+                <span className="num bold">{fmtNum(r.mine, 1)} <span className="muted">/ {fmtNum(r.metric.target)} {r.metric.unit}</span></span>
               </div>
-              <XpBar thin pct={r.pct} gold={!hero} />
+              <XpBar thin pct={r.pct} gold />
             </div>
           ))}
           {p.legend.note && <p className="tiny muted" style={{ lineHeight: 1.45 }}>{p.legend.note}</p>}
@@ -227,21 +240,51 @@ function Legends() {
   const legends = LEGENDS.map((l) => compare(g, l));
   return (
     <div className="stack">
-      <p className="small dim">
-        How close are you? Each bar averages your gym days and best <b>barbell</b> lifts (estimated 1-rep max from your sets) against theirs. Machine weights aren't comparable, so log the barbell bench, squat or deadlift to move those bars.
+      <p className="small dim" style={{ lineHeight: 1.5, padding: '0 4px' }}>
+        How close are you? Each score averages your gym days and best <b>barbell</b> lifts (estimated 1-rep max) against theirs. Machine weights aren't comparable, so log barbell bench, squat or deadlift to move those bars.
       </p>
-      <div className="section-title">Your goal</div>
-      <a href="#/hero" className="card card-link row" style={{ gap: 14, borderColor: 'rgba(110, 240, 154, 0.4)' }}>
-        <span style={{ fontSize: '1.8rem' }}>{g.hero.stage.icon}</span>
-        <div className="grow stack" style={{ gap: 4 }}>
-          <span className="bold">Hero Physique · {g.hero.stage.name}</span>
-          <span className="tiny muted">Your Tom Holland goal: open the full breakdown →</span>
-        </div>
-        <span className="bold num accent" style={{ fontSize: '1.3rem' }}>{Math.round(g.hero.pct * 100)}%</span>
-      </a>
-      <div className="section-title">Legends</div>
       {legends.map((p) => <LegendCard key={p.legend.id} p={p} />)}
-      <p className="tiny muted">Legend numbers are commonly reported bests and rough estimates of training days, just for fun.</p>
+      <p className="tiny muted" style={{ padding: '0 4px' }}>Legend numbers are commonly reported bests and rough estimates of training days, just for fun.</p>
     </div>
+  );
+}
+
+function HowItWorks({ onClose }: { onClose: () => void }) {
+  const rule = (xp: number | string, text: React.ReactNode, gold?: boolean) => (
+    <Cell value={<span className={`xp-chip${gold ? ' gold' : ''}`}>+{xp}</span>} style={{ minHeight: 46 } as CSSProperties}>
+      <span className="grow small">{text}</span>
+    </Cell>
+  );
+  return (
+    <Sheet onClose={onClose} title="How progression works">
+      <div className="stack-lg">
+        <div className="stack prose">
+          <div>⚡ <b>Level</b>: every workout adds XP. Early levels come every few weeks; later ones take months.</div>
+          <div>🎖️ <b>Rank</b> needs a level <i>and</i> enough gym visits, so it can't be rushed. Each rank has <b>4 stars</b>; rank points fill toward the next star. Your slower side (XP or visits) sets the pace.</div>
+          <div>🌦️ <b>Seasons</b> reset every 3 months: earn Bronze → Champion for staying consistent <i>now</i>. Your rank never resets.</div>
+          <div>🎯 <b>Weekly quests</b>: 3 small healthy challenges, new every Monday.</div>
+          <div>🏅 <b>Machine mastery</b>: each exercise earns Bronze → Master as you keep training it (Progress → Strength).</div>
+          <div>👑 Past <b>Olympian</b> you keep earning service stars forever.</div>
+        </div>
+        <div className="stack">
+          <div className="section-title">XP per workout</div>
+          <div className="group">
+            {rule(RULES.visitXp, 'Per gym day (first workout of the day)')}
+            {rule(RULES.setXp, 'Per completed set')}
+            {rule(1, `Per ${RULES.volumeKgPerXp} kg moved (dumbbells count both, assisted = bodyweight − assist)`)}
+            {rule(1, `Per workout minute (max ${RULES.watchMinCap}) and per ${RULES.kcalPerXp} active kcal (max ${RULES.kcalXpCap})`)}
+            {rule(RULES.weightPrXp, 'Weight PR', true)}
+            {rule(RULES.e1rmPrXp, 'Best set (more reps at a weight)', true)}
+            {rule(RULES.newExerciseXp, 'First time trying an exercise')}
+            {rule(RULES.weeklyGoalXp, 'Hitting your weekly goal')}
+            {rule(`${RULES.streakStepPct}%`, `Base XP per consecutive goal week (up to +${RULES.streakStepPct * RULES.streakCapWeeks}%)`)}
+            {rule(RULES.rainXp, `Rain · ≤5 °C (+${RULES.coldXp}, +${RULES.freezingXp} more at ≤0 °C) · ≥33 °C (+${RULES.heatXp})`)}
+            {rule(RULES.holidayXp, 'Training on an Argentine national holiday')}
+            {rule(RULES.weighInXp, 'A weigh-in (once per week)')}
+          </div>
+          <p className="tiny muted" style={{ padding: '0 4px' }}>Everything is recalculated from your log, so editing an old workout updates XP and records correctly.</p>
+        </div>
+      </div>
+    </Sheet>
   );
 }

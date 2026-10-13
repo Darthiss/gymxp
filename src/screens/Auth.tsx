@@ -1,6 +1,19 @@
 import { useState } from 'react';
 import { checkRepo, type GhConfig } from '../lib/github';
+import { Ring } from '../components/ui';
+import { Icon } from '../components/Icon';
 import { createVault, failedAttempts, MAX_FAILS, unlock, wipeDevice, WrongPinError, type Unlocked } from '../lib/vault';
+
+/** App mark: a dumbbell inside a level ring. */
+function LogoMark({ locked }: { locked?: boolean }) {
+  return (
+    <div style={{ alignSelf: 'center' }}>
+      <Ring pct={0.72} size={84} stroke={6} color="var(--accent)">
+        <Icon name={locked ? 'lock' : 'dumbbell'} size={34} stroke={2.2} style={{ color: 'var(--accent)' }} />
+      </Ring>
+    </div>
+  );
+}
 
 const TOKEN_URL = 'https://github.com/settings/personal-access-tokens/new';
 const NEW_REPO_URL = 'https://github.com/new';
@@ -43,12 +56,13 @@ export function Setup({ onDone }: { onDone: (u: Unlocked) => void }) {
     <div className="auth-wrap">
       <form className="auth-box stack-lg" onSubmit={submit}>
         <div className="center stack" style={{ gap: 6 }}>
+          <LogoMark />
           <div className="logo">Gym<span>XP</span></div>
-          <p className="dim">One-time setup for this device</p>
+          <p className="dim">Level up at the gym. One-time setup for this device.</p>
         </div>
 
         <div className="card stack">
-          <h2>1 · Where your data lives</h2>
+          <h2 className="row" style={{ gap: 10 }}><span className="xp-chip">1</span>Where your data lives</h2>
           <ol className="steps-guide small">
             <li>
               <a href={NEW_REPO_URL} target="_blank" rel="noopener noreferrer">Create a new repository</a> named <b>gymxp-data</b>, set to <b>Private</b>. Leave it empty.
@@ -73,7 +87,7 @@ export function Setup({ onDone }: { onDone: (u: Unlocked) => void }) {
         </div>
 
         <div className="card stack">
-          <h2>2 · Lock it with a PIN</h2>
+          <h2 className="row" style={{ gap: 10 }}><span className="xp-chip">2</span>Lock it with a PIN</h2>
           <p className="small dim">
             You'll enter it when the app is locked. Use 6+ characters; a passphrase is stronger than digits. After {MAX_FAILS} wrong tries this device forgets the token (your data stays safe on GitHub).
           </p>
@@ -127,8 +141,9 @@ export function Unlock({ onDone }: { onDone: (u: Unlocked) => void }) {
     <div className="auth-wrap">
       <form className="auth-box stack-lg" onSubmit={submit}>
         <div className="center stack" style={{ gap: 6 }}>
-          <div style={{ fontSize: '2.6rem' }}>🔒</div>
+          <LogoMark locked />
           <div className="logo">Gym<span>XP</span></div>
+          <p className="small dim">Enter your PIN to continue</p>
         </div>
         <input
           className="input pin-input"

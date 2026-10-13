@@ -6,7 +6,9 @@ import { navigate } from '../lib/router';
 import { MUSCLE_GROUPS, type MuscleGroup } from '../lib/types';
 import { fmtDate, uid } from '../lib/util';
 import { ExerciseInfo } from '../components/ExerciseInfo';
-import { ExerciseThumb, PageHead, RepoPhoto, toast } from '../components/ui';
+import { Cell, CellIcon, ExerciseThumb, LargeTitle, PageHead, RepoPhoto, toast } from '../components/ui';
+import { Icon } from '../components/Icon';
+import { masteryOf } from '../lib/xp';
 import { SettingNote } from './Log';
 
 export function Guide() {
@@ -21,10 +23,16 @@ export function Guide() {
   const hasCustom = all.some((e) => e.custom);
 
   return (
-    <div className="stack">
-      <PageHead title="Exercise guide" right={<a className="btn sm" href="#/guide-edit/new">＋ My machine</a>} />
-      <p className="small dim">Find a machine, dumbbell or barbell exercise by body part or any name your coach used. Each one has start/end photos and step-by-step instructions.</p>
-      <input className="input" placeholder="Search: pulldown, pec deck, leg…" value={q} onChange={(e) => setQ(e.target.value)} />
+    <div className="stack fade-in">
+      <LargeTitle
+        eyebrow={`${all.length} exercises`}
+        title="Guide"
+        actions={<a className="icon-btn" href="#/guide-edit/new" aria-label="Add my own machine"><Icon name="camera" size={18} /></a>}
+      />
+      <div className="search">
+        <Icon name="search" size={17} />
+        <input className="input" placeholder="Pulldown, pec deck, leg…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search exercises" />
+      </div>
       {!q && (
         <div className="chips">
           {['All', ...(hasCustom ? ['Mine'] : []), ...Object.keys(EQUIPMENT_CHIPS), ...MUSCLE_GROUPS].map((g) => (
@@ -32,25 +40,25 @@ export function Guide() {
           ))}
         </div>
       )}
-      <div className="ex-grid">
+      <div className="ex-grid" style={{ marginTop: 4 }}>
         {list.map((e) => (
           <a key={e.id} className="ex-card" href={`#/guide/${encodeURIComponent(e.id)}`}>
             <ExerciseThumb ex={e} />
             <div className="body">
               <div className="name">{e.name}</div>
-              <div className="tiny muted ellipsis">{e.custom ? 'My machine' : `${e.group} · ${e.equipment}`}</div>
+              <div className="tiny dim ellipsis">{e.custom ? 'My machine' : `${e.group} · ${e.equipment}`}</div>
             </div>
           </a>
         ))}
       </div>
       {list.length === 0 && (
-        <div className="card stack center">
+        <div className="card stack center" style={{ alignItems: 'center' }}>
           <p className="dim">No match for “{q}”.</p>
-          <a className="btn primary" href="#/guide-edit/new">📷 Add it as my own machine</a>
+          <a className="btn primary" href="#/guide-edit/new"><Icon name="camera" size={18} /> Add it as my own machine</a>
         </div>
       )}
-      <p className="tiny muted center" style={{ marginTop: 12 }}>
-        Exercise photos & instructions: free-exercise-db (public domain).
+      <p className="tiny muted center" style={{ marginTop: 16 }}>
+        Photos & instructions: free-exercise-db (public domain).
       </p>
     </div>
   );
@@ -63,21 +71,23 @@ export function GuideDetail({ id }: { id: string }) {
   const ex = exMap.get(id);
   if (!ex) return <PageHead title="Not found" backTo="guide" />;
   const best = g.bests.get(id);
+  const m = best ? masteryOf(best.sessions) : null;
   return (
     <div className="stack-lg">
       <PageHead title={ex.name} backTo="guide" right={ex.custom ? <a className="btn sm" href={`#/guide-edit/${encodeURIComponent(id)}`}>Edit</a> : undefined} />
       <ExerciseInfo ex={ex} />
-      <div className="card stack">
-        <h3>My stats</h3>
-        <SettingNote exerciseId={id} value={settingFor(data, id)} equipment={ex.equipment} />
-        {best ? (
-          <a className="row between card-link" href={`#/lift/${encodeURIComponent(id)}`}>
-            <span className="small dim">Best {best.maxKg} kg · {best.sessions} sessions · last {fmtDate(best.lastDate)}</span>
-            <span className="small">Chart →</span>
-          </a>
-        ) : (
-          <span className="small muted">Not logged yet. Your first time earns +15 XP.</span>
-        )}
+      <div className="stack">
+        <div className="section-title">My stats</div>
+        <div className="group">
+          <div className="cell static"><SettingNote exerciseId={id} value={settingFor(data, id)} equipment={ex.equipment} /></div>
+          {best ? (
+            <Cell href={`#/lift/${encodeURIComponent(id)}`} icon={<CellIcon name="chart" color="#30d158" />}
+              title={`Best ${best.maxKg} kg · ${best.sessions} sessions`} sub={`${m?.current ? `${m.current.icon} ${m.current.name} mastery · ` : ''}last ${fmtDate(best.lastDate)}`} />
+          ) : (
+            <Cell icon={<CellIcon name="sparkles" color="#bf5af2" />} title="Not logged yet" sub="Your first time earns +15 XP" />
+          )}
+          <Cell href={`#/log?add=${encodeURIComponent(id)}`} icon={<CellIcon name="plus" color="#0a84ff" />} title="Add to a workout" />
+        </div>
       </div>
     </div>
   );
@@ -138,8 +148,8 @@ export function CustomExerciseEdit({ id }: { id: string }) {
     <div className="stack">
       <PageHead title={existing ? 'Edit machine' : 'My machine'} backTo="guide" />
       <p className="small dim">Don't know what it's called? Snap a photo at the gym and describe it. Ask your coach the name later.</p>
-      <label className="btn block" style={{ minHeight: 160, flexDirection: 'column', overflow: 'hidden', padding: photo ? 0 : 16 }}>
-        {uploading ? <span className="spinner" /> : photo ? <RepoPhoto path={photo} alt="Machine photo" className="thumb lg" /> : <><span style={{ fontSize: '2rem' }}>📷</span>Take / choose a photo</>}
+      <label className="btn block dashed" style={{ minHeight: 180, flexDirection: 'column', overflow: 'hidden', padding: photo ? 0 : 16, borderRadius: 'var(--r-lg)' }}>
+        {uploading ? <span className="spinner" /> : photo ? <RepoPhoto path={photo} alt="Machine photo" className="thumb lg" /> : <><Icon name="camera" size={30} />Take / choose a photo</>}
         <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
       </label>
       <label className="field">Name<input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Glute machine, the purple one" /></label>

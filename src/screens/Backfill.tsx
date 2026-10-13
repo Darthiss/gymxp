@@ -14,6 +14,7 @@ import type { AppData } from '../lib/types';
 import { buildSessions, freshImportDraft, PLAN_NAMES, type ImportDraft, type Plan, type PlanItem, type Row } from '../lib/backfill';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { Confetti, ExerciseThumb, LevelBadge, PageHead, Sheet, toast, XpBar } from '../components/ui';
+import { Icon } from '../components/Icon';
 
 export function Backfill() {
   const data = useData();
@@ -111,7 +112,7 @@ export function Backfill() {
   const fetchAllWeather = async () => {
     setFetchingWx(true);
     try {
-      const valid = draft.rows.filter((r) => /^d{4}-d{2}-d{2}$/.test(r.date) && r.date <= today());
+      const valid = draft.rows.filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.date) && r.date <= today());
       const wx = await lookupWeather(valid.map((r) => ({ date: r.date })));
       set((d) => ({ ...d, rows: d.rows.map((r) => { const w = wx.get(r.date); return w ? { ...r, tempC: String(w.tempC), rain: w.rain } : r; }) }));
       toast(`🌦️ Weather filled for ${plural(wx.size, 'day')}`);
@@ -163,24 +164,24 @@ export function Backfill() {
               {p.name} ({p.items.length})
             </button>
           ))}
-          <button className="chip" onClick={addPlan}>＋ Another workout</button>
+          <button className="chip accent" onClick={addPlan}><Icon name="plus" size={13} stroke={2.6} /> Another workout</button>
         </div>
         <p className="tiny muted">Did different machines on different days (e.g. legs one day, upper body another)? Make one workout for each.</p>
 
         <div className="card stack">
           <div className="row">
             <input className="input" value={plan.name} onChange={(e) => setPlan((p) => ({ ...p, name: e.target.value }))} aria-label="Workout name" />
-            {draft.plans.length > 1 && <button className="icon-btn" onClick={removePlan} aria-label="Delete this workout">🗑</button>}
+            {draft.plans.length > 1 && <button className="icon-btn" onClick={removePlan} aria-label="Delete this workout"><Icon name="trash" size={17} /></button>}
           </div>
 
           {plan.items.map((it, i) => {
             const ex = exMap.get(it.exerciseId);
             return (
-              <div key={it.exerciseId} className="card flat tight stack" style={{ gap: 8 }}>
+              <div key={it.exerciseId} className="card flat stack" style={{ gap: 8, padding: 12 }}>
                 <div className="row">
                   <ExerciseThumb ex={ex} />
                   <span className="grow bold small">{ex?.name ?? 'Unknown'}</span>
-                  <button className="icon-btn" aria-label="Remove" onClick={() => setPlan((p) => ({ ...p, items: p.items.filter((_, j) => j !== i) }))}>✕</button>
+                  <button className="icon-btn plain" aria-label="Remove" onClick={() => setPlan((p) => ({ ...p, items: p.items.filter((_, j) => j !== i) }))}><Icon name="x" size={17} /></button>
                 </div>
                 <div className="grid-2" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
                   <label className="field tiny">Sets<input className="input center" inputMode="numeric" value={it.sets} onChange={(e) => setItem(i, { sets: e.target.value })} /></label>
@@ -193,7 +194,7 @@ export function Backfill() {
           })}
           {plan.items.length > 0 && <p className="tiny muted">Start kg = what you lifted on your first day, End kg = your last day. Leave End empty if it stayed the same.</p>}
 
-          <button className="btn" style={{ borderStyle: 'dashed' }} onClick={() => setPicker(true)}>＋ Add machine</button>
+          <button className="btn dashed" onClick={() => setPicker(true)}><Icon name="plus" size={17} stroke={2.4} /> Add machine</button>
           {routines.length > 0 && (
             <div className="chips">
               {routines.map((r) => (
@@ -213,7 +214,7 @@ export function Backfill() {
 
         <div className="card stack">
           <button className="row between" style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', width: '100%' }} onClick={() => setShowPaste((v) => !v)}>
-            <span className="bold">📋 Paste a list of days</span>
+            <span className="bold row" style={{ gap: 8 }}><Icon name="clipboard" size={17} /> Paste a list of days</span>
             <span className="small muted">{showPaste ? '▲' : 'fastest ▼'}</span>
           </button>
           {showPaste && (
@@ -229,7 +230,7 @@ export function Backfill() {
         </div>
 
         {rows.map((r) => (
-          <div key={r.id} className="card tight stack" style={{ gap: 8 }}>
+          <div key={r.id} className="card stack" style={{ gap: 8, padding: 12 }}>
             <div className="row">
               <input className="input" type="date" value={r.date} max={today()} onChange={(e) => setRow(r.id, { date: e.target.value })} aria-label="Date" style={{ flex: 1 }} />
               {draft.plans.length > 1 && (
@@ -237,7 +238,7 @@ export function Backfill() {
                   {draft.plans.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               )}
-              <button className="icon-btn" aria-label="Remove day" onClick={() => set((d) => ({ ...d, rows: d.rows.filter((x) => x.id !== r.id) }))}>✕</button>
+              <button className="icon-btn plain" aria-label="Remove day" onClick={() => set((d) => ({ ...d, rows: d.rows.filter((x) => x.id !== r.id) }))}><Icon name="x" size={17} /></button>
             </div>
             <div className="grid-3" style={{ gap: 6 }}>
               <input className="input center" inputMode="numeric" placeholder="min" value={r.dur} onChange={(e) => setRow(r.id, { dur: e.target.value })} aria-label="Minutes" />
@@ -246,7 +247,7 @@ export function Backfill() {
             </div>
             <div className="row" style={{ gap: 6 }}>
               <div className="unit-input" style={{ flex: 1 }}>
-                <input className="input" inputMode="decimal" placeholder="temp" value={r.tempC ?? ''} onChange={(e) => setRow(r.id, { tempC: e.target.value.replace(/[^d.,-]/g, '') })} aria-label="Temperature" />
+                <input className="input" inputMode="decimal" placeholder="temp" value={r.tempC ?? ''} onChange={(e) => setRow(r.id, { tempC: e.target.value.replace(/[^\d.,-]/g, '') })} aria-label="Temperature" />
                 <span>°C</span>
               </div>
               <button className={`btn sm${r.rain ? ' primary' : ''}`} style={{ flex: 1, minHeight: 44 }} aria-pressed={!!r.rain} onClick={() => setRow(r.id, { rain: !r.rain })}>{r.rain ? '🌧️ Rain' : '☀️ No rain'}</button>
@@ -256,7 +257,7 @@ export function Backfill() {
             {r.date > today() && <span className="tiny danger">Date is in the future and will be skipped.</span>}
           </div>
         ))}
-        <button className="btn block" style={{ borderStyle: 'dashed' }} onClick={addRow}>＋ Add a day</button>
+        <button className="btn block dashed" onClick={addRow}><Icon name="plus" size={17} stroke={2.4} /> Add a day</button>
         {draft.rows.length > 0 && (
           <button className="btn block" disabled={fetchingWx} onClick={fetchAllWeather}>
             {fetchingWx ? <span className="spinner" /> : '🌦️ Fill in the weather for all days (approx. 7 pm unless set)'}
@@ -284,7 +285,7 @@ export function Backfill() {
           {preview.sessions.some((s) => !s.exercises.length) && <p className="tiny muted">Days whose workout has no machines yet only count the visit and watch stats.</p>}
         </div>
         <button className="btn primary big block" disabled={!preview.sessions.length} onClick={doImport}>
-          📥 Import {plural(preview.sessions.length, 'workout')}
+          <Icon name="download" size={19} /> Import {plural(preview.sessions.length, 'workout')}
         </button>
       </div>
 

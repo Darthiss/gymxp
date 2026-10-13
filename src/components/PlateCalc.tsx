@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sheet } from './ui';
+import { CloseButton, Sheet } from './ui';
 
 // Standard (IWF) plate colours so the picture matches what you see on the gym floor.
 const PLATES: { kg: number; color: string; h: number }[] = [
@@ -44,9 +44,9 @@ export function PlateCalc({ barKg, current, sets, onApply, onClose }: {
   return (
     <Sheet onClose={onClose}>
       <div className="stack">
-        <div className="row">
-          <h2 className="grow">🧮 Bar + plates</h2>
-          <button className="icon-btn" onClick={onClose} aria-label="Close">✕</button>
+        <div className="sheet-head" style={{ marginBottom: 0 }}>
+          <h2 className="grow">Bar + plates</h2>
+          <CloseButton onClick={onClose} />
         </div>
         <p className="small dim">Tap the plates on <b>one side</b> of the bar. GymXP doubles them and adds the bar.</p>
 
@@ -57,7 +57,7 @@ export function PlateCalc({ barKg, current, sets, onApply, onClose }: {
         </div>
 
         {/* Picture of one side of the bar */}
-        <div className="card flat row" style={{ minHeight: 92, gap: 3, overflowX: 'auto' }} aria-label="Plates on one side">
+        <div className="card flat row" style={{ minHeight: 96, gap: 3, overflowX: 'auto', background: '#0c0c0e' }} aria-label="Plates on one side">
           <div style={{ width: 34, height: 10, background: 'var(--muted)', borderRadius: 3, flex: 'none' }} />
           <div style={{ width: 8, height: 26, background: 'var(--muted)', borderRadius: 2, flex: 'none' }} />
           {sorted.map((kg, i) => {
@@ -81,7 +81,7 @@ export function PlateCalc({ barKg, current, sets, onApply, onClose }: {
         </div>
 
         <div className="card center stack" style={{ gap: 2 }}>
-          <div className="big-xp" style={{ fontSize: '2.4rem', color: 'var(--text)', fontWeight: 900 }}>{fmt(total)} kg</div>
+          <div className="display" style={{ fontSize: '2.6rem' }}>{fmt(total)}<span className="dim" style={{ fontSize: '0.45em', marginLeft: 4 }}>kg</span></div>
           <div className="small muted">
             {bar ? `${bar} kg bar` : 'no bar'}{sum ? ` + 2 × ${fmt(sum)} kg` : ''}
           </div>

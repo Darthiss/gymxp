@@ -3,15 +3,17 @@ import { getStore, useData } from '../lib/store';
 import { settingFor, useExerciseMap } from '../lib/game';
 import { computeGame, levelInfo, RULES, sortSessions, type PR, type SessionResult } from '../lib/xp';
 import { holidayOn } from '../lib/holidays';
+import { setLogMode, type LogMode } from '../lib/today';
 import { WeatherField } from '../components/WeatherField';
-import { navigate, type Route } from '../lib/router';
-import { num, nowTime, parseWatchText, today, uid, type WatchImport } from '../lib/util';
+import { back, navigate, type Route } from '../lib/router';
+import { fmtDate, fmtNum, num, nowTime, parseWatchText, plural, today, uid, type WatchImport } from '../lib/util';
 import type { AppData, Exercise, Session, SetEntry } from '../lib/types';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { PlateCalc } from '../components/PlateCalc';
 import { ExerciseInfo } from '../components/ExerciseInfo';
 import { Celebration } from '../components/Celebration';
-import { ExerciseThumb, PageHead, Sheet, toast, XpBar } from '../components/ui';
+import { Cell, CellIcon, ExerciseThumb, PageHead, Sheet, toast, XpBar } from '../components/ui';
+import { Icon } from '../components/Icon';
 
 interface DraftSet { kg: string; reps: string }
 interface DraftEx { exerciseId: string; sets: DraftSet[]; note?: string }
@@ -27,12 +29,24 @@ interface Draft {
   rain?: boolean;
   note: string;
   createdAt: number;
+  /** 'live' = logging at the gym (clock running); 'after' = filling it in afterwards. */
+  mode?: LogMode;
 }
 
 const str = (n: number | undefined) => (n ? String(n) : '');
 
-function freshDraft(): Draft {
-  return { id: uid(), date: today(), startTime: nowTime(), exercises: [], durationMin: '', kcal: '', avgHr: '', note: '', createdAt: Date.now() };
+function freshDraft(mode: LogMode = 'live'): Draft {
+  // Logging afterwards: don't stamp "now" as the start time. It would be wrong in your
+  // history, skew the weather hour and could unlock the early-bird / night-owl awards.
+  return { id: uid(), date: today(), startTime: mode === 'live' ? nowTime() : '', exercises: [], durationMin: '', kcal: '', avgHr: '', note: '', createdAt: Date.now(), mode };
+}
+
+/** Switch a draft between live and after-the-gym logging. */
+function withMode(d: Draft, mode: LogMode): Draft {
+  if ((d.mode ?? 'live') === mode) return d;
+  // A start time the app stamped automatically is meaningless once you log afterwards.
+  const stamped = d.exercises.length === 0 || d.startTime === '';
+  return { ...d, mode, startTime: mode === 'after' && stamped ? '' : mode === 'live' && !d.startTime ? nowTime() : d.startTime };
 }
 
 function fromSession(s: Session): Draft {
@@ -128,16 +142,17 @@ export function Log({ route }: { route: Route }) {
     if (loaded.current) return;
     loaded.current = true;
     (async () => {
-      let d = (await getStore().loadDraft<Draft>()) ?? freshDraft();
       const q = route.query;
       const p = (k: string) => q.get(k) ?? '';
+      let d = (await getStore().loadDraft<Draft>()) ?? freshDraft(q.get('after') === '1' ? 'after' : 'live');
+      if (q.get('after') === '1') d = withMode(d, 'after');
       if (q.has('dur') || q.has('kcal') || q.has('hr')) {
         const w = parseWatchText(['dur', 'kcal', 'hr', 'start'].filter((k) => q.has(k)).map((k) => `${k}=${p(k)}`).join(';'));
         d = applyWatch(d, w);
         setShowWatch(true);
         toast('⌚ Watch data imported');
       }
-      if (/^d{4}-d{2}-d{2}$/.test(p('date'))) d = { ...d, date: p('date') };
+      if (/^\d{4}-\d{2}-\d{2}$/.test(p('date'))) d = { ...d, date: p('date') };
       const addId = p('add');
       if (addId && exMap.has(addId) && !d.exercises.some((e) => e.exerciseId === addId)) d = { ...d, exercises: [...d.exercises, newEx(addId, d)] };
       const routine = data.routines.find((r) => r.id === p('routine') && !r.deleted);
@@ -194,7 +209,10 @@ export function Log({ route }: { route: Route }) {
       d.sessions = d.sessions.filter((x) => x.id !== s.id);
       d.sessions.push(s);
     }, `${editing ? 'Edit' : 'Log'} workout ${s.date}`);
-    if (!editing) void getStore().saveDraft(null);
+    if (!editing) {
+      void getStore().saveDraft(null);
+      setLogMode(draft.mode ?? 'live'); // the Start buttons follow how you last logged
+    }
     setCelebrate(result);
   };
 
@@ -226,39 +244,74 @@ export function Log({ route }: { route: Route }) {
   const pBefore = preview ? levelInfo(preview.xpBefore, preview.visitsBefore) : null;
   const pAfter = preview ? levelInfo(preview.xpAfter, preview.visitsAfter) : null;
   const infoEx = info ? exMap.get(info) : undefined;
+  const levelUp = !!(pAfter && pBefore && pAfter.level > pBefore.level);
+  const after = !editing && draft.mode === 'after';
+  const live = !editing && !after && draft.date === today() && !!draft.startTime;
+  const doneSets = draft.exercises.reduce((n, e) => n + e.sets.filter((x) => num(x.reps) > 0).length, 0);
+  const feriado = holidayOn(draft.date);
+  const routines = data.routines.filter((r) => !r.deleted);
 
   return (
     <div className="stack">
-      <PageHead title={editing ? 'Edit workout' : 'Workout'} backTo="" right={!editing && draft.exercises.length > 0 ? <button className="btn ghost sm muted" onClick={discard}>Discard</button> : undefined} />
-
-      {preview && pAfter && pBefore && (
-        <div className="sticky-xp stack" style={{ gap: 6 }}>
-          <div className="row between">
-            <span className="xp-pill" style={{ fontSize: '1.25rem' }}>+{preview.xp} XP</span>
-            <span className="small dim">
-              {pAfter.level > pBefore.level ? <b className="gold">LEVEL UP → {pAfter.level}!</b> : `Level ${pAfter.level} · ${Math.round(pAfter.pct * 100)}%`}
-              {preview.prs.length > 0 && <b className="gold"> · 🏆 {preview.prs.length} PR</b>}
-            </span>
+      <div className="live stack" style={{ gap: 10 }}>
+        <div className="row">
+          <button className="icon-btn" aria-label="Close" onClick={() => back('')}><Icon name="chevD" size={20} stroke={2.4} /></button>
+          <div className="grow center">
+            {live ? <Elapsed since={draft.startTime} /> : <div className="clock" style={{ fontSize: '1.15rem' }}>{editing ? 'Edit workout' : after ? 'Log workout' : fmtDate(draft.date, { weekday: 'short', day: 'numeric', month: 'short' })}</div>}
+            <div className="sub">{live ? `Started ${draft.startTime}` : editing || after ? fmtDate(draft.date, { weekday: 'long', day: 'numeric', month: 'short' }) : 'Past workout'} · {plural(doneSets, 'set')}</div>
           </div>
-          <XpBar thin pct={pAfter.pct} gold={pAfter.level > pBefore.level} />
+          <div style={{ textAlign: 'right', minWidth: 58 }}>
+            <div className="xp">+{fmtNum(preview?.xp ?? 0)}</div>
+            <div className="sub">XP</div>
+          </div>
+        </div>
+        {pAfter && (
+          <div className="row" style={{ gap: 8 }}>
+            <span className="tiny bold" style={{ color: pAfter.rank.color }}>Lv {pAfter.level}</span>
+            <div className="grow"><XpBar thin pct={pAfter.pct} gold={levelUp} /></div>
+            {levelUp ? <span className="tiny bold gold">LEVEL UP!</span> : <span className="tiny dim num">{Math.round(pAfter.pct * 100)}%</span>}
+            {preview && preview.prs.length > 0 && <span className="tag gold">🏆 {preview.prs.length}</span>}
+          </div>
+        )}
+      </div>
+
+      {feriado && <div className="banner">🧉 <span><b>{feriado}</b>: training on a feriado earns +{RULES.holidayXp} XP</span></div>}
+
+      {after && (
+        <div className="stack" style={{ gap: 10 }}>
+          <div className="section-title">When did you train?</div>
+          <div className="group">
+            <Cell icon={<CellIcon name="calendar" color="#ff453a" />} title="Date">
+              <input className="bare" type="date" value={draft.date} max={today()} onChange={(e) => set((d) => ({ ...d, date: e.target.value }))} aria-label="Date" />
+            </Cell>
+            <Cell icon={<CellIcon name="clock" color="#ff9f0a" />} title="Started at" sub={draft.startTime ? undefined : 'Optional · used for weather and time-of-day awards'}>
+              <input className="bare" type="time" value={draft.startTime} onChange={(e) => set((d) => ({ ...d, startTime: e.target.value }))} aria-label="Start time" />
+            </Cell>
+            <Cell icon={<CellIcon name="history" color="#5e5ce6" />} title="Duration" sub="1 XP per minute (max 150)">
+              <div className="unit-input" style={{ width: 96 }}>
+                <input className="input" inputMode="numeric" placeholder="—" value={draft.durationMin} onChange={(e) => set((d) => ({ ...d, durationMin: e.target.value }))} aria-label="Duration in minutes" style={{ minHeight: 36, paddingLeft: 8, paddingRight: 34 }} />
+                <span>min</span>
+              </div>
+            </Cell>
+            <Cell icon={<CellIcon name="watch" color="#30d158" />} title="Paste from Apple Watch" sub="Fills start time, duration, kcal and heart rate" onClick={pasteWatch} />
+          </div>
         </div>
       )}
 
-      <div className="grid-2">
-        <label className="field">
-          Date
-          <input className="input" type="date" value={draft.date} max={today()} onChange={(e) => set((d) => ({ ...d, date: e.target.value }))} />
-        </label>
-        <label className="field">
-          Start time
-          <input className="input" type="time" value={draft.startTime} onChange={(e) => set((d) => ({ ...d, startTime: e.target.value }))} />
-        </label>
-      </div>
-
-      {holidayOn(draft.date) && (
-        <div className="notice good small">🧉 <b>{holidayOn(draft.date)}</b>: training on a feriado earns +{RULES.holidayXp} XP!</div>
+      {draft.exercises.length === 0 && (
+        <div className="card center stack" style={{ padding: '28px 20px', alignItems: 'center' }}>
+          <span style={{ fontSize: '2.2rem' }}>🏋️</span>
+          <h3>What are you training?</h3>
+          <p className="small dim" style={{ lineHeight: 1.5 }}>Add the machines you use. Not sure what one is called? Browse by body part and tap ⓘ to see photos.</p>
+          {routines.length > 0 && (
+            <div className="row-wrap" style={{ justifyContent: 'center', marginTop: 4 }}>
+              {routines.map((r) => (
+                <button key={r.id} className="chip accent" onClick={() => addExercise(r.exerciseIds.filter((id) => exMap.has(id)))}><Icon name="play" size={11} fill stroke={0} /> {r.name}</button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
-      <WeatherField date={draft.date} startTime={draft.startTime} tempC={draft.tempC ?? ''} rain={!!draft.rain} onChange={(w) => set((d) => ({ ...d, ...w }))} />
 
       {draft.exercises.map((e, i) => {
         const ex = exMap.get(e.exerciseId);
@@ -266,95 +319,112 @@ export function Log({ route }: { route: Route }) {
         const prs = preview?.prs.filter((p) => p.exerciseId === e.exerciseId) ?? [];
         const isNew = preview?.newExercises.includes(e.exerciseId);
         const setting = settingFor(data, e.exerciseId);
+        const c = cols(ex);
         return (
-          <div key={e.exerciseId} className="card stack" style={{ gap: 10 }}>
-            <div className="row">
-              <button className="list-item" style={{ padding: 0, width: 'auto', flex: 1, minWidth: 0 }} onClick={() => setInfo(e.exerciseId)}>
-                <ExerciseThumb ex={ex} />
+          <div key={e.exerciseId} className="ex-block">
+            <div className="ex-head">
+              <button className="row grow" style={{ background: 'none', border: 0, padding: 0, textAlign: 'left', cursor: 'pointer', minWidth: 0 }} onClick={() => setInfo(e.exerciseId)}>
+                <ExerciseThumb ex={ex} className="thumb sm" />
                 <div className="grow">
-                  <div className="bold">{ex?.name ?? 'Unknown exercise'}</div>
-                  <div className="tiny muted">
-                    {last ? `Last: ${last.map((s) => `${s.kg}×${s.reps}`).join(', ')}` : 'First time, sets your baseline'}
-                  </div>
+                  <div className="name">{ex?.name ?? 'Unknown exercise'}</div>
+                  <div className="last ellipsis">{last ? `Last: ${last.map((s) => `${s.kg}×${s.reps}`).join(' · ')}` : 'First time · sets your baseline'}</div>
                 </div>
               </button>
-              <button className="icon-btn" aria-label="Remove exercise" onClick={() => set((d) => ({ ...d, exercises: d.exercises.filter((_, j) => j !== i) }))}>✕</button>
+              <button className="icon-btn plain" aria-label="Remove exercise" onClick={() => set((d) => ({ ...d, exercises: d.exercises.filter((_, j) => j !== i) }))}><Icon name="x" size={17} stroke={2.4} /></button>
             </div>
 
             {(prs.length > 0 || isNew) && (
               <div className="pr-flash">
-                {prs.map(prText).join(' · ')}
-                {isNew && <span className="accent">✨ New exercise +15 XP</span>}
+                {prs.map((p, k) => <span key={k} className="tag gold">{prText(p)}</span>)}
+                {isNew && <span className="tag accent">✨ New exercise +{RULES.newExerciseXp} XP</span>}
               </div>
             )}
 
             <SettingNote exerciseId={e.exerciseId} value={setting} equipment={ex?.equipment} />
 
             <div className="set-row set-head">
-              <span className="center">#</span>
-              <span className="center">{cols(ex).kg}</span>
-              <span className="center">{cols(ex).reps}</span>
+              <span className="center">Set</span>
+              <span className="center">{c.kg}</span>
+              <span className="center">{c.reps}</span>
               <span />
             </div>
             {e.sets.map((st, k) => (
               <div key={k} className="set-row">
-                <span className="idx">{k + 1}</span>
+                <span className={`idx${num(st.reps) > 0 ? ' done' : ''}`}>{num(st.reps) > 0 ? <Icon name="check" size={13} stroke={3.4} /> : k + 1}</span>
                 <div className="unit-input">
-                  <input className="input" inputMode="decimal" value={st.kg} placeholder={last?.[k] ? String(last[k].kg) : '0'} aria-label={`Set ${k + 1} weight`}
+                  <input className="input" inputMode="decimal" value={st.kg} placeholder={last?.[k] ? String(last[k].kg) : '0'} aria-label={`Set ${k + 1} ${c.kg}`}
                     onChange={(ev) => setEx(i, (x) => ({ ...x, sets: x.sets.map((y, m) => (m === k ? { ...y, kg: ev.target.value } : y)) }))} />
-                  <span>{cols(ex).kgUnit}</span>
+                  <span>{c.kgUnit}</span>
                 </div>
                 <div className="unit-input">
-                  <input className="input" inputMode="numeric" value={st.reps} placeholder={last?.[k] ? String(last[k].reps) : '—'} aria-label={`Set ${k + 1} reps`}
+                  <input className="input" inputMode="numeric" value={st.reps} placeholder={last?.[k] ? String(last[k].reps) : '—'} aria-label={`Set ${k + 1} ${c.reps}`}
                     onChange={(ev) => setEx(i, (x) => ({ ...x, sets: x.sets.map((y, m) => (m === k ? { ...y, reps: ev.target.value } : y)) }))} />
-                  <span>{cols(ex).repsUnit}</span>
+                  <span>{c.repsUnit}</span>
                 </div>
-                <button className="icon-btn" aria-label={`Remove set ${k + 1}`} onClick={() => setEx(i, (x) => ({ ...x, sets: x.sets.filter((_, m) => m !== k) }))}>−</button>
+                <button className="icon-btn plain" aria-label={`Remove set ${k + 1}`} onClick={() => setEx(i, (x) => ({ ...x, sets: x.sets.filter((_, m) => m !== k) }))}><Icon name="minus" size={16} stroke={2.6} /></button>
               </div>
             ))}
-            <div className="row">
-              <button className="btn sm grow" onClick={() => setEx(i, (x) => ({ ...x, sets: [...x.sets, { kg: x.sets[x.sets.length - 1]?.kg ?? '', reps: '' }] }))}>＋ Set</button>
+            <div className="row" style={{ gap: 8 }}>
+              <button className="btn sm tint grow" onClick={() => setEx(i, (x) => ({ ...x, sets: [...x.sets, { kg: x.sets[x.sets.length - 1]?.kg ?? '', reps: '' }] }))}><Icon name="plus" size={15} stroke={2.6} /> Set</button>
               {last && (
                 <button className="btn sm grow" onClick={() => setEx(i, (x) => ({ ...x, sets: last.map((s) => ({ kg: String(s.kg), reps: String(s.reps) })) }))}>
-                  ↺ Same as last time
+                  <Icon name="repeat" size={15} /> Same as last
                 </button>
               )}
-              {ex?.barKg !== undefined && <button className="btn sm" onClick={() => setPlates(i)}>🧮 Plates</button>}
+              {ex?.barKg !== undefined && <button className="btn sm" onClick={() => setPlates(i)} aria-label="Plate calculator"><Icon name="calc" size={16} /> Plates</button>}
             </div>
           </div>
         );
       })}
 
-      <button className="btn block big" style={{ borderStyle: 'dashed' }} onClick={() => setPicker(true)}>
-        ＋ Add exercise
+      <button className="btn block big dashed" onClick={() => setPicker(true)}>
+        <Icon name="plus" size={20} stroke={2.4} /> Add exercise
       </button>
 
-      <div className="card stack">
-        <button className="row between" style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', width: '100%' }} onClick={() => setShowWatch((v) => !v)}>
-          <span className="bold">⌚ Apple Watch stats</span>
-          <span className="small muted">{draft.durationMin ? `${draft.durationMin} min · ${draft.kcal || 0} kcal` : showWatch ? '▲' : 'optional ▼'}</span>
-        </button>
-        {(showWatch || draft.durationMin) && (
+      <div className="section-title" style={{ marginTop: 14 }}>Session details</div>
+      <div className="group">
+        {!after && (
           <>
+            <Cell icon={<CellIcon name="calendar" color="#ff453a" />} title="Date">
+              <input className="bare" type="date" value={draft.date} max={today()} onChange={(e) => set((d) => ({ ...d, date: e.target.value }))} aria-label="Date" />
+            </Cell>
+            <Cell icon={<CellIcon name="clock" color="#ff9f0a" />} title="Start time">
+              <input className="bare" type="time" value={draft.startTime} onChange={(e) => set((d) => ({ ...d, startTime: e.target.value }))} aria-label="Start time" />
+            </Cell>
+          </>
+        )}
+        <div className="cell static" style={{ display: 'block' }}>
+          <WeatherField date={draft.date} startTime={draft.startTime} tempC={draft.tempC ?? ''} rain={!!draft.rain} onChange={(w) => set((d) => ({ ...d, ...w }))} />
+        </div>
+        <Cell icon={<CellIcon name="watch" color="#30d158" />} title="Apple Watch" onClick={() => setShowWatch((v) => !v)} chevron={false}
+          sub={draft.durationMin ? `${draft.durationMin} min · ${draft.kcal || 0} kcal${draft.avgHr ? ` · ${draft.avgHr} bpm` : ''}` : 'Minutes and calories earn XP'}>
+          <Icon name={showWatch ? 'chevU' : 'chevD'} size={16} style={{ color: 'var(--muted)' }} />
+        </Cell>
+        {showWatch && (
+          <div className="cell static stack" style={{ alignItems: 'stretch', gap: 10 }}>
             <div className="grid-3">
               <label className="field">Minutes<input className="input center" inputMode="numeric" value={draft.durationMin} onChange={(e) => set((d) => ({ ...d, durationMin: e.target.value }))} /></label>
               <label className="field">Active kcal<input className="input center" inputMode="numeric" value={draft.kcal} onChange={(e) => set((d) => ({ ...d, kcal: e.target.value }))} /></label>
               <label className="field">Avg ♥ bpm<input className="input center" inputMode="numeric" value={draft.avgHr} onChange={(e) => set((d) => ({ ...d, avgHr: e.target.value }))} /></label>
             </div>
-            <button className="btn sm" onClick={pasteWatch}>📋 Paste from Shortcut</button>
+            <button className="btn sm" onClick={pasteWatch}><Icon name="clipboard" size={16} /> Paste from Shortcut</button>
             <p className="tiny muted">Type them from the Fitness app, or run the GymXP Shortcut and tap Paste (setup in Settings → Apple Watch).</p>
-          </>
+          </div>
         )}
+        <div className="cell static" style={{ alignItems: 'flex-start' }}>
+          <CellIcon name="note" color="#636366" />
+          <textarea className="input grow" style={{ background: 'transparent', padding: '4px 0', minHeight: 60, boxShadow: 'none' }} value={draft.note} placeholder="Notes: how did it feel?" onChange={(e) => set((d) => ({ ...d, note: e.target.value }))} aria-label="Notes" />
+        </div>
       </div>
 
-      <label className="field">
-        Notes
-        <textarea className="input" value={draft.note} placeholder="How did it feel?" onChange={(e) => set((d) => ({ ...d, note: e.target.value }))} />
-      </label>
-
-      <button className="btn primary big block" onClick={save}>
-        {editing ? 'Save changes' : `Finish workout${preview ? ` · +${preview.xp} XP` : ''}`}
-      </button>
+      {!editing && (
+        <div className="row" style={{ justifyContent: 'center', gap: 4 }}>
+          <button className="btn ghost sm" onClick={() => set((d) => withMode(d, after ? 'live' : 'after'))}>
+            <Icon name={after ? 'clock' : 'history'} size={15} /> {after ? 'At the gym now? Use the live clock' : 'Back from the gym? Log it afterwards'}
+          </button>
+          {draft.exercises.length > 0 && <button className="btn ghost sm" style={{ color: 'var(--danger)' }} onClick={discard}>Discard</button>}
+        </div>
+      )}
       {editing && (
         confirmDelete ? (
           <div className="notice bad stack small">
@@ -362,10 +432,16 @@ export function Log({ route }: { route: Route }) {
             <div className="row"><button className="btn danger grow" onClick={remove}>Delete</button><button className="btn grow" onClick={() => setConfirmDelete(false)}>Cancel</button></div>
           </div>
         ) : (
-          <button className="btn danger block" onClick={() => setConfirmDelete(true)}>Delete workout</button>
+          <button className="btn danger block" onClick={() => setConfirmDelete(true)}><Icon name="trash" size={17} /> Delete workout</button>
         )
       )}
-      {!editing && draft.exercises.length === 0 && <p className="small muted center">Not sure what a machine is called? Tap “Add exercise”, then ⓘ to see photos.</p>}
+
+      <div className="action-bar">
+        <button className="btn primary big block" onClick={save}>
+          {editing ? 'Save changes' : 'Finish workout'}
+          {!editing && preview && preview.xp > 0 && <span style={{ opacity: 0.6, fontFamily: 'var(--font-round)' }}>· +{fmtNum(preview.xp)} XP</span>}
+        </button>
+      </div>
 
       {plates !== null && draft.exercises[plates] && (
         <PlateCalc
@@ -381,17 +457,29 @@ export function Log({ route }: { route: Route }) {
       )}
       {picker && <ExercisePicker exclude={draft.exercises.map((e) => e.exerciseId)} onClose={() => setPicker(false)} onPick={(id) => addExercise([id])} onPickMany={addExercise} />}
       {infoEx && (
-        <Sheet onClose={() => setInfo(null)}>
-          <div className="row" style={{ marginBottom: 12 }}>
-            <h2 className="grow">{infoEx.name}</h2>
-            <button className="icon-btn" onClick={() => setInfo(null)} aria-label="Close">✕</button>
-          </div>
+        <Sheet onClose={() => setInfo(null)} title={infoEx.name}>
           <ExerciseInfo ex={infoEx} />
         </Sheet>
       )}
       {celebrate && <Celebration result={celebrate} onClose={() => navigate(`session/${celebrate.id}`, true)} />}
     </div>
   );
+}
+
+/** Live workout clock counting up from the start time. */
+function Elapsed({ since }: { since: string }) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(t);
+  }, []);
+  const [h, m] = since.split(':').map(Number);
+  const start = new Date(now);
+  start.setHours(h, m, 0, 0);
+  const sec = Math.max(0, Math.floor((now.getTime() - start.getTime()) / 1000));
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const text = sec >= 3600 ? `${Math.floor(sec / 3600)}:${pad(Math.floor(sec / 60) % 60)}:${pad(sec % 60)}` : `${pad(Math.floor(sec / 60))}:${pad(sec % 60)}`;
+  return <div className="clock" role="timer" aria-label={`Elapsed ${text}`}>{text}</div>;
 }
 
 /** Per-machine settings memo ("seat 4, back pad 2"), synced with your data. */
@@ -401,9 +489,10 @@ export function SettingNote({ exerciseId, value, equipment }: { exerciseId: stri
   const [v, setV] = useState(value);
   if (!edit)
     return (
-      <button className="btn ghost sm" style={{ justifyContent: 'flex-start', padding: '4px 0', minHeight: 0, color: value ? 'var(--text-2)' : 'var(--muted)', fontWeight: 500 }}
+      <button className="chip" style={{ alignSelf: 'flex-start', maxWidth: '100%', color: value ? 'var(--text)' : 'var(--text-2)', fontWeight: value ? 600 : 500 }}
         onClick={() => { setV(value); setEdit(true); }}>
-        {freeWeight ? '📝' : '⚙️'} {value || (freeWeight ? 'Add a note (bench angle, grip…)' : 'Add machine settings (seat height, pin…)')}
+        <Icon name={freeWeight ? 'pencil' : 'sliders'} size={14} />
+        <span className="ellipsis">{value || (freeWeight ? 'Add a note (bench angle, grip…)' : 'Add machine settings (seat, pin…)')}</span>
       </button>
     );
   const saveIt = () => {

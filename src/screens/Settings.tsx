@@ -9,7 +9,8 @@ import { navigate } from '../lib/router';
 import { fmtDate, num, toISODate, today, uid } from '../lib/util';
 import type { Profile, Sex } from '../lib/types';
 import { ExercisePicker } from '../components/ExercisePicker';
-import { ExerciseThumb, PageHead, SyncBadge, toast } from '../components/ui';
+import { CellIcon, ExerciseThumb, PageHead, SyncBadge, toast } from '../components/ui';
+import { Icon } from '../components/Icon';
 
 export function Settings() {
   return (
@@ -49,7 +50,7 @@ function ProfileCard() {
   const age = p.birthYear ? new Date().getFullYear() - p.birthYear : null;
   return (
     <div className="card stack">
-      <h2>Profile</h2>
+      <h2 className="row" style={{ gap: 10 }}><CellIcon name="user" color="#0a84ff" />Profile</h2>
       <label className="field">Name<input className="input" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></label>
       <div className="grid-2">
         <label className="field">
@@ -87,14 +88,14 @@ function RoutinesCard() {
   return (
     <div className="card stack">
       <div className="row between">
-        <h2>Routines</h2>
-        <a className="btn sm" href="#/routine/new">＋ New</a>
+        <h2 className="row" style={{ gap: 10 }}><CellIcon name="list" color="#bf5af2" />Routines</h2>
+        <a className="btn sm tint" href="#/routine/new"><Icon name="plus" size={15} stroke={2.6} /> New</a>
       </div>
       <p className="small dim">Save your coach's plan (e.g. “Day A: legs”) to load all its machines into a workout with one tap.</p>
       {routines.map((r) => (
         <a key={r.id} className="list-item" href={`#/routine/${r.id}`}>
           <span className="grow bold">{r.name}</span>
-          <span className="small muted">{r.exerciseIds.length} exercises ›</span>
+          <span className="small muted">{r.exerciseIds.length} exercises</span><Icon name="chevR" size={16} style={{ color: 'var(--muted)' }} />
         </a>
       ))}
     </div>
@@ -125,17 +126,17 @@ export function RoutineEdit({ id }: { id: string }) {
     <div className="stack">
       <PageHead title={existing ? 'Edit routine' : 'New routine'} backTo="settings" />
       <label className="field">Name<input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Day A: legs & back" /></label>
-      <div className="card tight stack" style={{ gap: 2 }}>
+      <div className="card stack" style={{ gap: 2, padding: 8 }}>
         {ids.map((eid, i) => (
           <div key={eid} className="row" style={{ padding: 6 }}>
             <ExerciseThumb ex={exById.get(eid)} />
             <span className="grow bold small">{exById.get(eid)?.name ?? 'Unknown'}</span>
-            <button className="icon-btn" onClick={() => move(i, -1)} aria-label="Move up">↑</button>
-            <button className="icon-btn" onClick={() => move(i, 1)} aria-label="Move down">↓</button>
-            <button className="icon-btn" onClick={() => setIds((l) => l.filter((x) => x !== eid))} aria-label="Remove">✕</button>
+            <button className="icon-btn plain" onClick={() => move(i, -1)} aria-label="Move up"><Icon name="arrowUp" size={17} /></button>
+            <button className="icon-btn plain" onClick={() => move(i, 1)} aria-label="Move down"><Icon name="arrowDown" size={17} /></button>
+            <button className="icon-btn plain" onClick={() => setIds((l) => l.filter((x) => x !== eid))} aria-label="Remove"><Icon name="x" size={17} /></button>
           </div>
         ))}
-        <button className="btn" onClick={() => setPicker(true)}>＋ Add exercise</button>
+        <button className="btn dashed" onClick={() => setPicker(true)}><Icon name="plus" size={17} stroke={2.4} /> Add exercise</button>
       </div>
       <button className="btn primary big block" onClick={save}>Save routine</button>
       {existing && <button className="btn danger block" onClick={remove}>Delete routine</button>}
@@ -150,7 +151,7 @@ function WatchCard() {
   return (
     <div className="card stack">
       <div className="row between">
-        <h2>⌚ Apple Watch</h2>
+        <h2 className="row" style={{ gap: 10 }}><CellIcon name="watch" color="#30d158" />Apple Watch</h2>
         <button className="btn sm" onClick={() => setOpen((v) => !v)}>{open ? 'Hide' : 'Set up'}</button>
       </div>
       <p className="small dim">Workout minutes and active calories earn XP. Enter them by hand, or build a one-tap iOS Shortcut that grabs your latest workout.</p>
@@ -219,7 +220,7 @@ function SecurityCard() {
 
   return (
     <div className="card stack">
-      <h2>🔐 Security</h2>
+      <h2 className="row" style={{ gap: 10 }}><CellIcon name="shield" color="#8e8e93" />Security</h2>
       <p className="small dim">
         Data repo: <b>{session.unlocked.cfg.owner}/{session.unlocked.cfg.repo}</b> (private). The token is stored on this device encrypted with your PIN (AES-256, PBKDF2 600k).
       </p>
@@ -230,9 +231,9 @@ function SecurityCard() {
         </select>
       </label>
       <div className="row-wrap">
-        <button className="btn grow" onClick={session.lock}>🔒 Lock now</button>
-        <button className="btn grow" onClick={() => setMode(mode === 'pin' ? 'none' : 'pin')}>Change PIN</button>
-        <button className="btn grow" onClick={() => setMode(mode === 'token' ? 'none' : 'token')}>New token</button>
+        <button className="btn sm grow" onClick={session.lock}><Icon name="lock" size={16} /> Lock now</button>
+        <button className="btn sm grow" onClick={() => setMode(mode === 'pin' ? 'none' : 'pin')}>Change PIN</button>
+        <button className="btn sm grow" onClick={() => setMode(mode === 'token' ? 'none' : 'token')}>New token</button>
       </div>
       {mode === 'pin' && (
         <div className="stack">
@@ -287,7 +288,7 @@ function DataCard() {
   return (
     <div className="card stack">
       <div className="row between">
-        <h2>Data & sync</h2>
+        <h2 className="row" style={{ gap: 10 }}><CellIcon name="sync" color="#64d2ff" />Data & sync</h2>
         <SyncBadge />
       </div>
       {st.error && <div className="notice bad small">{st.error}</div>}
@@ -296,11 +297,11 @@ function DataCard() {
         {st.lastSync ? ` · last synced ${fmtDate(toISODate(new Date(st.lastSync)), { day: 'numeric', month: 'short' })} ${new Date(st.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
       </p>
       <p className="tiny muted">Every save is a commit in your private repo, so GitHub keeps the full history of your data as a free backup.</p>
-      <a className="btn primary" href="#/import">📥 Import past workouts (from memory)</a>
+      <a className="btn tint" href="#/import"><Icon name="download" size={17} /> Import past workouts (from memory)</a>
       <div className="row-wrap">
-        <button className="btn grow" onClick={() => void getStore().syncNow()}>⟳ Sync now</button>
-        <button className="btn grow" onClick={exportJson}>⬇ Export JSON</button>
-        <label className="btn grow">⬆ Import<input type="file" accept="application/json,.json" className="hidden" onChange={(e) => importJson(e.target.files?.[0])} /></label>
+        <button className="btn grow" onClick={() => void getStore().syncNow()}><Icon name="sync" size={16} /> Sync</button>
+        <button className="btn grow" onClick={exportJson}><Icon name="download" size={16} /> Export</button>
+        <label className="btn grow"><Icon name="upload" size={16} /> Import<input type="file" accept="application/json,.json" className="hidden" onChange={(e) => importJson(e.target.files?.[0])} /></label>
       </div>
     </div>
   );

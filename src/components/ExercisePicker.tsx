@@ -4,7 +4,8 @@ import { useData } from '../lib/store';
 import { MUSCLE_GROUPS, type Exercise } from '../lib/types';
 import { sortSessions } from '../lib/xp';
 import { ExerciseInfo } from './ExerciseInfo';
-import { ExerciseThumb, Sheet } from './ui';
+import { CloseButton, ExerciseThumb, Sheet } from './ui';
+import { Icon } from './Icon';
 
 export function ExercisePicker({
   onPick,
@@ -49,15 +50,15 @@ export function ExercisePicker({
   if (info) {
     return (
       <Sheet onClose={onClose} full>
-        <div className="row" style={{ marginBottom: 12 }}>
-          <button className="icon-btn" onClick={() => setInfo(null)} aria-label="Back to list">←</button>
+        <div className="sheet-head">
+          <button className="icon-btn" onClick={() => setInfo(null)} aria-label="Back to list"><Icon name="chevL" size={20} stroke={2.4} /></button>
           <h2 className="grow">{info.name}</h2>
         </div>
         <div style={{ overflow: 'auto', flex: 1 }}>
           <ExerciseInfo ex={info} />
         </div>
         <button className="btn primary block big" style={{ marginTop: 12 }} disabled={exclude.includes(info.id)} onClick={() => onPick(info.id)}>
-          {exclude.includes(info.id) ? 'Already in this workout' : '+ Add to workout'}
+          {exclude.includes(info.id) ? 'Already added' : <><Icon name="plus" size={20} stroke={2.6} /> Add</>}
         </button>
       </Sheet>
     );
@@ -66,11 +67,14 @@ export function ExercisePicker({
   return (
     <Sheet onClose={onClose} full>
       <div className="stack" style={{ flex: 'none' }}>
-        <div className="row">
+        <div className="sheet-head" style={{ marginBottom: 0 }}>
           <h2 className="grow">Add exercise</h2>
-          <button className="icon-btn" onClick={onClose} aria-label="Close">✕</button>
+          <CloseButton onClick={onClose} />
         </div>
-        <input className="input" placeholder="Search: leg, chest press, pulldown…" value={q} onChange={(e) => setQ(e.target.value)} autoFocus={matchMedia('(min-width: 900px)').matches} />
+        <div className="search">
+          <Icon name="search" size={17} />
+          <input className="input" placeholder="Leg, chest press, pulldown…" value={q} onChange={(e) => setQ(e.target.value)} autoFocus={matchMedia('(min-width: 900px)').matches} aria-label="Search exercises" />
+        </div>
         {!q && (
           <div className="chips">
             {[...(hasRecent ? ['Recent'] : []), 'All', ...Object.keys(EQUIPMENT_CHIPS), ...MUSCLE_GROUPS].map((g) => (
@@ -83,8 +87,8 @@ export function ExercisePicker({
         {!q && routines.length > 0 && onPickMany && (
           <div className="chips">
             {routines.map((r) => (
-              <button key={r.id} className="chip" style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }} onClick={() => onPickMany(r.exerciseIds.filter((id) => !exclude.includes(id)))}>
-                ▶ {r.name} ({r.exerciseIds.length})
+              <button key={r.id} className="chip accent" onClick={() => onPickMany(r.exerciseIds.filter((id) => !exclude.includes(id)))}>
+                <Icon name="play" size={11} fill stroke={0} /> {r.name} · {r.exerciseIds.length}
               </button>
             ))}
           </div>
@@ -101,9 +105,9 @@ export function ExercisePicker({
                   <div className="bold ellipsis">{e.name}</div>
                   <div className="tiny muted ellipsis">{e.custom ? 'My machine' : e.aliases.slice(0, 2).join(' · ') || e.group}</div>
                 </div>
-                {added && <span className="tag">added</span>}
+                {added && <span className="tag accent"><Icon name="check" size={11} stroke={3} /> added</span>}
               </button>
-              <button className="icon-btn" onClick={() => setInfo(e)} aria-label={`What is ${e.name}?`} title="What is this?">ⓘ</button>
+              <button className="icon-btn plain" onClick={() => setInfo(e)} aria-label={`What is ${e.name}?`} title="What is this?"><Icon name="info" size={20} /></button>
             </div>
           );
         })}
