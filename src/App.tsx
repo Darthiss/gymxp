@@ -10,7 +10,8 @@ import { SessionView } from './screens/SessionView';
 import { LiftDetail, Progress } from './screens/Progress';
 import { CustomExerciseEdit, Guide, GuideDetail } from './screens/Guide';
 import { Awards } from './screens/Awards';
-import { RoutineEdit, Settings } from './screens/Settings';
+import { Settings } from './screens/Settings';
+import { RoutineEdit, RoutineGuide, Routines } from './screens/Routines';
 import { Backfill } from './screens/Backfill';
 import { Hero } from './screens/Hero';
 import { ToastHost } from './components/ui';
@@ -101,13 +102,16 @@ function Shell() {
   else if (p0 === 'settings') page = <Settings />;
   else if (p0 === 'import') page = <Backfill />;
   else if (p0 === 'hero') page = <Hero />;
-  else if (p0 === 'routine' && p1) page = <RoutineEdit key={p1} id={p1} />;
+  else if (p0 === 'routines' && p1) page = <RoutineGuide key={p1} id={p1} />;
+  else if (p0 === 'routines') page = <Routines />;
+  else if (p0 === 'routine-edit' && p1) page = <RoutineEdit key={p1} id={p1} />;
   else page = <Home />;
 
-  const tab = p0 === 'progress' || p0 === 'lift' || p0 === 'session' ? 'progress' : p0 === 'guide' || p0 === 'guide-edit' ? 'guide' : p0 === 'awards' || p0 === 'hero' ? 'awards' : p0 === 'log' ? 'log' : 'home';
-  const focus = p0 === 'log' || p0 === 'import'; // full-screen flows hide the tab bar
+  const tab = p0 === 'progress' || p0 === 'lift' || p0 === 'session' ? 'progress' : p0 === 'guide' || p0 === 'guide-edit' ? 'guide' : p0 === 'routines' || p0 === 'routine-edit' ? 'routines' : p0 === 'awards' || p0 === 'hero' ? 'awards' : p0 === 'log' ? 'log' : 'home';
+  const focus = p0 === 'log' || p0 === 'import' || (p0 === 'routines' && !!p1); // full-screen flows (and the gym guide) hide the tab bar
   const tabs: { id: string; href: string; ico: IconName; label: string }[] = [
     { id: 'home', href: '#/', ico: 'home', label: 'Today' },
+    { id: 'routines', href: '#/routines', ico: 'list', label: 'Routines' },
     { id: 'progress', href: '#/progress', ico: 'chart', label: 'Progress' },
     { id: 'guide', href: '#/guide', ico: 'book', label: 'Guide' },
     { id: 'awards', href: '#/awards', ico: 'trophy', label: 'Career' },

@@ -10,7 +10,8 @@ import { holidayOn } from '../lib/holidays';
 import { lookupWeather } from '../components/WeatherField';
 import { navigate } from '../lib/router';
 import { addDays, fmtDate, fmtNum, parseWorkoutLine, plural, today, uid } from '../lib/util';
-import type { AppData } from '../lib/types';
+import type { AppData, Routine } from '../lib/types';
+import { activeRoutines, firstReps, routineItems } from '../lib/routines';
 import { buildSessions, freshImportDraft, PLAN_NAMES, type ImportDraft, type Plan, type PlanItem, type Row } from '../lib/backfill';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { Confetti, ExerciseThumb, LevelBadge, PageHead, Sheet, toast, XpBar } from '../components/ui';
@@ -54,17 +55,21 @@ export function Backfill() {
 
   const plan = draft.plans[Math.min(activePlan, draft.plans.length - 1)];
   const loggedDates = new Set(data.sessions.filter((s) => !s.deleted).map((s) => s.date));
-  const routines = data.routines.filter((r) => !r.deleted);
+  const routines = activeRoutines(data);
   const set = (fn: (d: ImportDraft) => ImportDraft) => setDraft((d) => (d ? fn(d) : d));
   const setPlan = (fn: (p: Plan) => Plan) => set((d) => ({ ...d, plans: d.plans.map((p) => (p.id === plan.id ? fn(p) : p)) }));
   const setItem = (i: number, patch: Partial<PlanItem>) => setPlan((p) => ({ ...p, items: p.items.map((it, j) => (j === i ? { ...it, ...patch } : it)) }));
   const setRow = (id: string, patch: Partial<Row>) => set((d) => ({ ...d, rows: d.rows.map((r) => (r.id === id ? { ...r, ...patch } : r)) }));
   const nextPlanId = (rows: Row[]) => draft.plans[rows.length % draft.plans.length].id; // rotate A, B, C…
 
-  const addItems = (ids: string[]) => {
+  const addItems = (ids: string[], routine?: Routine) => {
+    const target = new Map(routine ? routineItems(routine).map((it) => [it.exerciseId, it]) : []);
     setPlan((p) => ({
       ...p,
-      items: [...p.items, ...ids.filter((id) => !p.items.some((it) => it.exerciseId === id)).map((exerciseId) => ({ exerciseId, sets: '3', reps: '10', startKg: '', endKg: '' }))],
+      items: [...p.items, ...ids.filter((id) => !p.items.some((it) => it.exerciseId === id)).map((exerciseId) => {
+        const t = target.get(exerciseId);
+        return { exerciseId, sets: String(t?.sets ?? 3), reps: String((t && firstReps(t.reps)) ?? 10), startKg: '', endKg: '' };
+      })],
     }));
     setPicker(false);
   };
@@ -198,7 +203,7 @@ export function Backfill() {
           {routines.length > 0 && (
             <div className="chips">
               {routines.map((r) => (
-                <button key={r.id} className="chip" onClick={() => addItems(r.exerciseIds)}>▶ Load “{r.name}”</button>
+                <button key={r.id} className="chip" onClick={() => addItems(r.exerciseIds, r)}>▶ Load “{r.name}”</button>
               ))}
             </div>
           )}

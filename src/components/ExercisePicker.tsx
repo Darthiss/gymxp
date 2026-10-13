@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { allExercises, EQUIPMENT_CHIPS, searchExercises } from '../lib/exercises';
 import { useData } from '../lib/store';
-import { MUSCLE_GROUPS, type Exercise } from '../lib/types';
+import { MUSCLE_GROUPS, type Exercise, type Routine } from '../lib/types';
+import { activeRoutines } from '../lib/routines';
 import { sortSessions } from '../lib/xp';
 import { ExerciseInfo } from './ExerciseInfo';
 import { CloseButton, ExerciseThumb, Sheet } from './ui';
@@ -14,7 +15,7 @@ export function ExercisePicker({
   exclude,
 }: {
   onPick: (id: string) => void;
-  onPickMany?: (ids: string[]) => void;
+  onPickMany?: (ids: string[], routine?: Routine) => void;
   onClose: () => void;
   exclude: string[];
 }) {
@@ -31,7 +32,7 @@ export function ExercisePicker({
     return ids;
   }, [data.sessions]);
 
-  const routines = data.routines.filter((r) => !r.deleted);
+  const routines = activeRoutines(data);
   const hasRecent = recentIds.length > 0;
   const activeGroup = group === 'Recent' && !hasRecent && !q ? 'All' : group;
 
@@ -87,7 +88,7 @@ export function ExercisePicker({
         {!q && routines.length > 0 && onPickMany && (
           <div className="chips">
             {routines.map((r) => (
-              <button key={r.id} className="chip accent" onClick={() => onPickMany(r.exerciseIds.filter((id) => !exclude.includes(id)))}>
+              <button key={r.id} className="chip accent" onClick={() => onPickMany(r.exerciseIds.filter((id) => !exclude.includes(id)), r)}>
                 <Icon name="play" size={11} fill stroke={0} /> {r.name} · {r.exerciseIds.length}
               </button>
             ))}

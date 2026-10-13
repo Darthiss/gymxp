@@ -7,7 +7,8 @@ import { setLogMode, type LogMode } from '../lib/today';
 import { WeatherField } from '../components/WeatherField';
 import { back, navigate, type Route } from '../lib/router';
 import { fmtDate, fmtNum, num, nowTime, parseWatchText, plural, today, uid, type WatchImport } from '../lib/util';
-import type { AppData, Exercise, Session, SetEntry } from '../lib/types';
+import type { AppData, Exercise, Routine, RoutineItem, Session, SetEntry } from '../lib/types';
+import { activeRoutines, fmtTarget, repsForSet, routineItems } from '../lib/routines';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { PlateCalc } from '../components/PlateCalc';
 import { ExerciseInfo } from '../components/ExerciseInfo';
@@ -16,7 +17,7 @@ import { Cell, CellIcon, ExerciseThumb, PageHead, Sheet, toast, XpBar } from '..
 import { Icon } from '../components/Icon';
 
 interface DraftSet { kg: string; reps: string }
-interface DraftEx { exerciseId: string; sets: DraftSet[]; note?: string }
+interface DraftEx { exerciseId: string; sets: DraftSet[]; note?: string; target?: Pick<RoutineItem, 'sets' | 'reps'> } // target: from the routine it was loaded with
 interface Draft {
   id: string;
   date: string;
@@ -109,7 +110,7 @@ function cols(ex?: Exercise) {
 }
 
 /** Sets from the most recent session (before `date`) that included this exercise. */
-function lastTime(data: AppData, exerciseId: string, date: string, excludeId: string): SetEntry[] | null {
+export function lastTime(data: AppData, exerciseId: string, date: string, excludeId: string): SetEntry[] | null {
   const ss = sortSessions(data.sessions).reverse();
   for (const s of ss) {
     if (s.id === excludeId || s.date > date) continue;
@@ -156,10 +157,7 @@ export function Log({ route }: { route: Route }) {
       const addId = p('add');
       if (addId && exMap.has(addId) && !d.exercises.some((e) => e.exerciseId === addId)) d = { ...d, exercises: [...d.exercises, newEx(addId, d)] };
       const routine = data.routines.find((r) => r.id === p('routine') && !r.deleted);
-      if (routine) {
-        const have = new Set(d.exercises.map((e) => e.exerciseId));
-        d = { ...d, exercises: [...d.exercises, ...routine.exerciseIds.filter((id) => !have.has(id) && exMap.has(id)).map((id) => newEx(id, d))] };
-      }
+      if (routine) d = withRoutine(d, routine.exerciseIds, routine);
       setDraft(d);
       if (q.toString()) navigate('log', true); // drop params so a reload doesn't re-import
     })();
@@ -172,10 +170,19 @@ export function Log({ route }: { route: Route }) {
     return () => window.clearTimeout(t);
   }, [draft, editing]);
 
-  const newEx = (exerciseId: string, d: Draft): DraftEx => {
+  const newEx = (exerciseId: string, d: Draft, plan?: RoutineItem): DraftEx => {
     const last = lastTime(data, exerciseId, d.date, d.id);
-    const n = exMap.get(exerciseId)?.benchmark ? 1 : (last?.length ?? 3);
-    return { exerciseId, sets: Array.from({ length: n }, (_, i) => ({ kg: last?.[i] ? String(last[i].kg) : '', reps: '' })) };
+    const n = exMap.get(exerciseId)?.benchmark ? 1 : (plan?.sets ?? last?.length ?? 3);
+    const kgAt = (i: number) => (last?.length ? String(last[Math.min(i, last.length - 1)].kg) : ''); // extra planned sets repeat the last weight
+    const sets = Array.from({ length: n }, (_, i) => ({ kg: kgAt(i), reps: '' }));
+    return { exerciseId, sets, ...(plan ? { target: { sets: plan.sets, reps: plan.reps } } : {}) };
+  };
+
+  /** Add exercises not already in the draft; from a routine they get its planned sets and rep target. */
+  const withRoutine = (d: Draft, ids: string[], routine?: Routine): Draft => {
+    const plan = new Map(routine ? routineItems(routine).map((it) => [it.exerciseId, it]) : []);
+    const add = ids.filter((id) => exMap.has(id) && !d.exercises.some((e) => e.exerciseId === id));
+    return { ...d, exercises: [...d.exercises, ...add.map((id) => newEx(id, d, plan.get(id)))] };
   };
 
   const deferred = useDeferredValue(draft);
@@ -192,8 +199,8 @@ export function Log({ route }: { route: Route }) {
   const set = (fn: (d: Draft) => Draft) => setDraft((d) => (d ? fn(d) : d));
   const setEx = (i: number, fn: (e: DraftEx) => DraftEx) => set((d) => ({ ...d, exercises: d.exercises.map((e, j) => (j === i ? fn(e) : e)) }));
 
-  const addExercise = (ids: string[]) => {
-    set((d) => ({ ...d, exercises: [...d.exercises, ...ids.filter((id) => !d.exercises.some((e) => e.exerciseId === id)).map((id) => newEx(id, d))] }));
+  const addExercise = (ids: string[], routine?: Routine) => {
+    set((d) => withRoutine(d, ids, routine));
     setPicker(false);
   };
 
@@ -249,7 +256,7 @@ export function Log({ route }: { route: Route }) {
   const live = !editing && !after && draft.date === today() && !!draft.startTime;
   const doneSets = draft.exercises.reduce((n, e) => n + e.sets.filter((x) => num(x.reps) > 0).length, 0);
   const feriado = holidayOn(draft.date);
-  const routines = data.routines.filter((r) => !r.deleted);
+  const routines = activeRoutines(data);
 
   return (
     <div className="stack">
@@ -306,7 +313,7 @@ export function Log({ route }: { route: Route }) {
           {routines.length > 0 && (
             <div className="row-wrap" style={{ justifyContent: 'center', marginTop: 4 }}>
               {routines.map((r) => (
-                <button key={r.id} className="chip accent" onClick={() => addExercise(r.exerciseIds.filter((id) => exMap.has(id)))}><Icon name="play" size={11} fill stroke={0} /> {r.name}</button>
+                <button key={r.id} className="chip accent" onClick={() => addExercise(r.exerciseIds, r)}><Icon name="play" size={11} fill stroke={0} /> {r.name}</button>
               ))}
             </div>
           )}
@@ -330,6 +337,7 @@ export function Log({ route }: { route: Route }) {
                   <div className="last ellipsis">{last ? `Last: ${last.map((s) => `${s.kg}×${s.reps}`).join(' · ')}` : 'First time · sets your baseline'}</div>
                 </div>
               </button>
+              {e.target && <span className="tag accent num" title="Your routine's target">{fmtTarget(e.target)}</span>}
               <button className="icon-btn plain" aria-label="Remove exercise" onClick={() => set((d) => ({ ...d, exercises: d.exercises.filter((_, j) => j !== i) }))}><Icon name="x" size={17} stroke={2.4} /></button>
             </div>
 
@@ -357,7 +365,7 @@ export function Log({ route }: { route: Route }) {
                   <span>{c.kgUnit}</span>
                 </div>
                 <div className="unit-input">
-                  <input className="input" inputMode="numeric" value={st.reps} placeholder={last?.[k] ? String(last[k].reps) : '—'} aria-label={`Set ${k + 1} ${c.reps}`}
+                  <input className="input" inputMode="numeric" value={st.reps} placeholder={e.target?.reps ? repsForSet(e.target.reps, k) : last?.[k] ? String(last[k].reps) : '—'} aria-label={`Set ${k + 1} ${c.reps}`}
                     onChange={(ev) => setEx(i, (x) => ({ ...x, sets: x.sets.map((y, m) => (m === k ? { ...y, reps: ev.target.value } : y)) }))} />
                   <span>{c.repsUnit}</span>
                 </div>

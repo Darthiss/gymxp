@@ -4,12 +4,9 @@ import { useSession } from '../lib/session';
 import { checkRepo } from '../lib/github';
 import { AUTOLOCK_OPTIONS, changePin, getAutolockMin, setAutolockMin, touchKey, updateConfig, wipeDevice } from '../lib/vault';
 import { mergeData, normalizeData } from '../lib/merge';
-import { allExercises } from '../lib/exercises';
-import { navigate } from '../lib/router';
-import { fmtDate, num, toISODate, today, uid } from '../lib/util';
+import { fmtDate, num, toISODate, today } from '../lib/util';
 import type { Profile, Sex } from '../lib/types';
-import { ExercisePicker } from '../components/ExercisePicker';
-import { CellIcon, ExerciseThumb, PageHead, SyncBadge, toast } from '../components/ui';
+import { CellIcon, PageHead, SyncBadge, toast } from '../components/ui';
 import { Icon } from '../components/Icon';
 
 export function Settings() {
@@ -17,7 +14,6 @@ export function Settings() {
     <div className="stack-lg">
       <PageHead title="Settings" backTo="" />
       <ProfileCard />
-      <RoutinesCard />
       <WatchCard />
       <SecurityCard />
       <DataCard />
@@ -78,69 +74,6 @@ function ProfileCard() {
           <button className="btn ghost sm" onClick={() => getStore().update((d) => { d.profile = { ...d.profile, weatherLat: null, weatherLon: null, updatedAt: Date.now() }; }, 'Forget weather location')}>Forget</button>
         </div>
       )}
-    </div>
-  );
-}
-
-function RoutinesCard() {
-  const data = useData();
-  const routines = data.routines.filter((r) => !r.deleted);
-  return (
-    <div className="card stack">
-      <div className="row between">
-        <h2 className="row" style={{ gap: 10 }}><CellIcon name="list" color="#bf5af2" />Routines</h2>
-        <a className="btn sm tint" href="#/routine/new"><Icon name="plus" size={15} stroke={2.6} /> New</a>
-      </div>
-      <p className="small dim">Save your coach's plan (e.g. “Day A: legs”) to load all its machines into a workout with one tap.</p>
-      {routines.map((r) => (
-        <a key={r.id} className="list-item" href={`#/routine/${r.id}`}>
-          <span className="grow bold">{r.name}</span>
-          <span className="small muted">{r.exerciseIds.length} exercises</span><Icon name="chevR" size={16} style={{ color: 'var(--muted)' }} />
-        </a>
-      ))}
-    </div>
-  );
-}
-
-export function RoutineEdit({ id }: { id: string }) {
-  const data = useData();
-  const existing = data.routines.find((r) => r.id === id && !r.deleted);
-  const [name, setName] = useState(existing?.name ?? '');
-  const [ids, setIds] = useState<string[]>(existing?.exerciseIds ?? []);
-  const [picker, setPicker] = useState(false);
-  const exById = new Map(allExercises(data).map((e) => [e.id, e]));
-  const move = (i: number, dir: -1 | 1) => setIds((l) => { const n = [...l]; const j = i + dir; if (j < 0 || j >= n.length) return l; [n[i], n[j]] = [n[j], n[i]]; return n; });
-
-  const save = () => {
-    if (!name.trim()) return toast('Name the routine');
-    const rec = { id: existing?.id ?? uid(), updatedAt: Date.now(), name: name.trim(), exerciseIds: ids };
-    getStore().update((d) => { d.routines = d.routines.filter((r) => r.id !== rec.id); d.routines.push(rec); }, `Routine ${rec.name}`);
-    navigate('settings', true);
-  };
-  const remove = () => {
-    getStore().update((d) => { const r = d.routines.find((x) => x.id === id); if (r) { r.deleted = true; r.updatedAt = Date.now(); } }, 'Delete routine');
-    navigate('settings', true);
-  };
-
-  return (
-    <div className="stack">
-      <PageHead title={existing ? 'Edit routine' : 'New routine'} backTo="settings" />
-      <label className="field">Name<input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Day A: legs & back" /></label>
-      <div className="card stack" style={{ gap: 2, padding: 8 }}>
-        {ids.map((eid, i) => (
-          <div key={eid} className="row" style={{ padding: 6 }}>
-            <ExerciseThumb ex={exById.get(eid)} />
-            <span className="grow bold small">{exById.get(eid)?.name ?? 'Unknown'}</span>
-            <button className="icon-btn plain" onClick={() => move(i, -1)} aria-label="Move up"><Icon name="arrowUp" size={17} /></button>
-            <button className="icon-btn plain" onClick={() => move(i, 1)} aria-label="Move down"><Icon name="arrowDown" size={17} /></button>
-            <button className="icon-btn plain" onClick={() => setIds((l) => l.filter((x) => x !== eid))} aria-label="Remove"><Icon name="x" size={17} /></button>
-          </div>
-        ))}
-        <button className="btn dashed" onClick={() => setPicker(true)}><Icon name="plus" size={17} stroke={2.4} /> Add exercise</button>
-      </div>
-      <button className="btn primary big block" onClick={save}>Save routine</button>
-      {existing && <button className="btn danger block" onClick={remove}>Delete routine</button>}
-      {picker && <ExercisePicker exclude={ids} onClose={() => setPicker(false)} onPick={(eid) => { setIds((l) => [...l, eid]); setPicker(false); }} />}
     </div>
   );
 }

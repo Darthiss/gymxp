@@ -45,7 +45,12 @@ function sampleData(): AppData {
     d.sessions.push(s);
   });
   for (let i = 0; i < 10; i++) d.weights.push({ id: uid(), updatedAt: 1, date: addDays(t, -70 + i * 7), kg: Math.round((72.4 - i * 0.25 + (r() - 0.5) * 0.6) * 10) / 10 });
-  d.routines = names.map((n, i) => ({ id: `r${i}`, updatedAt: 1, name: `Day ${'ABC'[i]} · ${n}`, exerciseIds: PLANS[n].map((x) => x[0]) }));
+  const reps = ['12/10/8', '10', '10', '12', '15'];
+  d.routines = names.map((n, i) => ({
+    id: `r${i}`, updatedAt: 1, name: `Day ${'ABC'[i]} · ${n}`, exerciseIds: PLANS[n].map((x) => x[0]),
+    items: PLANS[n].map(([exerciseId], k) => ({ exerciseId, sets: k === 0 ? 4 : 3, reps: reps[k], ...(k < 3 ? { restSec: k === 0 ? 120 : 90 } : {}), ...(k === 1 ? { note: 'Slow on the way down' } : {}) })),
+    ...(i === 0 ? { note: '10 min on the bike to warm up' } : {}),
+  }));
   d.exerciseSettings = [{ id: 'Leg_Press', updatedAt: 1, note: 'Seat 5 · feet high on the plate' }];
   return d;
 }

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { computeGame, levelForXp, xpForLevel, RULES } from './xp';
 import { exerciseMap } from './exercises';
-import { emptyData, type AppData, type Session } from './types';
+import { emptyData, type AppData, type Routine, type Session } from './types';
+import { activeRoutines, firstReps, fmtRest, fmtTarget, hitTarget, lastDone, repsForSet, routineItems, upNextRoutine } from './routines';
 import { mergeData } from './merge';
 import { parseDuration, parseWatchText, parseWorkoutLine, weekKey } from './util';
 import { deriveKey, seal, unseal } from './crypto';
@@ -380,5 +381,57 @@ describe('hero physique', () => {
     const p = game(d).hero.pillars.find((x) => x.id === 'stronger')!;
     // leg press +30%, chest press +37.5% → median ≈ 33.75% → score ≈ 0.675
     expect(p.score).toBeCloseTo(0.675, 2);
+  });
+});
+
+describe('routines', () => {
+  const routine = (id: string, name: string, exerciseIds: string[], extra: Partial<Routine> = {}): Routine => ({ id, updatedAt: 1, name, exerciseIds, ...extra });
+
+  it('older routines without targets default to 3 sets', () => {
+    const r = routine('a', 'Day A', ['Leg_Press', 'Leg_Extensions']);
+    expect(routineItems(r)).toEqual([{ exerciseId: 'Leg_Press', sets: 3, reps: '' }, { exerciseId: 'Leg_Extensions', sets: 3, reps: '' }]);
+    expect(fmtTarget(routineItems(r)[0])).toBe('3 sets');
+  });
+
+  it('formats and splits rep targets', () => {
+    expect(fmtTarget({ sets: 3, reps: '10' })).toBe('3 × 10');
+    expect(repsForSet('12/10/8', 0)).toBe('12');
+    expect(repsForSet('12/10/8', 2)).toBe('8');
+    expect(repsForSet('12/10/8', 3)).toBe('8'); // extra sets repeat the last target
+    expect(repsForSet('8-12', 1)).toBe('8-12');
+    expect(firstReps('8-12')).toBe(8);
+    expect(firstReps('max')).toBeNull();
+    expect(fmtRest(90)).toBe('90 s');
+    expect(fmtRest(150)).toBe('2.5 min');
+  });
+
+  it('suggests more weight only when every planned set hit the top of its target', () => {
+    const set = (...reps: number[]) => reps.map((r) => ({ kg: 40, reps: r }));
+    expect(hitTarget({ exerciseId: 'x', sets: 3, reps: '10' }, set(10, 10, 10))).toBe(true);
+    expect(hitTarget({ exerciseId: 'x', sets: 3, reps: '10' }, set(10, 10, 9))).toBe(false);
+    expect(hitTarget({ exerciseId: 'x', sets: 3, reps: '10' }, set(12, 12))).toBe(false); // missed a set
+    expect(hitTarget({ exerciseId: 'x', sets: 3, reps: '8-12' }, set(12, 11, 10))).toBe(false);
+    expect(hitTarget({ exerciseId: 'x', sets: 3, reps: '12/10/8' }, set(12, 10, 8))).toBe(true);
+    expect(hitTarget({ exerciseId: 'x', sets: 3, reps: '' }, set(20, 20, 20))).toBe(false);
+    expect(hitTarget({ exerciseId: 'x', sets: 3, reps: '10' }, null)).toBe(false);
+  });
+
+  it('tracks last done and picks the routine you are due for', () => {
+    const a = routine('a', 'Day A', ['Leg_Press', 'Leg_Extensions', 'Seated_Leg_Curl']);
+    const b = routine('b', 'Day B', ['Butterfly', 'Machine_Bench_Press']);
+    const d = emptyData();
+    d.routines = [b, a];
+    d.sessions = [
+      sess('2026-10-01', [{ exerciseId: 'Leg_Press', sets: [{ kg: 80, reps: 10 }] }, { exerciseId: 'Seated_Leg_Curl', sets: [{ kg: 30, reps: 10 }] }]),
+      sess('2026-10-03', [{ exerciseId: 'Butterfly', sets: [{ kg: 30, reps: 10 }] }]),
+      sess('2026-10-05', [{ exerciseId: 'Leg_Extensions', sets: [{ kg: 30, reps: 10 }] }]), // 1/3 of Day A: doesn't count
+    ];
+    const rs = activeRoutines(d);
+    expect(rs.map((r) => r.name)).toEqual(['Day A', 'Day B']);
+    const done = lastDone(d, rs);
+    expect(done.get('a')).toBe('2026-10-01');
+    expect(done.get('b')).toBe('2026-10-03');
+    expect(upNextRoutine(rs, done)?.id).toBe('a');
+    expect(upNextRoutine([a], done)).toBeNull(); // nothing to rotate
   });
 });

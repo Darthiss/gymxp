@@ -66,9 +66,20 @@ export interface CustomExercise extends Rec {
   assisted?: boolean;
 }
 
+/** One step of a routine: the coach's target for an exercise. */
+export interface RoutineItem {
+  exerciseId: string;
+  sets: number; // planned sets (series)
+  reps: string; // target per set: "10", a range "8-12", a pyramid "12/10/8" or "30 s"
+  restSec?: number;
+  note?: string; // coach's cue, e.g. "slow on the way down"
+}
+
 export interface Routine extends Rec {
   name: string;
-  exerciseIds: string[];
+  exerciseIds: string[]; // kept in sync with `items` so older data and app versions still work
+  items?: RoutineItem[]; // missing on routines saved before targets existed
+  note?: string;
 }
 
 // Per-exercise machine settings ("seat 4, back pad 2") — keyed by exercise id.

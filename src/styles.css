@@ -220,7 +220,7 @@ button.cell:active, a.cell:active { background: rgba(255, 255, 255, 0.05); }
 .icon-btn.glass { background: var(--glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: var(--glass-edge); }
 .icon-btn.plain { background: transparent; color: var(--text-2); }
 
-label.field { display: flex; flex-direction: column; gap: 6px; font-size: 0.82rem; font-weight: 550; color: var(--text-2); }
+label.field, div.field { display: flex; flex-direction: column; gap: 6px; font-size: 0.82rem; font-weight: 550; color: var(--text-2); }
 .input, select.input, textarea.input {
   width: 100%; min-height: 46px; padding: 10px 14px; border-radius: 12px; border: 0;
   background: var(--surface-2); color: var(--text); font-size: 16px; /* 16px stops iOS zoom */
@@ -368,6 +368,27 @@ ol.steps li::before { content: counter(s); width: 24px; height: 24px; border-rad
 .set-row { display: grid; grid-template-columns: 30px 1fr 1fr 34px; gap: 8px; align-items: center; }
 .set-row .idx { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--fill); color: var(--text-2); font-weight: 700; font-size: 0.78rem; font-variant-numeric: tabular-nums; }
 .set-row .idx.done { background: var(--accent); color: var(--accent-ink); }
+/* ---------- Routines ---------- */
+.routine-card { gap: 6px; }
+.thumbs { display: flex; margin-top: 6px; }
+.thumbs .thumb { box-shadow: 0 0 0 2.5px var(--surface); margin-right: -6px; font-size: 0.75rem; }
+.thumbs .more { background: var(--surface-3); color: var(--text-2); font-weight: 700; }
+.ex-block.done { opacity: 0.5; }
+.ex-block .target { font-family: var(--font-round); font-weight: 800; font-size: 1.3rem; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.coach-note { font-size: 0.86rem; color: var(--text); background: var(--surface-2); border-radius: var(--r-sm); padding: 8px 12px; line-height: 1.4; }
+.set-dots { display: flex; flex-wrap: wrap; gap: 10px; }
+.set-dot {
+  width: 52px; height: 52px; border-radius: 50%; border: 0; background: var(--fill); color: var(--text); cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; touch-action: manipulation;
+  font-variant-numeric: tabular-nums; transition: background 0.2s, color 0.2s, transform 0.16s var(--spring);
+}
+.set-dot b { font-family: var(--font-round); font-size: 1.05rem; font-weight: 800; }
+.set-dot small { font-size: 0.58rem; font-weight: 650; color: var(--text-2); margin-top: 2px; }
+.set-dot:active { transform: scale(0.9); }
+.set-dot.done { background: var(--accent); color: var(--accent-ink); }
+.stepper { display: flex; align-items: center; justify-content: space-between; min-height: 46px; border-radius: 12px; background: var(--surface-2); color: var(--text); }
+.stepper span { font-size: 1.05rem; font-weight: 700; }
+.stepper button { width: 38px; height: 46px; display: grid; place-items: center; border: 0; background: none; color: var(--accent); cursor: pointer; }
 .set-head { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
 .unit-input { position: relative; }
 .unit-input .input { padding-right: 40px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; font-family: var(--font-round); font-size: 17px; min-height: 44px; }

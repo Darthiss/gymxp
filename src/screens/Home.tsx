@@ -6,6 +6,7 @@ import { GoalList, PlayerCard, QuestList } from '../components/Progression';
 import { WorkoutRow } from '../components/WorkoutRow';
 import { greeting, logHref, logMode, upNext, weekDays } from '../lib/today';
 import { holidayOn } from '../lib/holidays';
+import { activeRoutines, lastDone, upNextRoutine } from '../lib/routines';
 import { fmtDate, fmtKg, fmtNum, plural, today } from '../lib/util';
 import { Icon } from '../components/Icon';
 import { LargeTitle, SectionHead, SyncBadge } from '../components/ui';
@@ -18,7 +19,12 @@ export function Home() {
   const exMap = useExerciseMap();
   const goal = data.profile.weeklyGoal || 3;
   const recent = useMemo(() => sortSessions(data.sessions).reverse().slice(0, 3), [data.sessions]);
-  const routines = data.routines.filter((r) => !r.deleted);
+  // Routine shortcuts open the gym guide; the one you're due for comes first.
+  const routines = useMemo(() => {
+    const all = activeRoutines(data);
+    const next = upNextRoutine(all, lastDone(data, all));
+    return next ? [next, ...all.filter((r) => r !== next)].map((r) => ({ r, next: r === next })) : all.map((r) => ({ r, next: false }));
+  }, [data]);
   const trainedToday = data.sessions.some((s) => !s.deleted && s.date === today());
   const feriado = holidayOn(today());
   const goals = useMemo(() => upNext(g).slice(0, 4), [g]);
@@ -86,9 +92,9 @@ export function Home() {
             <a className="chip" href={logHref(after ? 'live' : 'after')} style={{ color: 'var(--text-2)' }}>
               <Icon name={after ? 'clock' : 'history'} size={14} /> {after ? 'Start live instead' : 'Log it afterwards'}
             </a>
-            {routines.map((r) => (
-              <a key={r.id} className="chip" href={logHref(mode, `routine=${encodeURIComponent(r.id)}`)}>
-                <Icon name="play" size={12} fill stroke={0} /> {r.name}
+            {routines.map(({ r, next }) => (
+              <a key={r.id} className={`chip${next ? ' accent' : ''}`} href={`#/routines/${r.id}`}>
+                <Icon name="list" size={14} /> {next ? `Up next: ${r.name}` : r.name}
               </a>
             ))}
           </div>
