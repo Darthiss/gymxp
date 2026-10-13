@@ -2565,6 +2565,334 @@
   "barKg": 10
  },
  {
+  "id": "Pullups",
+  "name": "Pull-up",
+  "aliases": [
+   "Pull-Up",
+   "Strict Pull-up",
+   "Weighted Pull-up",
+   "Dominadas"
+  ],
+  "group": "Back",
+  "equipment": "Bodyweight",
+  "primaryMuscles": [
+   "Lats"
+  ],
+  "secondaryMuscles": [
+   "Biceps",
+   "Middle Back"
+  ],
+  "look": "Hang from a bar with palms facing away, hands a bit wider than shoulders. Pull until your chin is over the bar, lower all the way down. Log 0 kg for bodyweight, or the weight of a vest/belt.",
+  "instructions": [
+   "Grab the pull-up bar with the palms facing forward using the prescribed grip. Note on grips: For a wide grip, your hands need to be spaced out at a distance wider than your shoulder width. For a medium grip, your hands need to be spaced out at a distance equal to your shoulder width and for a close grip at a distance smaller than your shoulder width.",
+   "As you have both arms extended in front of you holding the bar at the chosen grip width, bring your torso back around 30 degrees or so while creating a curvature on your lower back and sticking your chest out. This is your starting position.",
+   "Pull your torso up until the bar touches your upper chest by drawing the shoulders and the upper arms down and back. Exhale as you perform this portion of the movement. Tip: Concentrate on squeezing the back muscles once you reach the full contracted position. The upper torso should remain stationary as it moves through space and only the arms should move. The forearms should do no other work other than hold the bar.",
+   "After a second on the contracted position, start to inhale and slowly lower your torso back to the starting position when your arms are fully extended and the lats are fully stretched.",
+   "Repeat this motion for the prescribed amount of repetitions."
+  ],
+  "images": [
+   "ex/Pullups/0.jpg",
+   "ex/Pullups/1.jpg"
+  ],
+  "bwFactor": 1
+ },
+ {
+  "id": "Chin-Up",
+  "name": "Chin-up",
+  "aliases": [
+   "Chin-Up",
+   "Underhand Pull-up",
+   "Weighted Chin-up"
+  ],
+  "group": "Back",
+  "equipment": "Bodyweight",
+  "primaryMuscles": [
+   "Lats"
+  ],
+  "secondaryMuscles": [
+   "Biceps",
+   "Forearms",
+   "Middle Back"
+  ],
+  "look": "Same as a pull-up but palms facing you (underhand), a little easier and more biceps. Counts toward your Hero pull-ups.",
+  "instructions": [
+   "Grab the pull-up bar with the palms facing your torso and a grip closer than the shoulder width.",
+   "As you have both arms extended in front of you holding the bar at the chosen grip width, keep your torso as straight as possible while creating a curvature on your lower back and sticking your chest out. This is your starting position. Tip: Keeping the torso as straight as possible maximizes biceps stimulation while minimizing back involvement.",
+   "As you breathe out, pull your torso up until your head is around the level of the pull-up bar. Concentrate on using the biceps muscles in order to perform the movement. Keep the elbows close to your body. Tip: The upper torso should remain stationary as it moves through space and only the arms should move. The forearms should do no other work other than hold the bar.",
+   "After a second of squeezing the biceps in the contracted position, slowly lower your torso back to the starting position; when your arms are fully extended. Breathe in as you perform this portion of the movement.",
+   "Repeat this motion for the prescribed amount of repetitions."
+  ],
+  "images": [
+   "ex/Chin-Up/0.jpg",
+   "ex/Chin-Up/1.jpg"
+  ],
+  "bwFactor": 1
+ },
+ {
+  "id": "Parallel_Bar_Dip",
+  "name": "Parallel Bar Dip",
+  "aliases": [
+   "Dips",
+   "Bar Dip",
+   "Weighted Dip",
+   "Fondos"
+  ],
+  "group": "Arms",
+  "equipment": "Bodyweight",
+  "primaryMuscles": [
+   "Triceps"
+  ],
+  "secondaryMuscles": [
+   "Chest",
+   "Shoulders"
+  ],
+  "look": "Support yourself on two parallel bars with straight arms. Lower until your upper arms are about parallel to the floor, push back up. Log 0 kg for bodyweight.",
+  "instructions": [
+   "Stand between a set of parallel bars. Place a hand on each bar, and then take a small jump to help you get into the starting position with your arms locked out.",
+   "Begin by flexing the elbow, lowering your body until your arms break 90 degrees. Avoid swinging, and maintain good posture throughout the descent.",
+   "Reverse the motion by extending the elbow, pushing yourself back up into the starting position.",
+   "Repeat for the desired number of repetitions."
+  ],
+  "images": [
+   "ex/Parallel_Bar_Dip/0.jpg",
+   "ex/Parallel_Bar_Dip/1.jpg"
+  ],
+  "bwFactor": 0.9
+ },
+ {
+  "id": "Pushups",
+  "name": "Push-up",
+  "aliases": [
+   "Push-Up",
+   "Press-up",
+   "Flexiones",
+   "Lagartijas"
+  ],
+  "group": "Chest",
+  "equipment": "Bodyweight",
+  "primaryMuscles": [
+   "Chest"
+  ],
+  "secondaryMuscles": [
+   "Shoulders",
+   "Triceps"
+  ],
+  "look": "Hands just wider than shoulders, body in a straight line from head to heels. Lower your chest to a fist above the floor, push back up.",
+  "instructions": [
+   "Lie on the floor face down and place your hands about 36 inches apart while holding your torso up at arms length.",
+   "Next, lower yourself downward until your chest almost touches the floor as you inhale.",
+   "Now breathe out and press your upper body back up to the starting position while squeezing your chest.",
+   "After a brief pause at the top contracted position, you can begin to lower yourself downward again for as many repetitions as needed."
+  ],
+  "images": [
+   "ex/Pushups/0.jpg",
+   "ex/Pushups/1.jpg"
+  ],
+  "bwFactor": 0.64
+ },
+ {
+  "id": "Inverted_Row",
+  "name": "Inverted Row",
+  "aliases": [
+   "Australian Pull-up",
+   "Body Row",
+   "Smith Machine Row (bodyweight)"
+  ],
+  "group": "Back",
+  "equipment": "Bodyweight",
+  "primaryMuscles": [
+   "Middle Back"
+  ],
+  "secondaryMuscles": [
+   "Lats"
+  ],
+  "look": "Lie under a bar set at hip height (a Smith machine or squat rack works), heels on the floor, body straight. Pull your chest to the bar. A great step toward your first pull-up.",
+  "instructions": [
+   "Position a bar in a rack to about waist height. You can also use a smith machine.",
+   "Take a wider than shoulder width grip on the bar and position yourself hanging underneath the bar. Your body should be straight with your heels on the ground with your arms fully extended. This will be your starting position.",
+   "Begin by flexing the elbow, pulling your chest towards the bar. Retract your shoulder blades as you perform the movement.",
+   "Pause at the top of the motion, and return yourself to the start position.",
+   "Repeat for the desired number of repetitions."
+  ],
+  "images": [
+   "ex/Inverted_Row/0.jpg",
+   "ex/Inverted_Row/1.jpg"
+  ],
+  "bwFactor": 0.6
+ },
+ {
+  "id": "Bodyweight_Squat",
+  "name": "Air Squat",
+  "aliases": [
+   "Bodyweight Squat",
+   "Sentadilla"
+  ],
+  "group": "Legs",
+  "equipment": "Bodyweight",
+  "primaryMuscles": [
+   "Quadriceps"
+  ],
+  "secondaryMuscles": [
+   "Glutes",
+   "Hamstrings"
+  ],
+  "look": "Feet shoulder-width, arms forward. Sit back and down until your thighs are at least parallel, stand up tall.",
+  "instructions": [
+   "Stand with your feet shoulder width apart. You can place your hands behind your head. This will be your starting position.",
+   "Begin the movement by flexing your knees and hips, sitting back with your hips.",
+   "Continue down to full depth if you are able,and quickly reverse the motion until you return to the starting position. As you squat, keep your head and chest up and push your knees out."
+  ],
+  "images": [
+   "ex/Bodyweight_Squat/0.jpg",
+   "ex/Bodyweight_Squat/1.jpg"
+  ],
+  "bwFactor": 0.35
+ },
+ {
+  "id": "Sit-Up",
+  "name": "Sit-up",
+  "aliases": [
+   "Sit-Up",
+   "Abdominales"
+  ],
+  "group": "Core",
+  "equipment": "Bodyweight",
+  "primaryMuscles": [
+   "Abdominals"
+  ],
+  "secondaryMuscles": [],
+  "look": "Lying on your back, knees bent, feet anchored. Curl all the way up to sitting, lower with control.",
+  "instructions": [
+   "Lie down on the floor placing your feet either under something that will not move or by having a partner hold them. Your legs should be bent at the knees.",
+   "Place your hands behind your head and lock them together by clasping your fingers. This is the starting position.",
+   "Elevate your upper body so that it creates an imaginary V-shape with your thighs. Breathe out when performing this part of the exercise.",
+   "Once you feel the contraction for a second, lower your upper body back down to the starting position while inhaling.",
+   "Repeat for the recommended amount of repetitions."
+  ],
+  "images": [
+   "ex/Sit-Up/0.jpg",
+   "ex/Sit-Up/1.jpg"
+  ],
+  "bwFactor": 0.25
+ },
+ {
+  "id": "Hanging_Leg_Raise",
+  "name": "Hanging Leg Raise",
+  "aliases": [
+   "Leg Raise",
+   "Hanging Knee Raise"
+  ],
+  "group": "Core",
+  "equipment": "Bodyweight",
+  "primaryMuscles": [
+   "Abdominals"
+  ],
+  "secondaryMuscles": [],
+  "look": "Hang from a pull-up bar (or use the elbow pads of a captain's chair). Raise your legs to hip height or higher without swinging. Start with bent knees if needed.",
+  "instructions": [
+   "Hang from a chin-up bar with both arms extended at arms length in top of you using either a wide grip or a medium grip. The legs should be straight down with the pelvis rolled slightly backwards. This will be your starting position.",
+   "Raise your legs until the torso makes a 90-degree angle with the legs. Exhale as you perform this movement and hold the contraction for a second or so.",
+   "Go back slowly to the starting position as you breathe in.",
+   "Repeat for the recommended amount of repetitions."
+  ],
+  "images": [
+   "ex/Hanging_Leg_Raise/0.jpg",
+   "ex/Hanging_Leg_Raise/1.jpg"
+  ],
+  "bwFactor": 0.35
+ },
+ {
+  "id": "Ab_Roller",
+  "name": "Ab Wheel Rollout",
+  "aliases": [
+   "Ab Wheel",
+   "Rollout"
+  ],
+  "group": "Core",
+  "equipment": "Bodyweight",
+  "primaryMuscles": [
+   "Abdominals"
+  ],
+  "secondaryMuscles": [
+   "Shoulders"
+  ],
+  "look": "Kneeling with an ab wheel under your shoulders. Roll forward as far as you can keep your back flat, then pull back with your abs.",
+  "instructions": [
+   "Hold the Ab Roller with both hands and kneel on the floor.",
+   "Now place the ab roller on the floor in front of you so that you are on all your hands and knees (as in a kneeling push up position). This will be your starting position.",
+   "Slowly roll the ab roller straight forward, stretching your body into a straight position. Tip: Go down as far as you can without touching the floor with your body. Breathe in during this portion of the movement.",
+   "After a pause at the stretched position, start pulling yourself back to the starting position as you breathe out. Tip: Go slowly and keep your abs tight at all times."
+  ],
+  "images": [
+   "ex/Ab_Roller/0.jpg",
+   "ex/Ab_Roller/1.jpg"
+  ],
+  "bwFactor": 0.4
+ },
+ {
+  "id": "Hero_Ladder",
+  "name": "Hero Ladder (Tom Holland)",
+  "aliases": [
+   "Spider-Man Ladder",
+   "Holland Ladder",
+   "1500 Rep Ladder",
+   "Monday Ladder"
+  ],
+  "group": "Core",
+  "equipment": "Benchmark",
+  "primaryMuscles": [
+   "Lats"
+  ],
+  "secondaryMuscles": [
+   "Biceps",
+   "Middle Back"
+  ],
+  "look": "Tom Holland's reported Monday workout with trainer Duffy Gaver: a ladder of pull-ups, dips, push-ups, sit-ups and squats in a 1-2-3-4-5 ratio. Round 1 = 1/2/3/4/5 reps, climb to round 10 (10/20/30/40/50), then back down to 1. That's 19 rungs and 1,500 reps. Log the rungs you finished and the minutes it took.",
+  "instructions": [
+   "Each rung n: n pull-ups, 2n dips, 3n push-ups, 4n sit-ups, 5n squats.",
+   "Climb rungs 1 → 10, then come back down 9 → 1 (19 rungs total, 1,500 reps).",
+   "Scale it: use the assisted pull-up/dip machine, knee push-ups, or stop at the rung you can reach. Log how many rungs you completed.",
+   "In GymXP log ONE set: \"Rungs\" = rungs completed (max 19), \"Minutes\" = how long it took."
+  ],
+  "images": [
+   "ex/Hero_Ladder/0.jpg",
+   "ex/Hero_Ladder/1.jpg"
+  ],
+  "benchmark": "ladder"
+ },
+ {
+  "id": "Hero_Cindy",
+  "name": "Cindy (20-min AMRAP)",
+  "aliases": [
+   "Cindy",
+   "CrossFit Cindy",
+   "AMRAP Benchmark"
+  ],
+  "group": "Core",
+  "equipment": "Benchmark",
+  "primaryMuscles": [
+   "Chest"
+  ],
+  "secondaryMuscles": [
+   "Shoulders",
+   "Triceps"
+  ],
+  "look": "A classic CrossFit benchmark often used in superhero-style programs: as many rounds as possible in 20 minutes of 5 pull-ups, 10 push-ups and 15 air squats. ~10 rounds = solid start, 15+ = fit, 20+ = advanced.",
+  "instructions": [
+   "Set a 20-minute timer.",
+   "Each round: 5 pull-ups, 10 push-ups, 15 air squats. Repeat as many times as you can.",
+   "Scale pull-ups with the assisted machine or inverted rows if needed (note it).",
+   "In GymXP log ONE set: \"Rounds\" = full rounds completed, \"Vest kg\" = weighted vest (0 if none)."
+  ],
+  "images": [
+   "ex/Hero_Cindy/0.jpg",
+   "ex/Hero_Cindy/1.jpg"
+  ],
+  "bwFactor": 16.65,
+  "benchmark": "cindy",
+  "vestMult": 30
+ },
+ {
   "id": "Ab_Crunch_Machine",
   "name": "Ab Crunch Machine",
   "aliases": [

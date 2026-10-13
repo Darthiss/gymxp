@@ -104,6 +104,8 @@ export interface Exercise {
   bwFactor?: number;
   loadFactor?: number; // 2 = weight is logged per dumbbell, both count toward volume
   barKg?: number; // free barbell: weight logged is the total (bar + plates); typical empty bar
+  benchmark?: 'ladder' | 'cindy'; // Hero benchmark workouts with special logging
+  vestMult?: number; // reps per logged unit that carry the vest weight (Cindy: 30 per round)
   custom?: boolean;
   photo?: string;
 }

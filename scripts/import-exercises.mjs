@@ -315,6 +315,58 @@ const CURATED = [
     aliases: ['Preacher Curl', 'Scott Curl'],
     look: 'Sitting at a preacher bench (an angled arm pad), upper arms resting on the pad, curl a barbell or EZ bar up.' },
 
+  // ---------- Bodyweight (calisthenics) ----------
+  // bwFactor = share of bodyweight that counts per rep (push-up ≈ 64 %, Ebben et al. 2011). Easy, high-rep
+  // moves (air squats, sit-ups) are effort-adjusted down so they don't inflate kg moved / XP.
+  // Log 0 kg for plain bodyweight; add the vest/belt weight if you wear one.
+  { src: 'Pullups', name: 'Pull-up', group: 'Back', equipment: 'Bodyweight', bwFactor: 1,
+    aliases: ['Pull-Up', 'Strict Pull-up', 'Weighted Pull-up', 'Dominadas'],
+    look: 'Hang from a bar with palms facing away, hands a bit wider than shoulders. Pull until your chin is over the bar, lower all the way down. Log 0 kg for bodyweight, or the weight of a vest/belt.' },
+  { src: 'Chin-Up', name: 'Chin-up', group: 'Back', equipment: 'Bodyweight', bwFactor: 1,
+    aliases: ['Chin-Up', 'Underhand Pull-up', 'Weighted Chin-up'],
+    look: 'Same as a pull-up but palms facing you (underhand), a little easier and more biceps. Counts toward your Hero pull-ups.' },
+  { src: 'Parallel_Bar_Dip', name: 'Parallel Bar Dip', group: 'Arms', equipment: 'Bodyweight', bwFactor: 0.9,
+    aliases: ['Dips', 'Bar Dip', 'Weighted Dip', 'Fondos'],
+    look: 'Support yourself on two parallel bars with straight arms. Lower until your upper arms are about parallel to the floor, push back up. Log 0 kg for bodyweight.' },
+  { src: 'Pushups', name: 'Push-up', group: 'Chest', equipment: 'Bodyweight', bwFactor: 0.64,
+    aliases: ['Push-Up', 'Press-up', 'Flexiones', 'Lagartijas'],
+    look: 'Hands just wider than shoulders, body in a straight line from head to heels. Lower your chest to a fist above the floor, push back up.' },
+  { src: 'Inverted_Row', name: 'Inverted Row', group: 'Back', equipment: 'Bodyweight', bwFactor: 0.6,
+    aliases: ['Australian Pull-up', 'Body Row', 'Smith Machine Row (bodyweight)'],
+    look: 'Lie under a bar set at hip height (a Smith machine or squat rack works), heels on the floor, body straight. Pull your chest to the bar. A great step toward your first pull-up.' },
+  { src: 'Bodyweight_Squat', name: 'Air Squat', group: 'Legs', equipment: 'Bodyweight', bwFactor: 0.35,
+    aliases: ['Bodyweight Squat', 'Sentadilla'],
+    look: 'Feet shoulder-width, arms forward. Sit back and down until your thighs are at least parallel, stand up tall.' },
+  { src: 'Sit-Up', name: 'Sit-up', group: 'Core', equipment: 'Bodyweight', bwFactor: 0.25,
+    aliases: ['Sit-Up', 'Abdominales'],
+    look: 'Lying on your back, knees bent, feet anchored. Curl all the way up to sitting, lower with control.' },
+  { src: 'Hanging_Leg_Raise', name: 'Hanging Leg Raise', group: 'Core', equipment: 'Bodyweight', bwFactor: 0.35,
+    aliases: ['Leg Raise', 'Hanging Knee Raise'],
+    look: 'Hang from a pull-up bar (or use the elbow pads of a captain\'s chair). Raise your legs to hip height or higher without swinging. Start with bent knees if needed.' },
+  { src: 'Ab_Roller', name: 'Ab Wheel Rollout', group: 'Core', equipment: 'Bodyweight', bwFactor: 0.4,
+    aliases: ['Ab Wheel', 'Rollout'],
+    look: 'Kneeling with an ab wheel under your shoulders. Roll forward as far as you can keep your back flat, then pull back with your abs.' },
+
+  // ---------- Hero benchmarks (special logging) ----------
+  { id: 'Hero_Ladder', src: 'Pullups', name: 'Hero Ladder (Tom Holland)', group: 'Core', equipment: 'Benchmark', benchmark: 'ladder',
+    aliases: ['Spider-Man Ladder', 'Holland Ladder', '1500 Rep Ladder', 'Monday Ladder'],
+    look: 'Tom Holland\'s reported Monday workout with trainer Duffy Gaver: a ladder of pull-ups, dips, push-ups, sit-ups and squats in a 1-2-3-4-5 ratio. Round 1 = 1/2/3/4/5 reps, climb to round 10 (10/20/30/40/50), then back down to 1. That\'s 19 rungs and 1,500 reps. Log the rungs you finished and the minutes it took.',
+    instructions: [
+      'Each rung n: n pull-ups, 2n dips, 3n push-ups, 4n sit-ups, 5n squats.',
+      'Climb rungs 1 → 10, then come back down 9 → 1 (19 rungs total, 1,500 reps).',
+      'Scale it: use the assisted pull-up/dip machine, knee push-ups, or stop at the rung you can reach. Log how many rungs you completed.',
+      'In GymXP log ONE set: "Rungs" = rungs completed (max 19), "Minutes" = how long it took.',
+    ] },
+  { id: 'Hero_Cindy', src: 'Pushups', name: 'Cindy (20-min AMRAP)', group: 'Core', equipment: 'Benchmark', benchmark: 'cindy', bwFactor: 16.65, vestMult: 30, // per round: 5×1.0 + 10×0.64 + 15×0.35
+    aliases: ['Cindy', 'CrossFit Cindy', 'AMRAP Benchmark'],
+    look: 'A classic CrossFit benchmark often used in superhero-style programs: as many rounds as possible in 20 minutes of 5 pull-ups, 10 push-ups and 15 air squats. ~10 rounds = solid start, 15+ = fit, 20+ = advanced.',
+    instructions: [
+      'Set a 20-minute timer.',
+      'Each round: 5 pull-ups, 10 push-ups, 15 air squats. Repeat as many times as you can.',
+      'Scale pull-ups with the assisted machine or inverted rows if needed (note it).',
+      'In GymXP log ONE set: "Rounds" = full rounds completed, "Vest kg" = weighted vest (0 if none).',
+    ] },
+
   // ---------- Core ----------
   { src: 'Ab_Crunch_Machine', name: 'Ab Crunch Machine', group: 'Core', equipment: 'Machine',
     aliases: ['Crunch Machine', 'Seated Ab Crunch', 'Abdominal Machine'],
@@ -369,6 +421,8 @@ for (const c of CURATED) {
     ...(c.bwFactor ? { bwFactor: c.bwFactor } : {}),
     ...(c.loadFactor ? { loadFactor: c.loadFactor } : {}),
     ...(c.barKg ? { barKg: c.barKg } : {}),
+    ...(c.benchmark ? { benchmark: c.benchmark } : {}),
+    ...(c.vestMult ? { vestMult: c.vestMult } : {}),
   });
 }
 await fs.writeFile(path.join(ROOT, 'src/data/exercises.json'), JSON.stringify(out, null, 1) + '\n');

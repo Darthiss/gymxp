@@ -3,7 +3,6 @@ import { useData } from '../lib/store';
 import { useGame } from '../lib/game';
 import { nextVisitMilestone, QUEST_ALL_BONUS, sortSessions } from '../lib/xp';
 import { QuestList, RankProgress, SeasonCard, Stars } from '../components/Progression';
-import { compare, heroGoal } from '../lib/legends';
 import { holidayOn } from '../lib/holidays';
 import { fmtDate, fmtKg, fmtNum, plural, today } from '../lib/util';
 import { LevelBadge, SyncBadge, XpBar } from '../components/ui';
@@ -24,7 +23,9 @@ export function Home() {
   const latestAch = g.unlocked.slice(-3).reverse();
   const routines = data.routines.filter((r) => !r.deleted);
   const trainedToday = data.sessions.some((s) => !s.deleted && s.date === today());
-  const hero = compare(g, heroGoal(g.bodyweight));
+  const hero = g.hero;
+  // Biggest win available right now (training age can't be rushed, so it's not a suggestion)
+  const focus = [...hero.pillars].filter((p) => p.id !== 'training').sort((a, b) => b.weight * (1 - b.score) - a.weight * (1 - a.score))[0];
   const feriado = holidayOn(today());
 
   return (
@@ -123,12 +124,14 @@ export function Home() {
         <div className="stat"><div className="label">PRs</div><div className="value">{fmtNum(g.prCount)}</div></div>
       </div>
 
-      <a href="#/awards?tab=legends" className="card card-link row" style={{ gap: 14 }}>
-        <span style={{ fontSize: '2rem' }}>🦸</span>
+      <a href="#/hero" className="card card-link row" style={{ gap: 14 }}>
+        <span style={{ fontSize: '2rem' }}>{hero.stage.icon}</span>
         <div className="grow stack" style={{ gap: 6 }}>
-          <div className="row between"><span className="bold">Hero Physique goal</span><span className="bold num accent">{Math.round(hero.pct * 100)}%</span></div>
+          <div className="row between"><span className="bold">Hero Physique · {hero.stage.name}</span><span className="bold num accent">{Math.round(hero.pct * 100)}%</span></div>
           <XpBar thin pct={hero.pct} />
-          <div className="tiny muted">Compare yourself with Arnold & other legends →</div>
+          <div className="tiny muted">
+            Focus next: {focus.icon} {focus.name} →
+          </div>
         </div>
       </a>
 

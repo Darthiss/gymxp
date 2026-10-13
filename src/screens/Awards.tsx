@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useGame } from '../lib/game';
 import { ACHIEVEMENTS, RANKS, RULES, SEASON_TIERS, xpForLevel, type AchievementCategory } from '../lib/xp';
 import { RankProgress, SeasonCard, Stars } from '../components/Progression';
-import { compare, heroGoal, LEGENDS, type LegendProgress } from '../lib/legends';
+import { compare, LEGENDS, type LegendProgress } from '../lib/legends';
 import { fmtDate, fmtNum, plural } from '../lib/util';
 import { navigate, type Route } from '../lib/router';
 import { LevelBadge, PageHead, XpBar } from '../components/ui';
@@ -224,7 +224,6 @@ function LegendCard({ p, hero }: { p: LegendProgress; hero?: boolean }) {
 
 function Legends() {
   const g = useGame();
-  const hero = compare(g, heroGoal(g.bodyweight));
   const legends = LEGENDS.map((l) => compare(g, l));
   return (
     <div className="stack">
@@ -232,7 +231,14 @@ function Legends() {
         How close are you? Each bar averages your gym days and best <b>barbell</b> lifts (estimated 1-rep max from your sets) against theirs. Machine weights aren't comparable, so log the barbell bench, squat or deadlift to move those bars.
       </p>
       <div className="section-title">Your goal</div>
-      <LegendCard p={hero} hero />
+      <a href="#/hero" className="card card-link row" style={{ gap: 14, borderColor: 'rgba(110, 240, 154, 0.4)' }}>
+        <span style={{ fontSize: '1.8rem' }}>{g.hero.stage.icon}</span>
+        <div className="grow stack" style={{ gap: 4 }}>
+          <span className="bold">Hero Physique · {g.hero.stage.name}</span>
+          <span className="tiny muted">Your Tom Holland goal: open the full breakdown →</span>
+        </div>
+        <span className="bold num accent" style={{ fontSize: '1.3rem' }}>{Math.round(g.hero.pct * 100)}%</span>
+      </a>
       <div className="section-title">Legends</div>
       {legends.map((p) => <LegendCard key={p.legend.id} p={p} />)}
       <p className="tiny muted">Legend numbers are commonly reported bests and rough estimates of training days, just for fun.</p>

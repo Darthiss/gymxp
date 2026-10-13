@@ -4,6 +4,7 @@
 import type { AppData, Exercise, MuscleGroup, Session } from './types';
 import { weekKey, addDays, today, parseDate } from './util';
 import { holidayOn } from './holidays';
+import { capacityFrom, emptyCapacity, HERO_IDS, HERO_TARGETS, HERO_VOLUME_WEEKS, HERO_STAGES, heroMuscle, ladderWork, scoreHero, type Capacity, type HeroMuscle, type HeroResult } from './hero';
 
 export const RULES = {
   visitXp: 100, // first session of a calendar day
@@ -158,7 +159,7 @@ export function nextRankNeeds(info: LevelInfo, visits: number): string {
 
 export type AchievementCategory =
   | 'Visits' | 'Streaks' | 'Strength' | 'Records' | 'Volume' | 'Habits' | 'Explorer' | 'Sets'
-  | 'Time' | 'Burn' | 'Weather' | 'Holidays' | 'Special' | 'Body';
+  | 'Time' | 'Burn' | 'Weather' | 'Holidays' | 'Special' | 'Body' | 'Hero';
 
 export interface AchievementDef {
   id: string;
@@ -327,6 +328,14 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'body-first', category: 'Body', icon: '⚖️', title: 'On the Scale', desc: 'Log your bodyweight for the first time', xp: 25 },
   { id: 'body-10', category: 'Body', icon: '📊', title: 'Tracking Pro', desc: 'Log your bodyweight 10 times', xp: 75, target: 10 },
   { id: 'body-goal', category: 'Body', icon: '🎯', title: 'Goal Weight', desc: 'Reach your goal bodyweight', xp: 500 },
+  ...HERO_STAGES.slice(1).map((st, i) => ({ id: `hero-stage-${i + 1}`, category: 'Hero' as const, icon: st.icon, title: st.name, desc: `Reach ${Math.round(st.min * 100)}% of your Hero Physique goal`, xp: st.xp })),
+  { id: 'hero-push-50', category: 'Hero', icon: '💪', title: '50 Push-ups', desc: '50 strict push-ups in one set', xp: 400 },
+  { id: 'hero-dip-20', category: 'Hero', icon: '🔱', title: '20 Dips', desc: '20 strict dips in one set', xp: 400 },
+  { id: 'hero-cindy-10', category: 'Hero', icon: '⏱️', title: 'Cindy: 10 Rounds', desc: '10+ rounds of Cindy in 20 minutes', xp: 150 },
+  { id: 'hero-cindy-15', category: 'Hero', icon: '⏱️', title: 'Cindy: 15 Rounds', desc: '15+ rounds of Cindy in 20 minutes', xp: 300 },
+  { id: 'hero-cindy-20', category: 'Hero', icon: '🏅', title: 'Cindy: 20 Rounds', desc: '20+ rounds of Cindy: advanced', xp: 600 },
+  { id: 'hero-ladder', category: 'Hero', icon: '🪜', title: 'The Holland Ladder', desc: 'Finish all 19 rungs: 1,500 reps', xp: 1000 },
+  { id: 'hero-ladder-45', category: 'Hero', icon: '🕸️', title: 'Ladder Under 45', desc: 'Finish the ladder in 45 minutes or less', xp: 1000 },
 ];
 
 const ACH_BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));
@@ -382,8 +391,9 @@ export const QUEST_ALL_BONUS = 50;
 interface WeekStats {
   visits: number; sets: number; volume: number; prs: number; legs: number; groups: Set<MuscleGroup>;
   weighIns: number; maxMinutes: number; weekend: number; newEx: number; maxExInSession: number; visitsByThu: number;
+  calisReps: number; backSets: number; chestSets: number; benchmark: number;
 }
-interface QuestCtx { goal: number; avgVol: number; seen: number; exTotal: number; hasWatch: boolean }
+interface QuestCtx { goal: number; avgVol: number; seen: number; exTotal: number; hasWatch: boolean; visits: number; benchRecent: boolean }
 interface QuestDef {
   id: string; icon: string;
   title: (c: QuestCtx) => string;
@@ -405,6 +415,9 @@ const QUESTS: QuestDef[] = [
   { id: 'long', icon: '⏱️', title: () => 'One workout of 60+ minutes', target: () => 60, value: (s) => s.maxMinutes, eligible: (c) => c.hasWatch },
   { id: 'weekend', icon: '🏖️', title: () => 'Train on Saturday or Sunday', target: () => 1, value: (s) => s.weekend, eligible: () => true },
   { id: 'variety', icon: '🎨', title: () => 'Do 6+ different exercises in one workout', target: () => 6, value: (s) => s.maxExInSession, eligible: (c) => c.seen >= 6 },
+  { id: 'calisthenics', icon: '🤸', title: () => 'Do 50 reps of pull-ups, dips or push-ups (assisted counts)', target: () => 50, value: (s) => s.calisReps, eligible: () => true },
+  { id: 'vtaper', icon: '📐', title: () => 'V-taper week: at least as many back sets as chest sets (6+ back)', target: () => 1, value: (s) => (s.backSets >= 6 && s.backSets >= s.chestSets ? 1 : 0), eligible: (c) => c.goal >= 2 },
+  { id: 'benchmark', icon: '🕷️', title: () => 'Test a Hero benchmark: the Ladder or Cindy (scaled is fine)', target: () => 1, value: (s) => s.benchmark, eligible: (c) => c.visits >= 8 && !c.benchRecent },
   { id: 'early', icon: '⚡', title: () => 'Reach your weekly goal by Thursday', target: (c) => c.goal, value: (s) => s.visitsByThu, eligible: (c) => c.goal <= 4 },
 ];
 
@@ -423,7 +436,7 @@ function pickQuests(week: string, c: QuestCtx): QuestStatus[] {
   return pool.map(({ q }) => ({ id: q.id, icon: q.icon, title: q.title(c), target: q.target(c), value: 0, done: false, xp: QUEST_XP }));
 }
 
-const emptyWeek = (): WeekStats => ({ visits: 0, sets: 0, volume: 0, prs: 0, legs: 0, groups: new Set(), weighIns: 0, maxMinutes: 0, weekend: 0, newEx: 0, maxExInSession: 0, visitsByThu: 0 });
+const emptyWeek = (): WeekStats => ({ visits: 0, sets: 0, volume: 0, prs: 0, legs: 0, groups: new Set(), weighIns: 0, maxMinutes: 0, weekend: 0, newEx: 0, maxExInSession: 0, visitsByThu: 0, calisReps: 0, backSets: 0, chestSets: 0, benchmark: 0 });
 
 // ---------- Machine mastery (Battlefield weapon service stars) ----------
 export const MASTERY = [
@@ -454,7 +467,7 @@ export interface XpItem {
 
 export interface PR {
   exerciseId: string;
-  kind: 'weight' | 'e1rm' | 'assist';
+  kind: 'weight' | 'e1rm' | 'assist' | 'reps' | 'rounds' | 'rungs' | 'time';
   value: number;
   prev: number;
 }
@@ -479,7 +492,9 @@ export interface SessionResult {
 }
 
 export interface ExerciseBest {
-  maxKg: number; // heaviest set (raw kg; for assisted: least assistance)
+  maxKg: number; // heaviest set (raw kg; for assisted: least assistance; for the ladder: best full time in minutes)
+  maxReps: number; // most reps in one set (rounds for Cindy, rungs for the ladder)
+  maxRepsDate: string;
   maxKgDate: string;
   maxE1rm: number;
   maxE1rmDate: string;
@@ -514,6 +529,8 @@ export interface GameState {
   bests: Map<string, ExerciseBest>;
   history: Map<string, ExerciseHistoryPoint[]>;
   maxPullups: number; // most unassisted pull-ups in one set
+  hero: HeroResult;
+  heroBodyweightKnown: boolean;
   bodyweight: number; // latest logged, 0 if none
   weekStreak: number; // current streak (weeks hitting goal), counting this week if already hit
   bestWeekStreak: number;
@@ -551,7 +568,7 @@ function bodyweightLookup(data: AppData): (date: string) => number {
 
 export function effectiveLoad(ex: Exercise | undefined, kg: number, bw: number): number {
   if (ex?.assisted) return Math.max(0, bw - kg);
-  if (ex?.bwFactor) return kg + ex.bwFactor * bw;
+  if (ex?.bwFactor) return kg * (ex.vestMult ?? 1) + ex.bwFactor * bw;
   return kg * (ex?.loadFactor ?? 1);
 }
 
@@ -586,7 +603,58 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
   const prStreak = new Map<string, number>();
   const holidayNames = new Set<string>();
   let totalVolume = 0, totalSets = 0, totalMinutes = 0, totalKcal = 0, prCount = 0, weighInCount = 0, bestStreak = 0;
-  let mondays = 0, rainDays = 0, holidayDays = 0, maxPullups = 0, bestLegStreak = 0;
+  let mondays = 0, rainDays = 0, holidayDays = 0, bestLegStreak = 0;
+  // --- Hero Physique tracking ---
+  const hero = { pull: emptyCapacity(), dip: emptyCapacity(), push: emptyCapacity(), core: emptyCapacity(), cindy: 0, ladderRungs: 0, ladderMin: 0 };
+  const benchmarkWeeks = new Set<string>();
+  const weekMuscle = new Map<string, Record<HeroMuscle, number>>();
+  const muscleSets = (wk: string) => {
+    let m = weekMuscle.get(wk);
+    if (!m) { m = { Chest: 0, Back: 0, Shoulders: 0, Arms: 0, Legs: 0 }; weekMuscle.set(wk, m); }
+    return m;
+  };
+  const strength = new Map<string, { base: number; best: number; sessions: number }>();
+  const bump = (c: Capacity, strict: number, e: { est: number; frac: number }) => {
+    c.strict = Math.max(c.strict, strict);
+    c.est = Math.max(c.est, e.est);
+    c.frac = Math.max(c.frac, e.frac, strict >= 1 ? 1 : 0);
+  };
+  const NONE = { est: 0, frac: 0 };
+  const heroSet = (id: string, ex: Exercise | undefined, kg: number, r: number, bwRaw: number) => {
+    const bw = bwRaw || 70;
+    if (HERO_IDS.pull.includes(id)) bump(hero.pull, r, kg > 0 ? capacityFrom(e1rm(bw + kg, r), bw) : NONE);
+    else if (id === HERO_IDS.pullAssist) kg <= 0 ? bump(hero.pull, r, NONE) : bump(hero.pull, 0, capacityFrom(e1rm(Math.max(0, bw - kg), r), bw));
+    else if (HERO_IDS.dip.includes(id)) bump(hero.dip, r, kg > 0 ? capacityFrom(e1rm(0.9 * bw + kg, r), 0.9 * bw) : NONE);
+    else if (id === HERO_IDS.dipAssist) kg <= 0 ? bump(hero.dip, r, NONE) : bump(hero.dip, 0, capacityFrom(e1rm(Math.max(0, bw - kg), r), bw));
+    else if (HERO_IDS.push.includes(id)) bump(hero.push, r, kg > 0 ? capacityFrom(e1rm(0.64 * bw + kg, r), 0.64 * bw) : NONE);
+    else if (HERO_IDS.pushEstimate[id]) bump(hero.push, 0, capacityFrom(e1rm(effectiveLoad(ex, kg, bw), r) * HERO_IDS.pushEstimate[id], 0.64 * bw));
+    else if (HERO_IDS.core.includes(id)) bump(hero.core, r, NONE);
+  };
+  const strengthGain = () => {
+    const lifts = [...strength.values()].filter((x) => x.sessions >= 4 && x.base > 0).sort((a, b) => b.sessions - a.sessions).slice(0, 6);
+    if (lifts.length < 2) return { gain: null, n: lifts.length };
+    const g = lifts.map((x) => x.best / x.base - 1).sort((a, b) => a - b);
+    const mid = Math.floor(g.length / 2);
+    return { gain: g.length % 2 ? g[mid] : (g[mid - 1] + g[mid]) / 2, n: lifts.length };
+  };
+  const heroSnapshot = (endWk: string, bw: number): HeroResult => {
+    const avg: Record<HeroMuscle, number> = { Chest: 0, Back: 0, Shoulders: 0, Arms: 0, Legs: 0 };
+    const credit: Record<HeroMuscle, number> = { Chest: 0, Back: 0, Shoulders: 0, Arms: 0, Legs: 0 };
+    // 12-week window: muscle is built by months of enough volume, not one good week
+    for (let i = 0; i < HERO_VOLUME_WEEKS; i++) {
+      const w = weekMuscle.get(addDays(endWk, -7 * i));
+      if (w) for (const k of Object.keys(avg) as HeroMuscle[]) {
+        avg[k] += w[k] / HERO_VOLUME_WEEKS;
+        credit[k] += Math.min(w[k], HERO_TARGETS.setsPerMuscle) / HERO_VOLUME_WEEKS; // a huge week can't make up for missed ones
+      }
+    }
+    const sg = strengthGain();
+    return scoreHero({
+      bodyweight: bw || 70, bodyweightKnown: bw > 0, pull: hero.pull, dip: hero.dip, push: hero.push, core: hero.core,
+      cindyRounds: hero.cindy, ladderRungs: hero.ladderRungs, ladderBestMinutes: hero.ladderMin,
+      weeklySets: avg, weeklyCredit: credit, strengthGain: sg.gain, strengthLifts: sg.n, gymDays: visitDays.size,
+    });
+  };
   let lastVisit: string | undefined;
   const firstVisit = sessions[0]?.date;
   const firstWeight = weights[0]?.kg;
@@ -632,7 +700,8 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
   const questCtx = (beforeWeek: string): QuestCtx => {
     const recent = [...weekVolume.entries()].filter(([k, v]) => k < beforeWeek && v > 0).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 4);
     const avgVol = recent.length >= 2 ? recent.reduce((a, [, v]) => a + v, 0) / recent.length : 0;
-    return { goal, avgVol, seen: seen.size, exTotal: exMap.size, hasWatch };
+    const benchRecent = [0, 1, 2, 3].some((i) => benchmarkWeeks.has(addDays(beforeWeek, -7 * (i + 1))));
+    return { goal, avgVol, seen: seen.size, exTotal: exMap.size, hasWatch, visits: visitDays.size, benchRecent };
   };
   const enterWeek = (wk: string) => {
     if (wk === curWeek) return;
@@ -709,27 +778,79 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
       const ex = exMap.get(log.exerciseId);
       const done = log.sets.filter((x) => x.reps > 0);
       if (!done.length) continue;
-      if (ex) groups.add(ex.group === 'Glutes' ? 'Legs' : ex.group);
+      const bench = ex?.benchmark;
+      const bodyweightEx = !!ex?.bwFactor && !bench;
+      if (ex && !bench) groups.add(ex.group === 'Glutes' ? 'Legs' : ex.group);
       sets += done.length;
-      let exVol = 0, bestKg = ex?.assisted ? Infinity : 0, bestE = 0;
+      let exVol = 0, bestKg = ex?.assisted ? Infinity : 0, bestE = 0, bestReps = 0, effE = 0, fullLadderMin = 0;
       for (const st of done) {
-        reps += st.reps;
-        exVol += effectiveLoad(ex, st.kg, bw) * st.reps;
+        bestReps = Math.max(bestReps, st.reps);
+        if (bench === 'ladder') {
+          const w = ladderWork(st.reps);
+          reps += w.reps;
+          exVol += w.bwUnits * (bw || 70);
+          if (st.reps >= 19 && st.kg > 0) fullLadderMin = fullLadderMin ? Math.min(fullLadderMin, st.kg) : st.kg;
+          continue;
+        }
+        reps += bench === 'cindy' ? st.reps * 30 : st.reps;
+        const load = effectiveLoad(ex, st.kg, bw || (ex?.bwFactor || ex?.assisted ? 70 : 0));
+        exVol += load * st.reps;
+        effE = Math.max(effE, e1rm(load, st.reps));
         if (ex?.assisted) bestKg = Math.min(bestKg, st.kg);
-        else { bestKg = Math.max(bestKg, st.kg); bestE = Math.max(bestE, e1rm(st.kg, st.reps)); }
-        if (log.exerciseId === PULLUP && st.kg <= 0) maxPullups = Math.max(maxPullups, st.reps);
+        else { bestKg = Math.max(bestKg, st.kg); bestE = Math.max(bestE, bodyweightEx ? e1rm(load, st.reps) : e1rm(st.kg, st.reps)); }
+        heroSet(log.exerciseId, ex, st.kg, st.reps, bw);
+        if (HERO_IDS.pull.includes(log.exerciseId) || HERO_IDS.dip.includes(log.exerciseId) || HERO_IDS.push.includes(log.exerciseId) || log.exerciseId === HERO_IDS.pullAssist || log.exerciseId === HERO_IDS.dipAssist) week.calisReps += st.reps;
+      }
+      if (bench) {
+        benchmarkWeeks.add(wk);
+        week.benchmark = 1;
+        if (bench === 'cindy') hero.cindy = Math.max(hero.cindy, bestReps);
+        else {
+          hero.ladderRungs = Math.max(hero.ladderRungs, Math.min(19, bestReps));
+          if (fullLadderMin) hero.ladderMin = hero.ladderMin ? Math.min(hero.ladderMin, fullLadderMin) : fullLadderMin;
+        }
+      } else if (ex) {
+        const hm = heroMuscle(ex.group);
+        if (hm) muscleSets(wk)[hm] += done.length;
+        if (ex.group === 'Back') week.backSets += done.length;
+        if (ex.group === 'Chest') week.chestSets += done.length;
       }
       volume += exVol;
-      if (!ex?.assisted) strengthHits.push({ ex: log.exerciseId, kg: bestKg });
+      if (!ex?.assisted && !bench) strengthHits.push({ ex: log.exerciseId, kg: bestKg });
+      if (!bench && effE > 0) {
+        const t = strength.get(log.exerciseId);
+        if (!t) strength.set(log.exerciseId, { base: effE, best: effE, sessions: 1 });
+        else { t.best = Math.max(t.best, effE); t.sessions++; }
+      }
 
       const prev = bests.get(log.exerciseId);
       let weightPr = false;
       if (!seen.has(log.exerciseId)) {
         seen.add(log.exerciseId);
         newExercises.push(log.exerciseId);
-        bests.set(log.exerciseId, { maxKg: bestKg, maxKgDate: s.date, maxE1rm: bestE, maxE1rmDate: s.date, sessions: 1, lastDate: s.date });
+        bests.set(log.exerciseId, {
+          maxKg: bench === 'ladder' ? fullLadderMin : bestKg, maxKgDate: s.date, maxE1rm: bestE, maxE1rmDate: s.date,
+          maxReps: bestReps, maxRepsDate: s.date, sessions: 1, lastDate: s.date,
+        });
       } else if (prev) {
-        if (ex?.assisted) {
+        if (bench) {
+          if (bestReps > prev.maxReps) {
+            prs.push({ exerciseId: log.exerciseId, kind: bench === 'cindy' ? 'rounds' : 'rungs', value: bestReps, prev: prev.maxReps });
+            weightPr = true;
+          } else if (bench === 'ladder' && fullLadderMin && (!prev.maxKg || fullLadderMin < prev.maxKg)) {
+            prs.push({ exerciseId: log.exerciseId, kind: 'time', value: fullLadderMin, prev: prev.maxKg });
+            prev.maxKg = fullLadderMin; prev.maxKgDate = s.date; weightPr = true;
+          }
+        } else if (bodyweightEx) {
+          if (bestKg > prev.maxKg && bestKg > 0) {
+            prs.push({ exerciseId: log.exerciseId, kind: 'weight', value: bestKg, prev: prev.maxKg });
+            prev.maxKg = bestKg; prev.maxKgDate = s.date; weightPr = true;
+          } else if (bestReps > prev.maxReps) {
+            prs.push({ exerciseId: log.exerciseId, kind: 'reps', value: bestReps, prev: prev.maxReps });
+            weightPr = true;
+          }
+          if (bestE > prev.maxE1rm) { prev.maxE1rm = bestE; prev.maxE1rmDate = s.date; }
+        } else if (ex?.assisted) {
           if (bestKg < prev.maxKg) {
             prs.push({ exerciseId: log.exerciseId, kind: 'assist', value: bestKg, prev: prev.maxKg });
             prev.maxKg = bestKg; prev.maxKgDate = s.date; weightPr = true;
@@ -738,10 +859,11 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
           prs.push({ exerciseId: log.exerciseId, kind: 'weight', value: bestKg, prev: prev.maxKg });
           prev.maxKg = bestKg; prev.maxKgDate = s.date; weightPr = true;
         }
-        if (!ex?.assisted && bestE > prev.maxE1rm + 0.01) {
+        if (!ex?.assisted && !bench && !bodyweightEx && bestE > prev.maxE1rm + 0.01) {
           if (!weightPr) prs.push({ exerciseId: log.exerciseId, kind: 'e1rm', value: bestE, prev: prev.maxE1rm });
           prev.maxE1rm = bestE; prev.maxE1rmDate = s.date;
         }
+        if (bestReps > prev.maxReps) { prev.maxReps = bestReps; prev.maxRepsDate = s.date; }
         prev.sessions++;
         prev.lastDate = s.date;
       }
@@ -802,8 +924,9 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     }
     for (const pr of prs) {
       const name = exMap.get(pr.exerciseId)?.name ?? 'Unknown';
-      const v = pr.kind === 'weight' || pr.kind === 'assist' ? RULES.weightPrXp : RULES.e1rmPrXp;
-      const what = pr.kind === 'weight' ? `${pr.value} kg` : pr.kind === 'assist' ? `less assist (${pr.value} kg)` : 'best set';
+      const v = pr.kind === 'e1rm' ? RULES.e1rmPrXp : RULES.weightPrXp;
+      const what = pr.kind === 'weight' ? `${pr.value} kg` : pr.kind === 'assist' ? `less assist (${pr.value} kg)` : pr.kind === 'reps' ? `${pr.value} reps`
+        : pr.kind === 'rounds' ? `${pr.value} rounds` : pr.kind === 'rungs' ? `${pr.value} rungs` : pr.kind === 'time' ? `${pr.value} min` : 'best set';
       items.push({ label: `🏆 PR ${name}: ${what}`, xp: v, kind: 'pr' });
       xp += v;
     }
@@ -869,8 +992,17 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
       if (!hit) continue;
       if ((st.kg !== undefined && hit.kg >= st.kg) || (st.xbw !== undefined && bw > 0 && hit.kg >= st.xbw * bw)) A(st.id);
     }
-    if (maxPullups >= 1) A('str-pullup');
-    if (maxPullups >= 10) A('str-pullup-10');
+    if (hero.pull.strict >= 1) A('str-pullup');
+    if (hero.pull.strict >= 10) A('str-pullup-10');
+    if (hero.push.strict >= 50) A('hero-push-50');
+    if (hero.dip.strict >= 20) A('hero-dip-20');
+    if (hero.cindy >= 10) A('hero-cindy-10');
+    if (hero.cindy >= 15) A('hero-cindy-15');
+    if (hero.cindy >= 20) A('hero-cindy-20');
+    if (hero.ladderRungs >= 19) A('hero-ladder');
+    if (hero.ladderMin && hero.ladderMin <= 45) A('hero-ladder-45');
+    const heroNow = heroSnapshot(wk, bw);
+    HERO_STAGES.forEach((st, i) => { if (i > 0 && heroNow.pct >= st.min) A(`hero-stage-${i}`); });
     if ([...prStreak.values()].some((v) => v >= 3)) A('hab-overload');
     // habits
     if (firstOfDay && gapDays >= 14 && visitsBefore >= 3) A('hab-comeback');
@@ -952,7 +1084,9 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     exercisesTried: seen.size,
     bests,
     history,
-    maxPullups,
+    maxPullups: hero.pull.strict,
+    hero: heroSnapshot(weekMuscle.has(thisWeek) ? thisWeek : addDays(thisWeek, -7), weights[weights.length - 1]?.kg ?? 0),
+    heroBodyweightKnown: weights.length > 0,
     bodyweight: weights[weights.length - 1]?.kg ?? 0,
     weekStreak,
     bestWeekStreak: bestStreak,

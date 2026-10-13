@@ -1,10 +1,10 @@
-// "How far am I from…" comparisons with famous lifters and your Hero goal.
+// "How far am I from…" comparisons with famous lifters (your Hero goal lives in hero.ts).
 // Lifts are the commonly *reported* bests (approximate, kg). Career gym days are rough
 // estimates (years of serious training × typical days per week). For fun, not science.
 import { BENCH, DEADLIFT, SQUAT, type GameState } from './xp';
 
 export interface LegendMetric {
-  key: 'visits' | 'bench' | 'squat' | 'deadlift' | 'pullups';
+  key: 'visits' | 'bench' | 'squat' | 'deadlift';
   label: string;
   target: number;
   unit: string;
@@ -23,26 +23,6 @@ const visits = (n: number, label = 'Gym days (est.)'): LegendMetric => ({ key: '
 const lift = (key: 'bench' | 'squat' | 'deadlift', kg: number): LegendMetric => ({
   key, label: key === 'bench' ? 'Bench press' : key === 'squat' ? 'Squat' : 'Deadlift', target: kg, unit: 'kg',
 });
-
-/** Your goal: a lean, strong, natural "superhero actor" physique. Targets scale with your bodyweight. */
-export function heroGoal(bodyweight: number): Legend {
-  const bw = bodyweight || 70;
-  const r = (x: number) => Math.round(x / 2.5) * 2.5;
-  return {
-    id: 'hero',
-    name: 'Hero Physique',
-    icon: '🦸',
-    blurb: 'Your Tom Holland goal: lean, athletic, strong and natural.',
-    metrics: [
-      visits(500, 'Gym days'),
-      lift('bench', r(bw * 1.25)),
-      lift('squat', r(bw * 1.5)),
-      lift('deadlift', r(bw * 2)),
-      { key: 'pullups', label: 'Strict pull-ups (one set)', target: 12, unit: 'reps' },
-    ],
-    note: `Targets are typical strength standards for a fit, natural intermediate lifter at your bodyweight (${bodyweight ? `${bw} kg` : 'log your weight; using 70 kg'}): bench 1.25×, squat 1.5×, deadlift 2× bodyweight, 12 pull-ups, ~3-4 years of consistent training. Tom Holland's own numbers aren't public.`,
-  };
-}
 
 export const LEGENDS: Legend[] = [
   {
@@ -85,7 +65,7 @@ function liftOf(g: GameState, key: 'bench' | 'squat' | 'deadlift'): number {
 
 export function compare(g: GameState, legend: Legend): LegendProgress {
   const rows = legend.metrics.map((m) => {
-    const mine = m.key === 'visits' ? g.visits : m.key === 'pullups' ? g.maxPullups : liftOf(g, m.key);
+    const mine = m.key === 'visits' ? g.visits : liftOf(g, m.key);
     return { metric: m, mine, pct: Math.min(1, m.target ? mine / m.target : 0) };
   });
   return { legend, rows, pct: rows.reduce((a, r) => a + r.pct, 0) / rows.length };

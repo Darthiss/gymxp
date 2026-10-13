@@ -61,6 +61,7 @@ export function searchExercises(list: Exercise[], query: string): Exercise[] {
 export const EQUIPMENT_CHIPS: Record<string, (e: Exercise) => boolean> = {
   Dumbbells: (e) => e.equipment === 'Dumbbell',
   Barbells: (e) => e.barKg !== undefined,
+  Bodyweight: (e) => e.equipment === 'Bodyweight' || e.equipment === 'Benchmark' || !!e.assisted,
   Machines: (e) => ['Machine', 'Plate-loaded', 'Cable', 'Smith machine'].includes(e.equipment),
 };
 

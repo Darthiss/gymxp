@@ -329,3 +329,56 @@ describe('stars, seasons, quests, mastery', () => {
     expect(masteryOf(100).current!.name).toBe('Diamond');
   });
 });
+
+describe('hero physique', () => {
+  it('capacity estimates: assisted pull-ups approach the first rep, estimates cap at 80%', async () => {
+    const { capacityFrom, repScore, ESTIMATE_CAP } = await import('./hero');
+    // 70 kg, 40 kg assist x 8 reps → e1RM 30*(1+8/30)=38 → 54% of a first rep
+    const c1 = capacityFrom(30 * (1 + 8 / 30), 70);
+    expect(c1.est).toBe(0);
+    expect(c1.frac).toBeCloseTo(38 / 70);
+    // huge estimated capacity still capped
+    const s = repScore({ strict: 0, est: 40, frac: 1 }, 15);
+    expect(s.score).toBe(ESTIMATE_CAP);
+    expect(s.estimated).toBe(true);
+    // real strict reps win
+    expect(repScore({ strict: 15, est: 40, frac: 1 }, 15).score).toBe(1);
+  });
+
+  it('ladder work adds up to 1,500 reps', async () => {
+    const { ladderWork } = await import('./hero');
+    expect(ladderWork(19).reps).toBe(1500);
+    expect(ladderWork(10).reps).toBe(825); // 15 × (1+…+10)
+  });
+
+  it('engine tracks bodyweight reps, benchmark PRs and hero stages', () => {
+    const d = emptyData();
+    d.weights.push({ id: 'w', updatedAt: 1, date: '2026-01-01', kg: 68 });
+    d.sessions.push(sess('2026-02-02', [{ exerciseId: 'Pullups', sets: [{ kg: 0, reps: 3 }] }, { exerciseId: 'Hero_Cindy', sets: [{ kg: 0, reps: 9 }] }]));
+    d.sessions.push(sess('2026-02-04', [{ exerciseId: 'Pullups', sets: [{ kg: 0, reps: 5 }] }, { exerciseId: 'Hero_Cindy', sets: [{ kg: 0, reps: 11 }] }, { exerciseId: 'Hero_Ladder', sets: [{ kg: 52, reps: 19 }] }]));
+    const g = game(d);
+    const r2 = g.sessions.get(d.sessions[1].id)!;
+    expect(r2.prs.map((p) => p.kind).sort()).toEqual(['reps', 'rounds']);
+    expect(g.maxPullups).toBe(5);
+    expect(g.unlockedIds.has('str-pullup')).toBe(true);
+    expect(g.unlockedIds.has('hero-cindy-10')).toBe(true);
+    expect(g.unlockedIds.has('hero-ladder')).toBe(true);
+    expect(g.unlockedIds.has('hero-ladder-45')).toBe(false);
+    const bm = g.hero.pillars.find((p) => p.id === 'benchmarks')!;
+    expect(bm.score).toBeGreaterThan(0.6);
+    // pull-up volume uses bodyweight
+    expect(r2.volume).toBeGreaterThan(5 * 68);
+  });
+
+  it('stronger pillar uses the median gain on most-trained lifts', () => {
+    const d = emptyData();
+    ['2026-03-02', '2026-03-04', '2026-03-06', '2026-03-09'].forEach((date, i) =>
+      d.sessions.push(sess(date, [
+        { exerciseId: 'Leg_Press', sets: [{ kg: 100 + i * 10, reps: 10 }] },
+        { exerciseId: 'Machine_Bench_Press', sets: [{ kg: 40 + i * 5, reps: 10 }] },
+      ])));
+    const p = game(d).hero.pillars.find((x) => x.id === 'stronger')!;
+    // leg press +30%, chest press +37.5% → median ≈ 33.75% → score ≈ 0.675
+    expect(p.score).toBeCloseTo(0.675, 2);
+  });
+});

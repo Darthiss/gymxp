@@ -12,6 +12,7 @@ import { CustomExerciseEdit, Guide, GuideDetail } from './screens/Guide';
 import { Awards } from './screens/Awards';
 import { RoutineEdit, Settings } from './screens/Settings';
 import { Backfill } from './screens/Backfill';
+import { Hero } from './screens/Hero';
 import { ToastHost } from './components/ui';
 
 type Phase = { kind: 'boot' } | { kind: 'setup' } | { kind: 'locked' } | { kind: 'open'; unlocked: Unlocked; store: Store };
@@ -87,10 +88,11 @@ function Shell() {
   else if (p0 === 'awards') page = <Awards route={route} />;
   else if (p0 === 'settings') page = <Settings />;
   else if (p0 === 'import') page = <Backfill />;
+  else if (p0 === 'hero') page = <Hero />;
   else if (p0 === 'routine' && p1) page = <RoutineEdit key={p1} id={p1} />;
   else page = <Home />;
 
-  const tab = p0 === 'log' ? 'log' : p0 === 'progress' || p0 === 'lift' || p0 === 'session' ? 'progress' : p0 === 'guide' || p0 === 'guide-edit' ? 'guide' : p0 === 'awards' ? 'awards' : 'home';
+  const tab = p0 === 'log' ? 'log' : p0 === 'progress' || p0 === 'lift' || p0 === 'session' ? 'progress' : p0 === 'guide' || p0 === 'guide-edit' ? 'guide' : p0 === 'awards' || p0 === 'hero' ? 'awards' : 'home';
   const tabs = [
     { id: 'home', href: '#/', ico: '🏠', label: 'Home' },
     { id: 'progress', href: '#/progress', ico: '📈', label: 'Progress' },

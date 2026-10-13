@@ -1,12 +1,12 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { getStore, useData } from '../lib/store';
 import { settingFor, useExerciseMap } from '../lib/game';
-import { computeGame, levelInfo, RULES, sortSessions, type SessionResult } from '../lib/xp';
+import { computeGame, levelInfo, RULES, sortSessions, type PR, type SessionResult } from '../lib/xp';
 import { holidayOn } from '../lib/holidays';
 import { WeatherField } from '../components/WeatherField';
 import { navigate, type Route } from '../lib/router';
 import { num, nowTime, parseWatchText, today, uid, type WatchImport } from '../lib/util';
-import type { AppData, Session, SetEntry } from '../lib/types';
+import type { AppData, Exercise, Session, SetEntry } from '../lib/types';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { PlateCalc } from '../components/PlateCalc';
 import { ExerciseInfo } from '../components/ExerciseInfo';
@@ -74,6 +74,26 @@ function applyWatch(d: Draft, w: WatchImport): Draft {
   };
 }
 
+const prText = (p: PR) =>
+  p.kind === 'weight' ? `🏆 New weight PR: ${p.value} kg (was ${p.prev})`
+  : p.kind === 'assist' ? `🏆 PR: less assistance (${p.value} kg)`
+  : p.kind === 'reps' ? `🏆 Rep PR: ${p.value} reps (was ${p.prev})`
+  : p.kind === 'rounds' ? `🏆 PR: ${p.value} rounds (was ${p.prev})`
+  : p.kind === 'rungs' ? `🏆 PR: ${p.value} rungs (was ${p.prev})`
+  : p.kind === 'time' ? `🏆 Fastest ladder: ${p.value} min`
+  : '🏆 New best set (estimated 1RM)';
+
+/** Column labels for the set table, by exercise type. */
+function cols(ex?: Exercise) {
+  if (ex?.benchmark === 'ladder') return { kg: 'Minutes', reps: 'Rungs /19', kgUnit: 'min', repsUnit: 'rungs' };
+  if (ex?.benchmark === 'cindy') return { kg: 'Vest kg', reps: 'Rounds', kgUnit: 'kg', repsUnit: 'rnds' };
+  if (ex?.bwFactor) return { kg: '+ kg (vest)', reps: 'Reps', kgUnit: 'kg', repsUnit: 'reps' };
+  if (ex?.assisted) return { kg: 'Assist kg', reps: 'Reps', kgUnit: 'kg', repsUnit: 'reps' };
+  if (ex?.loadFactor === 2) return { kg: 'kg each', reps: 'Reps', kgUnit: 'kg', repsUnit: 'reps' };
+  if (ex?.barKg !== undefined) return { kg: 'Total kg', reps: 'Reps', kgUnit: 'kg', repsUnit: 'reps' };
+  return { kg: 'Weight', reps: 'Reps', kgUnit: 'kg', repsUnit: 'reps' };
+}
+
 /** Sets from the most recent session (before `date`) that included this exercise. */
 function lastTime(data: AppData, exerciseId: string, date: string, excludeId: string): SetEntry[] | null {
   const ss = sortSessions(data.sessions).reverse();
@@ -118,6 +138,8 @@ export function Log({ route }: { route: Route }) {
         toast('⌚ Watch data imported');
       }
       if (/^d{4}-d{2}-d{2}$/.test(p('date'))) d = { ...d, date: p('date') };
+      const addId = p('add');
+      if (addId && exMap.has(addId) && !d.exercises.some((e) => e.exerciseId === addId)) d = { ...d, exercises: [...d.exercises, newEx(addId, d)] };
       const routine = data.routines.find((r) => r.id === p('routine') && !r.deleted);
       if (routine) {
         const have = new Set(d.exercises.map((e) => e.exerciseId));
@@ -137,7 +159,7 @@ export function Log({ route }: { route: Route }) {
 
   const newEx = (exerciseId: string, d: Draft): DraftEx => {
     const last = lastTime(data, exerciseId, d.date, d.id);
-    const n = last?.length ?? 3;
+    const n = exMap.get(exerciseId)?.benchmark ? 1 : (last?.length ?? 3);
     return { exerciseId, sets: Array.from({ length: n }, (_, i) => ({ kg: last?.[i] ? String(last[i].kg) : '', reps: '' })) };
   };
 
@@ -261,7 +283,7 @@ export function Log({ route }: { route: Route }) {
 
             {(prs.length > 0 || isNew) && (
               <div className="pr-flash">
-                {prs.map((p) => (p.kind === 'weight' ? `🏆 New weight PR: ${p.value} kg (was ${p.prev})` : p.kind === 'assist' ? `🏆 PR: less assistance (${p.value} kg)` : '🏆 New best set (estimated 1RM)')).join(' · ')}
+                {prs.map(prText).join(' · ')}
                 {isNew && <span className="accent">✨ New exercise +15 XP</span>}
               </div>
             )}
@@ -270,8 +292,8 @@ export function Log({ route }: { route: Route }) {
 
             <div className="set-row set-head">
               <span className="center">#</span>
-              <span className="center">{ex?.assisted ? 'Assist kg' : ex?.loadFactor === 2 ? 'kg each' : ex?.barKg !== undefined ? 'Total kg' : 'Weight'}</span>
-              <span className="center">Reps</span>
+              <span className="center">{cols(ex).kg}</span>
+              <span className="center">{cols(ex).reps}</span>
               <span />
             </div>
             {e.sets.map((st, k) => (
@@ -280,12 +302,12 @@ export function Log({ route }: { route: Route }) {
                 <div className="unit-input">
                   <input className="input" inputMode="decimal" value={st.kg} placeholder={last?.[k] ? String(last[k].kg) : '0'} aria-label={`Set ${k + 1} weight`}
                     onChange={(ev) => setEx(i, (x) => ({ ...x, sets: x.sets.map((y, m) => (m === k ? { ...y, kg: ev.target.value } : y)) }))} />
-                  <span>kg</span>
+                  <span>{cols(ex).kgUnit}</span>
                 </div>
                 <div className="unit-input">
                   <input className="input" inputMode="numeric" value={st.reps} placeholder={last?.[k] ? String(last[k].reps) : '—'} aria-label={`Set ${k + 1} reps`}
                     onChange={(ev) => setEx(i, (x) => ({ ...x, sets: x.sets.map((y, m) => (m === k ? { ...y, reps: ev.target.value } : y)) }))} />
-                  <span>reps</span>
+                  <span>{cols(ex).repsUnit}</span>
                 </div>
                 <button className="icon-btn" aria-label={`Remove set ${k + 1}`} onClick={() => setEx(i, (x) => ({ ...x, sets: x.sets.filter((_, m) => m !== k) }))}>−</button>
               </div>
@@ -374,7 +396,7 @@ export function Log({ route }: { route: Route }) {
 
 /** Per-machine settings memo ("seat 4, back pad 2"), synced with your data. */
 export function SettingNote({ exerciseId, value, equipment }: { exerciseId: string; value: string; equipment?: string }) {
-  const freeWeight = equipment === 'Dumbbell' || equipment === 'Barbell' || equipment === 'EZ bar';
+  const freeWeight = ['Dumbbell', 'Barbell', 'EZ bar', 'Bodyweight', 'Benchmark'].includes(equipment ?? '');
   const [edit, setEdit] = useState(false);
   const [v, setV] = useState(value);
   if (!edit)

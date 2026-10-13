@@ -125,8 +125,17 @@ function Lifts() {
               <div className="tiny muted">{masteryOf(b.sessions).current ? `${masteryOf(b.sessions).current!.icon} ${masteryOf(b.sessions).current!.name} · ` : ''}{plural(b.sessions, 'session')} · last {fmtDate(b.lastDate)}</div>
             </div>
             <div className="center">
-              <div className="bold num">{b.maxKg} kg</div>
-              <div className="tiny muted">{ex?.assisted ? 'least assist' : 'best'}</div>
+              {ex?.bwFactor || ex?.benchmark ? (
+                <>
+                  <div className="bold num">{b.maxReps}</div>
+                  <div className="tiny muted">{ex?.benchmark === 'ladder' ? 'rungs' : ex?.benchmark === 'cindy' ? 'rounds' : 'best reps'}</div>
+                </>
+              ) : (
+                <>
+                  <div className="bold num">{b.maxKg} kg</div>
+                  <div className="tiny muted">{ex?.assisted ? 'least assist' : 'best'}</div>
+                </>
+              )}
             </div>
           </a>
         );
@@ -141,11 +150,14 @@ export function LiftDetail({ id }: { id: string }) {
   const ex = exMap.get(id);
   const hist = g.history.get(id) ?? [];
   const best = g.bests.get(id);
-  const [metric, setMetric] = useState<'kg' | 'e1rm' | 'volume'>('kg');
+  // Bodyweight moves and Hero benchmarks are about reps / rounds / rungs, not kilos.
+  const repMode = !!(ex?.bwFactor || ex?.benchmark);
+  const repUnit = ex?.benchmark === 'ladder' ? 'rungs' : ex?.benchmark === 'cindy' ? 'rounds' : 'reps';
+  const [metric, setMetric] = useState<'kg' | 'e1rm' | 'volume' | 'reps'>(repMode ? 'reps' : 'kg');
   // One point per day (two workouts on the same day: best value for metrics, summed volume).
   const byDay = new Map<string, number>();
   for (const h of hist) {
-    const v = metric === 'kg' ? h.bestKg : metric === 'e1rm' ? Math.round(h.bestE1rm * 10) / 10 : Math.round(h.volume);
+    const v = metric === 'reps' ? Math.max(...h.sets.map((x) => x.reps)) : metric === 'kg' ? h.bestKg : metric === 'e1rm' ? Math.round(h.bestE1rm * 10) / 10 : Math.round(h.volume);
     const prev = byDay.get(h.date);
     byDay.set(h.date, prev === undefined ? v : metric === 'volume' ? prev + v : ex?.assisted ? Math.min(prev, v) : Math.max(prev, v));
   }
@@ -154,7 +166,16 @@ export function LiftDetail({ id }: { id: string }) {
   return (
     <div className="stack-lg">
       <PageHead title={ex?.name ?? 'Exercise'} backTo="progress?tab=lifts" right={<a className="icon-btn" href={`#/guide/${encodeURIComponent(id)}`} aria-label="How to">ⓘ</a>} />
-      {best && (
+      {best && repMode && (
+        <div className="grid-3">
+          <div className="stat"><div className="label">Best set</div><div className="value">{best.maxReps} {repUnit}</div><div className="tiny muted">{fmtDate(best.maxRepsDate)}</div></div>
+          {ex?.benchmark === 'ladder'
+            ? <div className="stat"><div className="label">Fastest full ladder</div><div className="value">{best.maxKg ? `${best.maxKg} min` : '—'}</div></div>
+            : <div className="stat"><div className="label">{ex?.benchmark ? 'Best vest' : 'Most added kg'}</div><div className="value">{best.maxKg} kg</div></div>}
+          <div className="stat"><div className="label">Sessions</div><div className="value">{best.sessions}</div></div>
+        </div>
+      )}
+      {best && !repMode && (
         <div className="grid-3">
           <div className="stat"><div className="label">{ex?.assisted ? 'Least assist' : 'Heaviest'}</div><div className="value">{best.maxKg} kg</div><div className="tiny muted">{fmtDate(best.maxKgDate)}</div></div>
           {!ex?.assisted && <div className="stat"><div className="label">Est. 1-rep max</div><div className="value">{fmtNum(best.maxE1rm, 1)}</div><div className="tiny muted">{fmtDate(best.maxE1rmDate)}</div></div>}
@@ -165,11 +186,12 @@ export function LiftDetail({ id }: { id: string }) {
       {pts.length > 0 && (
         <div className="card stack">
           <div className="chips">
-            <button className={`chip${metric === 'kg' ? ' on' : ''}`} onClick={() => setMetric('kg')}>{ex?.assisted ? 'Assistance' : 'Top weight'}</button>
-            {!ex?.assisted && <button className={`chip${metric === 'e1rm' ? ' on' : ''}`} onClick={() => setMetric('e1rm')}>Est. 1RM</button>}
+            {repMode && <button className={`chip${metric === 'reps' ? ' on' : ''}`} onClick={() => setMetric('reps')}>Best {repUnit}</button>}
+            {!repMode && <button className={`chip${metric === 'kg' ? ' on' : ''}`} onClick={() => setMetric('kg')}>{ex?.assisted ? 'Assistance' : 'Top weight'}</button>}
+            {!ex?.assisted && !repMode && <button className={`chip${metric === 'e1rm' ? ' on' : ''}`} onClick={() => setMetric('e1rm')}>Est. 1RM</button>}
             <button className={`chip${metric === 'volume' ? ' on' : ''}`} onClick={() => setMetric('volume')}>Volume</button>
           </div>
-          <LineChart points={pts} unit="kg" label={`${ex?.name} ${metric}`} format={(v) => `${fmtNum(v, 1)} kg`} />
+          <LineChart points={pts} unit={metric === 'reps' ? repUnit : 'kg'} label={`${ex?.name} ${metric}`} format={(v) => `${fmtNum(v, 1)} ${metric === 'reps' ? repUnit : 'kg'}`} />
           {metric === 'e1rm' && <p className="tiny muted">Estimated 1-rep max (Epley formula) lets you compare sets with different reps: 50 kg × 12 ≈ 70 kg × 1.</p>}
         </div>
       )}
