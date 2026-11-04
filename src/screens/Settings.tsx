@@ -4,6 +4,7 @@ import { useSession } from '../lib/session';
 import { checkRepo } from '../lib/github';
 import { AUTOLOCK_OPTIONS, changePin, getAutolockMin, setAutolockMin, touchKey, updateConfig, wipeDevice } from '../lib/vault';
 import { mergeData, normalizeData } from '../lib/merge';
+import { withWeeklyGoal } from '../lib/engine';
 import { fmtDate, num, toISODate, today } from '../lib/util';
 import type { Profile, Sex } from '../lib/types';
 import { CellIcon, PageHead, SyncBadge, toast } from '../components/ui';
@@ -37,10 +38,11 @@ function ProfileCard() {
       sex: f.sex as Sex | '',
       heightCm: num(f.heightCm) || null,
       birthYear: Math.round(num(f.birthYear)) || null,
-      weeklyGoal: Math.min(7, Math.max(1, Math.round(num(f.weeklyGoal)) || 3)),
       goalWeightKg: num(f.goalWeightKg) || null,
     };
-    getStore().update((d) => { d.profile = next; }, 'Update profile');
+    const goal = Math.min(7, Math.max(1, Math.round(num(f.weeklyGoal)) || 3));
+    const hasWorkouts = data.sessions.some((s) => !s.deleted);
+    getStore().update((d) => { d.profile = withWeeklyGoal(next, goal, today(), hasWorkouts); }, 'Update profile');
     toast('Profile saved');
   };
   const age = p.birthYear ? new Date().getFullYear() - p.birthYear : null;
@@ -60,7 +62,7 @@ function ProfileCard() {
         <label className="field">Goal weight (kg)<input className="input" inputMode="decimal" value={f.goalWeightKg} onChange={(e) => setF({ ...f, goalWeightKg: e.target.value })} placeholder="optional" /></label>
       </div>
       <label className="field">
-        Weekly goal: gym days per week
+        Weekly goal: gym days per week{data.sessions.some((s) => !s.deleted) ? ' (a change starts next Monday)' : ''}
         <div className="chips">
           {[1, 2, 3, 4, 5, 6, 7].map((n) => (
             <button key={n} className={`chip${String(n) === f.weeklyGoal ? ' on' : ''}`} onClick={() => setF({ ...f, weeklyGoal: String(n) })}>{n}</button>
@@ -87,7 +89,7 @@ function WatchCard() {
         <h2 className="row" style={{ gap: 10 }}><CellIcon name="watch" color="#30d158" />Apple Watch</h2>
         <button className="btn sm" onClick={() => setOpen((v) => !v)}>{open ? 'Hide' : 'Set up'}</button>
       </div>
-      <p className="small dim">Workout minutes and active calories earn XP. Enter them by hand, or build a one-tap iOS Shortcut that grabs your latest workout.</p>
+      <p className="small dim">Keep workout minutes and active calories with your stats. Enter them by hand, or build a one-tap iOS Shortcut that grabs your latest workout.</p>
       {open && (
         <div className="stack small">
           <ol className="steps-guide">

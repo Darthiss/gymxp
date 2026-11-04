@@ -1,7 +1,8 @@
-// View-model helpers for the Today screen: one ranked "Up next" feed that merges every
-// long-term progression loop, the Mon–Sun strip, and human titles for workouts.
-import { ACHIEVEMENTS, DIVISIONS, SEASON_TIERS, nextVisitMilestone, type AchievementCategory, type GameState } from './xp';
-import { addDays, fmtDate, fmtNum, today, weekKey } from './util';
+// View-model helpers for the Today screen: the streak message, the closest goal, the Mon–Sun
+// strip, and human titles for workouts.
+import { nextVisitMilestone, perfectWeekStars, RULES, SEASON_TIERS, seasonTarget, starsForLevel, type GameState } from './engine';
+import { ACHIEVEMENTS, type AchievementCategory } from './trophies';
+import { addDays, fmtDate, fmtNum, parseDate, plural, today, weekKey } from './util';
 import type { Exercise, Session } from './types';
 
 export interface Goal {
@@ -10,25 +11,23 @@ export interface Goal {
   title: string;
   sub: string;
   pct: number;
-  xp?: number;
+  stars?: number;
   href: string;
   color?: string;
 }
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
-/** Achievement progress in its natural unit: tonnes for volume, hours for time. */
+/** Trophy progress in its natural unit: tonnes for volume, hours for time. */
 export const fmtProgress = (cat: AchievementCategory, v: number) =>
   cat === 'Volume' ? `${fmtNum(v / 1000, 1)} t` : cat === 'Time' ? `${fmtNum(v / 60, 1)} h` : fmtNum(v);
 
-/** Season tier progress, shared by the Today feed and the Career season card. */
+/** Season medal progress, shared by the Today goal and the Career season card. */
 export function seasonProgress(s: GameState['season']) {
-  const nextIdx = s.tier + 1;
-  const next = SEASON_TIERS[nextIdx];
-  const champion = next?.name === 'Champion';
-  const from = s.tier >= 0 ? s.targets[s.tier] : 0;
-  const pct = !next ? 1 : champion ? s.goalWeeks / s.weeks : (s.visits - from) / (s.targets[nextIdx] - from);
-  return { next, champion, pct: clamp01(pct), target: next ? s.targets[nextIdx] : 0 };
+  const next = SEASON_TIERS[s.tier + 1];
+  const target = next ? seasonTarget(next, s) : 0;
+  const from = s.tier >= 0 ? seasonTarget(SEASON_TIERS[s.tier], s) : 0;
+  return { next, target, pct: next ? clamp01((s.perfect - from) / (target - from || 1)) : 1 };
 }
 
 /** Every long-term unlock you're working toward, closest first. */
@@ -37,43 +36,65 @@ export function upNext(g: GameState): Goal[] {
   const L = g.level;
 
   if (L.nextRank) {
-    const rankUp = L.division === DIVISIONS;
+    const from = starsForLevel(L.rank.minLevel), to = starsForLevel(L.nextRank.minLevel);
     out.push({
-      id: 'star', icon: rankUp ? '🎖️' : '⭐', color: L.rank.color,
-      title: rankUp ? `Rank up to ${L.nextRank.title}` : `${L.rank.title} star ${L.division + 1}`,
-      sub: `${L.rp}/100 rank points · ${L.limiter === 'visits' ? 'gym visits set the pace' : 'XP sets the pace'}`,
-      pct: L.rp / 100, href: '#/awards',
+      id: 'rank', icon: '🎖️', color: L.nextRank.color, title: L.nextRank.title,
+      sub: `Next rank, at level ${L.nextRank.minLevel}`, pct: (g.totalStars - from) / (to - from), href: '#/awards',
     });
   }
 
   const ms = nextVisitMilestone(g.visits);
   if (ms?.target) {
     const prev = [...g.unlocked].reverse().find((a) => a.category === 'Visits')?.target ?? 0;
-    out.push({ id: ms.id, icon: ms.icon, title: ms.title, sub: `${fmtNum(g.visits)} of ${fmtNum(ms.target)} gym visits`, pct: (g.visits - prev) / (ms.target - prev), xp: ms.xp, href: '#/awards?tab=achievements' });
+    out.push({ id: ms.id, icon: ms.icon, title: ms.title, sub: `${fmtNum(g.visits)} of ${fmtNum(ms.target)} gym visits`, pct: (g.visits - prev) / (ms.target - prev), stars: ms.stars, href: '#/awards?tab=achievements' });
   }
 
   const sp = seasonProgress(g.season);
   if (sp.next) {
     out.push({
       id: 'season', icon: sp.next.icon, color: sp.next.color, title: `${sp.next.name} · ${g.season.label} season`,
-      sub: sp.champion ? `Weekly goal every week (${g.season.goalWeeks}/${g.season.weeks})` : `${g.season.visits} of ${sp.target} visits · ends ${fmtDate(g.season.end, { day: 'numeric', month: 'short' })}`,
-      pct: sp.pct, xp: sp.next.xp, href: '#/awards',
+      sub: `${g.season.perfect} of ${sp.target} Perfect Weeks · ends ${fmtDate(g.season.end, { day: 'numeric', month: 'short' })}`,
+      pct: sp.pct, stars: RULES.seasonMedalStars, href: '#/awards',
     });
   }
 
-  // Locked achievements already in motion (visit milestones are covered above).
+  // Locked trophies already in motion (visit milestones are covered above).
   ACHIEVEMENTS.filter((a) => a.target && a.category !== 'Visits' && !g.unlockedIds.has(a.id) && (g.progress[a.id] ?? 0) > 0)
     .map((a) => ({ a, pct: (g.progress[a.id] ?? 0) / a.target! }))
     .sort((x, y) => y.pct - x.pct)
     .slice(0, 3)
     .forEach(({ a, pct }) => {
       const prog = `${fmtProgress(a.category, g.progress[a.id] ?? 0)} of ${fmtProgress(a.category, a.target!)}`;
-      // "500 Sets" already says what to do; "Limit Breaker" needs the description.
-      const selfExplained = a.title.includes(fmtNum(a.target!)) || a.title.includes(String(a.target));
-      out.push({ id: a.id, icon: a.icon, title: a.title, sub: selfExplained ? prog : `${prog} · ${a.desc}`, pct, xp: a.xp, href: '#/awards?tab=achievements' });
+      out.push({ id: a.id, icon: a.icon, title: a.title, sub: `${prog} · ${a.desc}`, pct, stars: a.stars, href: '#/awards?tab=achievements' });
     });
 
   return out.map((x) => ({ ...x, pct: clamp01(x.pct) })).sort((a, b) => b.pct - a.pct);
+}
+
+/** The line under the week strip: what this week still needs, stated calmly. */
+export function weekMessage(g: GameState, date = today()): { text: string; tone: 'calm' | 'risk' | 'done' } {
+  const { thisWeekVisits: visits, weekGoal: goal, streak } = g;
+  if (g.perfectThisWeek) return { text: 'Perfect Week. Nice work.', tone: 'done' };
+  const dow = (parseDate(date).getDay() + 6) % 7; // Mon = 0
+  if (visits === 0 && streak.weeks > 0 && dow >= 3) {
+    return {
+      text: streak.shields > 0
+        ? `Train by Sunday to keep your ${plural(streak.weeks, 'week')} going. A shield covers you if not.`
+        : `Train by Sunday to keep your ${streak.weeks}-week streak.`,
+      tone: 'risk',
+    };
+  }
+  const left = goal - visits;
+  const streakThen = visits > 0 ? streak.weeks : streak.weeks + 1;
+  const pay = perfectWeekStars(goal, streakThen);
+  return { text: `${left === 1 ? 'One more' : `${left} more`} for a Perfect Week +${pay}★`, tone: 'calm' };
+}
+
+/** A gentle note when a streak ended recently. Never blames anyone. */
+export function streakNote(g: GameState, date = today()): string | null {
+  const b = g.streak.lastBreak;
+  if (!b || b.weeks < 2 || addDays(b.week, 21) < weekKey(date)) return null;
+  return `Your streak ended at ${b.weeks} weeks. Your best is still ${g.streak.best}.`;
 }
 
 export interface WeekDay { date: string; letter: string; on: boolean; today: boolean; future: boolean }

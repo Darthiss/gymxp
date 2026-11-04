@@ -1,78 +1,67 @@
-// Player card, rank stars, rank points, season track, weekly quests and goal rows.
+// Level card, streak card, season track, weekly challenge and goal rows.
 import type { CSSProperties, ReactNode } from 'react';
-import { DIVISIONS, SEASON_TIERS, nextRankNeeds, type GameState, type LevelInfo, type QuestStatus, type SeasonState } from '../lib/xp';
-import { seasonProgress, type Goal } from '../lib/today';
+import { RULES, SEASON_TIERS, type GameState, type QuestStatus, type SeasonState } from '../lib/engine';
+import { seasonProgress, streakNote, weekDays, weekMessage, type Goal } from '../lib/today';
 import { fmtDate, fmtNum } from '../lib/util';
+import type { Session } from '../lib/types';
 import { Icon } from './Icon';
-import { LevelBadge, Ring, XpBar } from './ui';
+import { ProgressBar, Ring } from './ui';
 
-export function Stars({ info, size = '1em' }: { info: LevelInfo; size?: string }) {
-  if (!info.nextRank) return info.division ? <span className="gold stars" style={{ fontSize: size }}>★×{info.division}</span> : null;
-  return (
-    <span className="stars" style={{ fontSize: size }} aria-label={`Star ${info.division} of ${DIVISIONS}`}>
-      {Array.from({ length: DIVISIONS }, (_, i) => (
-        <span key={i} style={{ color: i < info.division ? info.rank.color : 'rgba(255,255,255,0.14)' }}>★</span>
-      ))}
-    </span>
-  );
-}
-
-/** The identity card: level ring, rank, stars and XP to the next level. */
-export function PlayerCard({ g, href, big, footer }: { g: GameState; href?: string; big?: boolean; footer?: ReactNode }) {
+/** Your identity: level, rank name, and the stars filling the current level. */
+export function LevelCard({ g, href }: { g: GameState; href?: string }) {
   const L = g.level;
   const body = (
-    <>
-      <div className="row" style={{ gap: 16 }}>
-        <LevelBadge info={L} size={big ? 104 : 84} />
-        <div className="grow stack" style={{ gap: 5 }}>
-          <div className="rank-name" style={{ color: L.rank.color }}>{L.rank.title}</div>
-          <Stars info={L} size="1.1rem" />
-          <div className="tiny dim num">{fmtNum(g.totalXp)} XP total</div>
+    <div className="row" style={{ gap: 14 }}>
+      <div className="lvl-tile" style={{ color: L.rank.color }}><small>LVL</small><b>{L.level}</b></div>
+      <div className="grow stack" style={{ gap: 6 }}>
+        <div className="rank-name" style={{ color: L.rank.color }}>{L.rank.title}</div>
+        <ProgressBar gold pct={L.pct} />
+        <div className="row between tiny dim num">
+          <span>★ {fmtNum(L.into)} / {fmtNum(L.span)}</span>
+          <span>{fmtNum(L.span - L.into)}★ to level {L.level + 1}</span>
         </div>
       </div>
-      <div>
-        <div className="meta">
-          <span>Level <b>{L.level + 1}</b> in</span>
-          <span><b>{fmtNum(L.span - L.into)}</b> XP</span>
-        </div>
-        <XpBar pct={L.pct} />
-      </div>
-      {big && <RankProgress info={L} visits={g.visits} />}
-      {footer}
-    </>
+    </div>
   );
   const style = { '--glow': L.rank.color } as CSSProperties;
-  return href ? (
-    <a href={href} className="card card-link glow player" style={style}>{body}</a>
-  ) : (
-    <div className="card glow player" style={style}>{body}</div>
-  );
+  return href ? <a href={href} className="card card-link glow player" style={style}>{body}</a> : <div className="card glow player" style={style}>{body}</div>;
 }
 
-/** Rank points toward the next star, plus what's limiting progress. */
-export function RankProgress({ info, visits }: { info: LevelInfo; visits: number }) {
-  const top = !info.nextRank;
-  const nextStar = top ? 'next service star' : info.division < DIVISIONS ? `star ${info.division + 1}` : info.nextRank!.title;
-  const needs = !top && info.division === DIVISIONS ? nextRankNeeds(info, visits) : '';
+/** The habit: streak, flame, shields, this week's days and what the week still needs. */
+export function StreakCard({ g, sessions }: { g: GameState; sessions: Session[] }) {
+  const { streak, thisWeekVisits, weekGoal } = g;
+  const msg = weekMessage(g);
+  const note = streakNote(g);
   return (
-    <div>
-      <div className="meta">
-        <span>Rank points → {nextStar}</span>
-        <span><b>{info.rp}</b> / 100</span>
-      </div>
-      <XpBar gold pct={info.rp / 100} />
-      {!top && (
-        <div className="tiny dim" style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Icon name={info.limiter === 'visits' ? 'calendar' : 'bolt'} size={13} />
-          {info.limiter === 'visits' ? 'Gym visits set your pace right now' : 'XP sets your pace right now'}
-          {needs && ` · ${info.nextRank!.title} needs ${needs}`}
+    <div className="card stack" style={{ gap: 14 }}>
+      <div className="streak-head">
+        <span className={`flame${streak.weeks ? '' : ' out'}`}><Icon name="flame" size={22} stroke={2.2} fill={streak.weeks > 0} /></span>
+        <div className="grow">
+          <div className="weeks">{streak.weeks ? `${streak.weeks} ${streak.weeks === 1 ? 'week' : 'weeks'}` : 'No streak yet'}</div>
+          <div className="tiny dim">{streak.weeks ? `${streak.flame.name} · Perfect Weeks pay ×${streak.flame.mult}` : 'Train once this week to start one'}</div>
         </div>
-      )}
+        <div className="shields" role="img" aria-label={`${streak.shields} of ${RULES.maxShields} streak shields`} title="Streak shields cover a week with no workout. Earn one every 4 Perfect Weeks.">
+          {Array.from({ length: RULES.maxShields }, (_, i) => <span key={i} className={i < streak.shields ? 'on' : ''}><Icon name="shield" size={20} fill stroke={0} /></span>)}
+        </div>
+      </div>
+      <div className="week">
+        {weekDays(sessions).map((d) => (
+          <div key={d.date} className={`d${d.on ? ' on' : ''}${d.today ? ' today' : ''}${d.future ? ' future' : ''}`}>
+            {d.letter}
+            <i>{d.on && <Icon name="check" size={16} stroke={3.2} />}</i>
+          </div>
+        ))}
+      </div>
+      <div className="row between" style={{ alignItems: 'flex-start' }}>
+        <span className={`week-msg ${msg.tone}`}>{msg.text}</span>
+        <span className="small bold num" style={{ flex: 'none' }}>{thisWeekVisits} of {weekGoal}</span>
+      </div>
+      {note && <div className="tiny dim">{note}</div>}
     </div>
   );
 }
 
-/** Season card with the six tier medals as a track. */
+/** Season card with the five medals as a track. */
 export function SeasonCard({ s }: { s: SeasonState }) {
   const sp = seasonProgress(s);
   const tier = s.tier >= 0 ? SEASON_TIERS[s.tier] : null;
@@ -83,7 +72,7 @@ export function SeasonCard({ s }: { s: SeasonState }) {
           <div className="kicker">Season · ends {fmtDate(s.end, { day: 'numeric', month: 'short' })}</div>
           <div className="bold" style={{ fontSize: '1.1rem', marginTop: 2 }}>{s.label}</div>
         </div>
-        <span className="tag" style={{ background: tier ? `${tier.color}22` : undefined, color: tier?.color }}>{tier ? `${tier.icon} ${tier.name}` : 'Unranked'}</span>
+        <span className="tag" style={{ background: tier ? `${tier.color}22` : undefined, color: tier?.color }}>{tier ? `${tier.icon} ${tier.name}` : 'No medal yet'}</span>
       </div>
       <div className="tiers">
         {SEASON_TIERS.map((t, i) => (
@@ -93,23 +82,18 @@ export function SeasonCard({ s }: { s: SeasonState }) {
           </div>
         ))}
       </div>
-      {sp.next && (
+      {sp.next ? (
         <div>
-          <XpBar gold pct={sp.pct} />
-          <div className="tiny dim num" style={{ marginTop: 6 }}>
-            {sp.champion
-              ? `Champion: hit your weekly goal every week (${s.goalWeeks}/${s.weeks})`
-              : `${s.visits} of ${sp.target} visits → ${sp.next.name} · +${sp.next.xp} XP`}
-          </div>
+          <ProgressBar gold pct={sp.pct} />
+          <div className="tiny dim num" style={{ marginTop: 6 }}>{s.perfect} of {sp.target} Perfect Weeks → {sp.next.name} · +{RULES.seasonMedalStars}★</div>
         </div>
-      )}
-      {!sp.next && <div className="small gold">Champion! Goal hit every week this season 👑</div>}
+      ) : <div className="small gold">Champion! A Perfect Week every week this season 👑</div>}
     </div>
   );
 }
 
 /** A goal with a progress ring around its icon. */
-export function GoalRow({ icon, title, sub, pct, xp, done, color }: { icon: string; title: ReactNode; sub?: ReactNode; pct: number; xp?: number; done?: boolean; color?: string }) {
+export function GoalRow({ icon, title, sub, pct, stars, done, color }: { icon: string; title: ReactNode; sub?: ReactNode; pct: number; stars?: number; done?: boolean; color?: string }) {
   return (
     <div className={`goal${done ? ' done' : ''}`}>
       <Ring pct={done ? 1 : pct} size={42} stroke={3.5} color={done ? 'var(--accent)' : color ?? 'var(--accent)'}>
@@ -119,7 +103,7 @@ export function GoalRow({ icon, title, sub, pct, xp, done, color }: { icon: stri
         <div className="gt">{title}</div>
         {sub && <div className="gs">{sub}</div>}
       </div>
-      {xp !== undefined && <span className="xp-chip">+{fmtNum(xp)}</span>}
+      {stars !== undefined && <span className="star-chip gold">+{fmtNum(stars)}★</span>}
     </div>
   );
 }
@@ -130,7 +114,7 @@ export function GoalList({ goals }: { goals: Goal[] }) {
       {goals.map((x) => (
         <a key={x.id} className="cell" href={x.href} style={{ '--inset': '70px' } as CSSProperties}>
           <div className="grow">
-            <GoalRow icon={x.icon} title={x.title} sub={x.sub} pct={x.pct} xp={x.xp} color={x.color} />
+            <GoalRow icon={x.icon} title={x.title} sub={x.sub} pct={x.pct} stars={x.stars} color={x.color} />
           </div>
         </a>
       ))}
@@ -138,20 +122,17 @@ export function GoalList({ goals }: { goals: Goal[] }) {
   );
 }
 
-export function QuestList({ quests }: { quests: QuestStatus[] }) {
+export function ChallengeRow({ c }: { c: QuestStatus }) {
   return (
-    <div className="stack" style={{ gap: 14 }}>
-      {quests.map((q) => (
-        <GoalRow
-          key={q.id}
-          icon={q.icon}
-          title={q.title}
-          done={q.done}
-          pct={q.value / q.target}
-          sub={q.done ? 'Complete' : q.target > 1 ? `${fmtNum(Math.min(q.value, q.target))} / ${fmtNum(q.target)}` : 'Not yet'}
-          xp={q.xp}
-        />
-      ))}
+    <div className="card">
+      <GoalRow
+        icon={c.icon}
+        title={c.title}
+        done={c.done}
+        pct={c.value / c.target}
+        sub={c.done ? 'Done' : c.target > 1 ? `This week's challenge · ${fmtNum(Math.min(c.value, c.target))} of ${fmtNum(c.target)}` : "This week's challenge"}
+        stars={c.stars}
+      />
     </div>
   );
 }

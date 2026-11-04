@@ -8,7 +8,7 @@ import { fmtDate, uid } from '../lib/util';
 import { ExerciseInfo } from '../components/ExerciseInfo';
 import { Cell, CellIcon, ExerciseThumb, LargeTitle, PageHead, RepoPhoto, toast } from '../components/ui';
 import { Icon } from '../components/Icon';
-import { masteryOf } from '../lib/xp';
+import { medalOf } from '../lib/engine';
 import { SettingNote } from './Log';
 
 export function Guide() {
@@ -71,7 +71,7 @@ export function GuideDetail({ id }: { id: string }) {
   const ex = exMap.get(id);
   if (!ex) return <PageHead title="Not found" backTo="guide" />;
   const best = g.bests.get(id);
-  const m = best ? masteryOf(best.sessions) : null;
+  const m = best ? medalOf(best.points) : null;
   return (
     <div className="stack-lg">
       <PageHead title={ex.name} backTo="guide" right={ex.custom ? <a className="btn sm" href={`#/guide-edit/${encodeURIComponent(id)}`}>Edit</a> : undefined} />
@@ -82,9 +82,9 @@ export function GuideDetail({ id }: { id: string }) {
           <div className="cell static"><SettingNote exerciseId={id} value={settingFor(data, id)} equipment={ex.equipment} /></div>
           {best ? (
             <Cell href={`#/lift/${encodeURIComponent(id)}`} icon={<CellIcon name="chart" color="#30d158" />}
-              title={`Best ${best.maxKg} kg · ${best.sessions} sessions`} sub={`${m?.current ? `${m.current.icon} ${m.current.name} mastery · ` : ''}last ${fmtDate(best.lastDate)}`} />
+              title={`Best ${best.maxKg} kg · ${best.sessions} sessions`} sub={`${m?.current ? `${m.current.icon} ${m.current.name} medal · ` : ''}last ${fmtDate(best.lastDate)}`} />
           ) : (
-            <Cell icon={<CellIcon name="sparkles" color="#bf5af2" />} title="Not logged yet" sub="Your first time earns +15 XP" />
+            <Cell icon={<CellIcon name="sparkles" color="#bf5af2" />} title="Not logged yet" sub="Your first time sets your baseline" />
           )}
           <Cell href={`#/log?add=${encodeURIComponent(id)}`} icon={<CellIcon name="plus" color="#0a84ff" />} title="Add to a workout" />
         </div>

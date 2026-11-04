@@ -1,6 +1,6 @@
 # GymXP
 
-A personal gym habit tracker that works like a game. Log the machines, weights and reps you did, and earn XP, levels, ranks, streaks, personal records and milestone achievements. It runs on desktop and phone, and you can install it to your home screen.
+A personal gym habit tracker that works like a game. Log the machines, weights and reps you did. Every workout earns up to 3 stars, and stars build your level, while a weekly streak, machine medals, records and trophies keep you coming back. It runs on desktop and phone, and you can install it to your home screen.
 
 ## How it's hosted and secured
 
@@ -38,10 +38,11 @@ Settings → ⌚ Apple Watch has step-by-step instructions for an iOS Shortcut. 
 ```bash
 npm install
 npm run dev      # http://localhost:5173  (add ?demo for sample data, no GitHub needed; ?demo&draft adds a workout in progress)
-npm test         # XP engine, merge, crypto, parsing
+npm test         # game engine, merge, crypto, parsing
 npm run build
 ```
 
 - `scripts/import-exercises.mjs` regenerates `src/data/exercises.json` and the photos in `public/ex/` from [free-exercise-db](https://github.com/yuhonas/free-exercise-db) (public domain).
 - `scripts/make-icons.mjs` re-renders the app icons.
-- XP rules live in `src/lib/xp.ts` (`RULES`, the achievement tiers and `RANKS`). Everything is recomputed from the raw log, so changing the rules re-scores your whole history.
+- The rules live in `src/lib/engine.ts` and `src/lib/trophies.ts`, and [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md) explains them. Everything is recomputed from the raw log, so changing the rules re-scores your whole history.
+- `npm run calibrate -- backup.json` scores a backup from Settings → Export against the design's targets.

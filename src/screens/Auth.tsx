@@ -62,7 +62,7 @@ export function Setup({ onDone }: { onDone: (u: Unlocked) => void }) {
         </div>
 
         <div className="card stack">
-          <h2 className="row" style={{ gap: 10 }}><span className="xp-chip">1</span>Where your data lives</h2>
+          <h2 className="row" style={{ gap: 10 }}><span className="star-chip">1</span>Where your data lives</h2>
           <ol className="steps-guide small">
             <li>
               <a href={NEW_REPO_URL} target="_blank" rel="noopener noreferrer">Create a new repository</a> named <b>gymxp-data</b>, set to <b>Private</b>. Leave it empty.
@@ -87,7 +87,7 @@ export function Setup({ onDone }: { onDone: (u: Unlocked) => void }) {
         </div>
 
         <div className="card stack">
-          <h2 className="row" style={{ gap: 10 }}><span className="xp-chip">2</span>Lock it with a PIN</h2>
+          <h2 className="row" style={{ gap: 10 }}><span className="star-chip">2</span>Lock it with a PIN</h2>
           <p className="small dim">
             You'll enter it when the app is locked. Use 6+ characters; a passphrase is stronger than digits. After {MAX_FAILS} wrong tries this device forgets the token (your data stays safe on GitHub).
           </p>

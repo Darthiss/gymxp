@@ -14,6 +14,7 @@ export interface Profile extends Rec {
   heightCm: number | null;
   birthYear: number | null;
   weeklyGoal: number; // target gym visits per week
+  goalHistory?: { from: string; goal: number }[]; // past changes, oldest first; `from` is a Monday ('' = since the start)
   goalWeightKg: number | null;
   weatherLat?: number | null; // rounded to 0.1° (~10 km), only used for weather lookups
   weatherLon?: number | null;

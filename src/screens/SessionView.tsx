@@ -1,11 +1,11 @@
 import { useData } from '../lib/store';
-import { fmtSet } from '../lib/exercises';
+import { fmtBeat, fmtSet } from '../lib/exercises';
 import { useExerciseMap, useGame } from '../lib/game';
 import { sessionTitle } from '../lib/today';
 import { fmtDate, fmtKg, fmtNum } from '../lib/util';
-import { XpBreakdown } from '../components/Celebration';
+import { RewardLines } from '../components/Celebration';
 import { Icon } from '../components/Icon';
-import { ExerciseThumb, PageHead } from '../components/ui';
+import { ExerciseThumb, PageHead, StarRating } from '../components/ui';
 
 export function SessionView({ id }: { id: string }) {
   const data = useData();
@@ -30,6 +30,7 @@ export function SessionView({ id }: { id: string }) {
       <div className="stack" style={{ gap: 6, marginTop: -8 }}>
         <div className="kicker">{fmtDate(s.date, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</div>
         <h1 style={{ fontSize: '1.9rem' }}>{sessionTitle(s, exMap)}</h1>
+        <div style={{ marginTop: 2 }}><StarRating n={r.dayStars} size={24} /></div>
         {conditions.length > 0 && (
           <div className="row-wrap" style={{ marginTop: 4 }}>
             {conditions.map((c) => <span key={c} className="tag" style={{ fontSize: '0.78rem', padding: '4px 9px' }}>{c}</span>)}
@@ -40,7 +41,7 @@ export function SessionView({ id }: { id: string }) {
       {s.estimated && <div className="notice small">≈ Imported from memory: weights and reps are estimates. Edit it anytime if you remember better.</div>}
 
       <div className="passport" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-        <div><div className="label">XP earned</div><div className="value accent">+{fmtNum(r.xp)}</div></div>
+        <div><div className="label">Stars earned</div><div className="value gold">+{fmtNum(r.stars)}</div></div>
         <div><div className="label">Sets</div><div className="value">{r.sets}</div></div>
         <div><div className="label">Volume</div><div className="value">{fmtKg(r.volume)}</div></div>
         {w && (
@@ -58,6 +59,7 @@ export function SessionView({ id }: { id: string }) {
           {s.exercises.map((e) => {
             const ex = exMap.get(e.exerciseId);
             const pr = r.prs.some((p) => p.exerciseId === e.exerciseId);
+            const beat = r.beats.find((b) => b.exerciseId === e.exerciseId);
             return (
               <a key={e.exerciseId} href={`#/lift/${encodeURIComponent(e.exerciseId)}`} className="cell" style={{ '--inset': '68px' } as React.CSSProperties}>
                 <ExerciseThumb ex={ex} className="thumb sm" />
@@ -65,6 +67,7 @@ export function SessionView({ id }: { id: string }) {
                   <div className="cell-title">{ex?.name ?? 'Unknown'} {pr && <span className="tag gold">🏆 PR</span>}</div>
                   <div className="cell-sub num">{e.sets.map((x) => fmtSet(ex, x)).join('  ·  ')}</div>
                 </div>
+                {beat && <span className={`small bold num${beat.beat ? ' accent' : ' muted'}`} style={{ whiteSpace: 'nowrap' }}>{fmtBeat(ex, beat)}</span>}
                 <Icon name="chevR" size={16} stroke={2.4} className="chev" />
               </a>
             );
@@ -80,10 +83,12 @@ export function SessionView({ id }: { id: string }) {
         </div>
       )}
 
-      <div className="stack">
-        <div className="section-title">XP breakdown</div>
-        <XpBreakdown result={r} />
-      </div>
+      {r.items.some((i) => i.kind !== 'workout') && (
+        <div className="stack">
+          <div className="section-title">Bonus stars</div>
+          <div className="reward-list"><RewardLines items={r.items} /></div>
+        </div>
+      )}
     </div>
   );
 }

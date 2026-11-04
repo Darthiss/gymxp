@@ -1,8 +1,9 @@
 import type { CSSProperties } from 'react';
 import { useGame } from '../lib/game';
 import { HERO_STAGES, HERO_TARGETS } from '../lib/hero';
+import { RARITY_STARS, rarityOf } from '../lib/trophies';
 import { fmtDate } from '../lib/util';
-import { PageHead, Ring, XpBar } from '../components/ui';
+import { PageHead, Ring, ProgressBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 
 const SOURCES = [
@@ -37,9 +38,9 @@ export function Hero() {
           <div style={{ width: '100%' }}>
             <div className="meta row between tiny dim" style={{ marginBottom: 6 }}>
               <span>Next: {h.next.icon} {h.next.name} at {Math.round(h.next.min * 100)}%</span>
-              <span className="xp-chip">+{h.next.xp}</span>
+              <span className="star-chip">+{RARITY_STARS[rarityOf(h.next.value)]}★</span>
             </div>
-            <XpBar pct={toNext} />
+            <ProgressBar pct={toNext} />
           </div>
         )}
         {!g.heroBodyweightKnown && (
@@ -69,7 +70,7 @@ export function Hero() {
                       {m.estimated && <span className="tag" style={{ marginLeft: 6 }}>est.</span>}
                     </span>
                   </div>
-                  <XpBar thin gold pct={m.score} />
+                  <ProgressBar thin gold pct={m.score} />
                   {m.hint && <span className="tiny muted">{m.hint}</span>}
                 </div>
               ))}
@@ -106,7 +107,7 @@ export function Hero() {
                 <span style={{ width: 22, textAlign: 'center' }}>{st.icon}</span>
                 <span className="grow bold">{st.name}</span>
                 <span className="tiny muted num" style={{ textAlign: 'right' }}>
-                  {Math.round(st.min * 100)}%{st.xp ? ` · +${st.xp} XP` : ''}
+                  {Math.round(st.min * 100)}%{st.value ? ` · +${RARITY_STARS[rarityOf(st.value)]}★` : ''}
                   {a && <><br />✓ {fmtDate(a.date, { day: 'numeric', month: 'short', year: 'numeric' })}</>}
                 </span>
               </div>

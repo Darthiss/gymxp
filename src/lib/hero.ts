@@ -96,17 +96,17 @@ export interface HeroInput {
 
 export interface HeroMetric { label: string; value: string; score: number; hint?: string; estimated?: boolean }
 export interface HeroPillar { id: string; icon: string; name: string; weight: number; score: number; metrics: HeroMetric[]; tip: string }
-export interface HeroStage { min: number; name: string; icon: string; xp: number }
+export interface HeroStage { min: number; name: string; icon: string; value: number }
 export interface HeroResult { pct: number; pillars: HeroPillar[]; stage: HeroStage; next?: HeroStage }
 
 export const HERO_STAGES: HeroStage[] = [
-  { min: 0, name: 'Civilian', icon: '🧑', xp: 0 },
-  { min: 0.1, name: 'Trainee', icon: '🎒', xp: 100 },
-  { min: 0.25, name: 'Vigilante', icon: '🦹', xp: 250 },
-  { min: 0.45, name: 'Street-Level Hero', icon: '🏙️', xp: 500 },
-  { min: 0.65, name: 'Avenger-Ready', icon: '🛡️', xp: 900 },
-  { min: 0.85, name: 'Hero Physique', icon: '🕷️', xp: 1500 },
-  { min: 0.999, name: 'Peak Hero', icon: '🦸', xp: 3000 },
+  { min: 0, name: 'Civilian', icon: '🧑', value: 0 },
+  { min: 0.1, name: 'Trainee', icon: '🎒', value: 100 },
+  { min: 0.25, name: 'Vigilante', icon: '🦹', value: 250 },
+  { min: 0.45, name: 'Street-Level Hero', icon: '🏙️', value: 500 },
+  { min: 0.65, name: 'Avenger-Ready', icon: '🛡️', value: 900 },
+  { min: 0.85, name: 'Hero Physique', icon: '🕷️', value: 1500 },
+  { min: 0.999, name: 'Peak Hero', icon: '🦸', value: 3000 },
 ];
 
 const MUSCLES: (keyof HeroInput['weeklySets'])[] = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs'];

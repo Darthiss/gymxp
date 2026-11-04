@@ -1,7 +1,8 @@
 // "How far am I from…" comparisons with famous lifters (your Hero goal lives in hero.ts).
 // Lifts are the commonly *reported* bests (approximate, kg). Career gym days are rough
 // estimates (years of serious training × typical days per week). For fun, not science.
-import { BENCH, DEADLIFT, SQUAT, type GameState } from './xp';
+import type { GameState } from './engine';
+import { BENCH, DEADLIFT, SQUAT } from './trophies';
 
 export interface LegendMetric {
   key: 'visits' | 'bench' | 'squat' | 'deadlift';

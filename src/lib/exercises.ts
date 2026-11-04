@@ -1,8 +1,13 @@
 import raw from '../data/exercises.json';
+import type { Beat } from './engine';
+import { FEATURES } from './features';
 import type { AppData, Exercise, SetEntry } from './types';
 
 export const BUILTIN: Exercise[] = raw as Exercise[];
 
+const PICKABLE = FEATURES.hero ? BUILTIN : BUILTIN.filter((e) => !e.benchmark);
+
+/** The live list for pickers. Shelved exercises stay in exerciseMap() so old workouts still display. */
 export function allExercises(data: AppData): Exercise[] {
   const custom: Exercise[] = data.customExercises
     .filter((c) => !c.deleted)
@@ -21,7 +26,7 @@ export function allExercises(data: AppData): Exercise[] {
       custom: true,
       photo: c.photo,
     }));
-  return [...custom, ...BUILTIN];
+  return [...custom, ...PICKABLE];
 }
 
 export function exerciseMap(data: AppData): Map<string, Exercise> {
@@ -69,6 +74,29 @@ export const EQUIPMENT_CHIPS: Record<string, (e: Exercise) => boolean> = {
 export function fmtSet(ex: Exercise | undefined, s: SetEntry): string {
   if (ex?.hold) return s.kg ? `${s.kg} kg · ${s.reps} s` : `${s.reps} s`;
   return `${s.kg}×${s.reps}`;
+}
+
+const trim = (n: number) => +n.toFixed(2);
+
+/** How an exercise compared with last time: "+5 kg", "+2 reps", "New baseline", "Same". */
+export function fmtBeat(ex: Exercise | undefined, b: Beat): string {
+  if (b.first) return 'New baseline';
+  if (!b.beat) return b.kg === 0 && b.reps === 0 ? 'Same' : 'Next time';
+  if (b.kg > 0) return ex?.benchmark === 'ladder' ? `${trim(b.kg)} min faster` : ex?.assisted ? `−${trim(b.kg)} kg assist` : `+${trim(b.kg)} kg`;
+  const unit = ex?.benchmark === 'ladder' ? 'rungs' : ex?.benchmark === 'cindy' ? 'rounds' : ex?.hold ? 's' : b.reps === 1 ? 'rep' : 'reps';
+  return `+${b.reps}${ex?.hold ? '' : ' '}${unit}`;
+}
+
+/** What you need to do to beat your last time on an exercise. */
+export function toBeatText(ex: Exercise | undefined, last: SetEntry[]): string {
+  const kgs = last.map((s) => s.kg);
+  const total = last.reduce((n, s) => n + s.reps, 0) + 1;
+  if (ex?.benchmark) return `Beat ${Math.max(...last.map((s) => s.reps))} ${ex.benchmark === 'ladder' ? 'rungs' : 'rounds'}`;
+  if (ex?.assisted) return `To beat: ${Math.min(...kgs)} kg assist for ${total}+ reps, or less assist`;
+  const top = Math.max(...kgs);
+  if (ex?.hold) return top ? `To beat: ${top} kg for ${total}+ s in total, or add weight` : `To beat: ${total}+ s in total, or add weight`;
+  if (ex?.bwFactor && !top) return `To beat: ${total}+ reps in total, or add weight`;
+  return `To beat: ${top} kg for ${total}+ reps, or go heavier`;
 }
 
 export function imgUrl(rel: string): string {

@@ -5,13 +5,14 @@ import { settingFor, useExerciseMap } from '../lib/game';
 import { navigate } from '../lib/router';
 import { logHref } from '../lib/today';
 import {
-  activeRoutines, fmtRest, fmtTarget, hitTarget, lastDone, loadTicks, repsForSet, REST_OPTIONS, routineItems, saveTicks, totalSets, upNextRoutine, type Ticks,
+  activeRoutines, fmtRest, fmtTarget, hitTarget, inOrder, lastDone, loadOrder, loadTicks, moveTo, nextPosition, repsForSet, REST_OPTIONS, routineItems, saveOrder, saveTicks, totalSets, upNextRoutine, type Ticks,
 } from '../lib/routines';
 import { fmtDate, plural, today, uid } from '../lib/util';
 import type { RoutineItem } from '../lib/types';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { ExerciseInfo } from '../components/ExerciseInfo';
-import { ExerciseThumb, LargeTitle, PageHead, Sheet, toast, XpBar } from '../components/ui';
+import { ReorderSheet } from '../components/ReorderSheet';
+import { ExerciseThumb, LargeTitle, PageHead, Sheet, toast, ProgressBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { lastTime, SettingNote } from './Log';
 
@@ -72,10 +73,15 @@ export function RoutineGuide({ id }: { id: string }) {
   const date = today();
   const [ticks, setTicksState] = useState<Ticks>(() => loadTicks(id, date));
   const [info, setInfo] = useState<string | null>(null);
+  const [order, setOrderState] = useState(() => loadOrder(id, date));
+  const [reordering, setReordering] = useState(false);
   const done = useMemo(() => (routine ? lastDone(data, activeRoutines(data)).get(routine.id) : undefined), [data, routine]);
 
   if (!routine) return <PageHead title="Routine not found" backTo="routines" />;
-  const items = routineItems(routine);
+  const items = inOrder(routineItems(routine), order);
+  const ids = items.map((it) => it.exerciseId);
+  const setOrder = (next: string[]) => { setOrderState(next); saveOrder(id, date, next); };
+  const started = (it: RoutineItem) => (ticks[it.exerciseId] ?? 0) > 0;
   const setTicks = (t: Ticks) => { setTicksState(t); saveTicks(id, date, t); };
   // Tap the next open set to tick it; tap a ticked one to undo back to there.
   const tap = (it: RoutineItem, k: number) => setTicks({ ...ticks, [it.exerciseId]: (ticks[it.exerciseId] ?? 0) > k ? k : k + 1 });
@@ -93,10 +99,13 @@ export function RoutineGuide({ id }: { id: string }) {
           <span className="bold">{exDone === items.length && items.length ? 'All done 💪' : `${exDone} of ${plural(items.length, 'exercise')}`}</span>
           <span className="small dim num">{setsDone}/{sets} sets</span>
         </div>
-        <XpBar thin pct={sets ? setsDone / sets : 0} />
+        <ProgressBar thin pct={sets ? setsDone / sets : 0} />
         <div className="row between">
           <span className="tiny dim">{fmtDone(done)}</span>
-          {setsDone > 0 && <button className="btn ghost sm" style={{ minHeight: 0, padding: 0 }} onClick={() => setTicks({})}>Start over</button>}
+          <span className="row" style={{ gap: 14 }}>
+            {items.length > 1 && <button className="btn ghost sm" style={{ minHeight: 0, padding: 0 }} onClick={() => setReordering(true)}>Reorder</button>}
+            {setsDone > 0 && <button className="btn ghost sm" style={{ minHeight: 0, padding: 0 }} onClick={() => setTicks({})}>Start over</button>}
+          </span>
         </div>
       </div>
 
@@ -107,6 +116,7 @@ export function RoutineGuide({ id }: { id: string }) {
         const last = lastTime(data, it.exerciseId, date, '');
         const n = ticks[it.exerciseId] ?? 0;
         const finished = n >= it.sets;
+        const nextAt = nextPosition(items, i, started);
         return (
           <div key={it.exerciseId} className={`ex-block${finished ? ' done' : ''}`}>
             <button className="ex-head" style={{ background: 'none', border: 0, padding: 0, textAlign: 'left', cursor: 'pointer', color: 'inherit' }} onClick={() => setInfo(it.exerciseId)}>
@@ -121,6 +131,9 @@ export function RoutineGuide({ id }: { id: string }) {
               </div>
               <Icon name="info" size={20} style={{ color: 'var(--muted)', flex: 'none' }} />
             </button>
+            {n === 0 && nextAt !== i && (
+              <button className="do-next" onClick={() => setOrder(moveTo(ids, i, nextAt))} aria-label={`Do ${ex?.name ?? 'this exercise'} next`}><Icon name="arrowUp" size={13} stroke={2.6} /> Do next</button>
+            )}
             {it.note && <div className="coach-note">“{it.note}”</div>}
             <SettingNote exerciseId={it.exerciseId} value={settingFor(data, it.exerciseId)} equipment={ex?.equipment} />
             <div className="small dim num">{last ? `Last time: ${last.map((s) => fmtSet(ex, s)).join(' · ')}` : ex?.hold ? 'First time · hold as long as your form stays solid' : 'First time · pick a weight you can do with good form'}</div>
@@ -152,6 +165,7 @@ export function RoutineGuide({ id }: { id: string }) {
           <ExerciseInfo ex={infoEx} />
         </Sheet>
       )}
+      {reordering && <ReorderSheet ids={ids} exMap={exMap} onMove={(from, to) => setOrder(moveTo(ids, from, to))} onClose={() => setReordering(false)} />}
     </div>
   );
 }

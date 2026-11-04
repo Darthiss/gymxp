@@ -17,6 +17,7 @@ import { Hero } from './screens/Hero';
 import { ToastHost } from './components/ui';
 import { Icon, type IconName } from './components/Icon';
 import { logHref } from './lib/today';
+import { FEATURES } from './lib/features';
 
 type Phase = { kind: 'boot' } | { kind: 'setup' } | { kind: 'locked' } | { kind: 'open'; unlocked: Unlocked; store: Store };
 
@@ -101,7 +102,7 @@ function Shell() {
   else if (p0 === 'awards') page = <Awards route={route} />;
   else if (p0 === 'settings') page = <Settings />;
   else if (p0 === 'import') page = <Backfill />;
-  else if (p0 === 'hero') page = <Hero />;
+  else if (p0 === 'hero' && FEATURES.hero) page = <Hero />;
   else if (p0 === 'routines' && p1) page = <RoutineGuide key={p1} id={p1} />;
   else if (p0 === 'routines') page = <Routines />;
   else if (p0 === 'routine-edit' && p1) page = <RoutineEdit key={p1} id={p1} />;

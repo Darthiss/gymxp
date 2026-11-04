@@ -1,9 +1,10 @@
 import type { Session, Exercise } from '../lib/types';
-import type { SessionResult } from '../lib/xp';
+import type { SessionResult } from '../lib/engine';
 import { sessionTitle } from '../lib/today';
-import { fmtDate, fmtKg, fmtNum, parseDate, plural } from '../lib/util';
+import { fmtDate, fmtKg, parseDate, plural } from '../lib/util';
+import { StarRating } from './ui';
 
-/** Calendar-tile row for a workout: date, auto title, key numbers and XP earned. */
+/** Calendar-tile row for a workout: date, auto title, key numbers and its star rating. */
 export function WorkoutRow({ s, r, exMap }: { s: Session; r?: SessionResult; exMap: Map<string, Exercise> }) {
   const d = parseDate(s.date);
   const parts = [
@@ -25,7 +26,7 @@ export function WorkoutRow({ s, r, exMap }: { s: Session; r?: SessionResult; exM
         </div>
         <div className="cell-sub ellipsis">{parts.join(' · ') || 'Visit only'}</div>
       </div>
-      <span className="xp-pill">+{fmtNum(r?.xp ?? 0)}</span>
+      {r && <StarRating n={r.dayStars} size={15} />}
     </a>
   );
 }

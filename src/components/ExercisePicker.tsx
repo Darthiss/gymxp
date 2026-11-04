@@ -3,7 +3,7 @@ import { allExercises, EQUIPMENT_CHIPS, searchExercises } from '../lib/exercises
 import { useData } from '../lib/store';
 import { MUSCLE_GROUPS, type Exercise, type Routine } from '../lib/types';
 import { activeRoutines } from '../lib/routines';
-import { sortSessions } from '../lib/xp';
+import { sortSessions } from '../lib/engine';
 import { ExerciseInfo } from './ExerciseInfo';
 import { CloseButton, ExerciseThumb, Sheet } from './ui';
 import { Icon } from './Icon';

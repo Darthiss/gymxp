@@ -324,7 +324,7 @@ const CURATED = [
     look: 'Hang from a bar with palms facing away, hands a bit wider than shoulders. Pull until your chin is over the bar, lower all the way down. Log 0 kg for bodyweight, or the weight of a vest/belt.' },
   { src: 'Chin-Up', name: 'Chin-up', group: 'Back', equipment: 'Bodyweight', bwFactor: 1,
     aliases: ['Chin-Up', 'Underhand Pull-up', 'Weighted Chin-up'],
-    look: 'Same as a pull-up but palms facing you (underhand), a little easier and more biceps. Counts toward your Hero pull-ups.' },
+    look: 'Same as a pull-up but palms facing you (underhand), a little easier and more biceps.' },
   { src: 'Parallel_Bar_Dip', name: 'Parallel Bar Dip', group: 'Arms', equipment: 'Bodyweight', bwFactor: 0.9,
     aliases: ['Dips', 'Bar Dip', 'Weighted Dip', 'Fondos'],
     look: 'Support yourself on two parallel bars with straight arms. Lower until your upper arms are about parallel to the floor, push back up. Log 0 kg for bodyweight.' },

@@ -1,20 +1,21 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { getStore, useData } from '../lib/store';
-import { fmtSet } from '../lib/exercises';
-import { settingFor, useExerciseMap } from '../lib/game';
-import { computeGame, levelInfo, RULES, sortSessions, type PR, type SessionResult } from '../lib/xp';
+import { fmtBeat, fmtSet, toBeatText } from '../lib/exercises';
+import { gameFor, settingFor, useExerciseMap } from '../lib/game';
+import { beatsNeeded, computeGame, RULES, sortSessions, type GameState, type PR, type SessionResult } from '../lib/engine';
 import { holidayOn } from '../lib/holidays';
 import { setLogMode, type LogMode } from '../lib/today';
 import { WeatherField } from '../components/WeatherField';
 import { back, navigate, type Route } from '../lib/router';
-import { fmtDate, fmtNum, num, nowTime, parseWatchText, plural, today, uid, type WatchImport } from '../lib/util';
+import { fmtDate, num, nowTime, parseWatchText, plural, today, uid, type WatchImport } from '../lib/util';
 import type { AppData, Exercise, Routine, RoutineItem, Session, SetEntry } from '../lib/types';
-import { activeRoutines, fmtTarget, repsForSet, routineItems } from '../lib/routines';
+import { activeRoutines, fmtTarget, inOrder, loadOrder, moveTo, nextPosition, repsForSet, routineItems } from '../lib/routines';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { PlateCalc } from '../components/PlateCalc';
 import { ExerciseInfo } from '../components/ExerciseInfo';
+import { ReorderSheet } from '../components/ReorderSheet';
 import { Celebration } from '../components/Celebration';
-import { Cell, CellIcon, ExerciseThumb, PageHead, Sheet, toast, XpBar } from '../components/ui';
+import { Cell, CellIcon, ExerciseThumb, PageHead, PickerField, Sheet, StarRating, toast } from '../components/ui';
 import { Icon } from '../components/Icon';
 
 interface DraftSet { kg: string; reps: string }
@@ -136,7 +137,8 @@ export function Log({ route }: { route: Route }) {
   const [picker, setPicker] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
   const [plates, setPlates] = useState<number | null>(null); // index of exercise whose plate calculator is open
-  const [celebrate, setCelebrate] = useState<SessionResult | null>(null);
+  const [celebrate, setCelebrate] = useState<{ result: SessionResult; session: Session; before: GameState; after: GameState; edited: boolean } | null>(null);
+  const [reordering, setReordering] = useState(false);
   const [showWatch, setShowWatch] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const loaded = useRef(!!editing);
@@ -160,7 +162,7 @@ export function Log({ route }: { route: Route }) {
       const addId = p('add');
       if (addId && exMap.has(addId) && !d.exercises.some((e) => e.exerciseId === addId)) d = { ...d, exercises: [...d.exercises, newEx(addId, d)] };
       const routine = data.routines.find((r) => r.id === p('routine') && !r.deleted);
-      if (routine) d = withRoutine(d, routine.exerciseIds, routine);
+      if (routine) d = withRoutine(d, inOrder(routineItems(routine), loadOrder(routine.id, d.date)).map((it) => it.exerciseId), routine);
       setDraft(d);
       if (q.toString()) navigate('log', true); // drop params so a reload doesn't re-import
     })();
@@ -213,8 +215,8 @@ export function Log({ route }: { route: Route }) {
       toast('Log at least one set (weight + reps) first');
       return;
     }
-    const next = withSession(data, s);
-    const result = computeGame(next, exMap).sessions.get(s.id)!;
+    const before = gameFor(data);
+    const after = computeGame(withSession(data, s), exMap);
     getStore().update((d) => {
       d.sessions = d.sessions.filter((x) => x.id !== s.id);
       d.sessions.push(s);
@@ -223,7 +225,7 @@ export function Log({ route }: { route: Route }) {
       void getStore().saveDraft(null);
       setLogMode(draft.mode ?? 'live'); // the Start buttons follow how you last logged
     }
-    setCelebrate(result);
+    setCelebrate({ result: after.sessions.get(s.id)!, session: s, before, after, edited: !!editing });
   };
 
   const pasteWatch = async () => {
@@ -251,13 +253,19 @@ export function Log({ route }: { route: Route }) {
     navigate('progress', true);
   };
 
-  const pBefore = preview ? levelInfo(preview.xpBefore, preview.visitsBefore) : null;
-  const pAfter = preview ? levelInfo(preview.xpAfter, preview.visitsAfter) : null;
   const infoEx = info ? exMap.get(info) : undefined;
-  const levelUp = !!(pAfter && pBefore && pAfter.level > pBefore.level);
   const after = !editing && draft.mode === 'after';
   const live = !editing && !after && draft.date === today() && !!draft.startTime;
   const doneSets = draft.exercises.reduce((n, e) => n + e.sets.filter((x) => num(x.reps) > 0).length, 0);
+  // Live stars count every exercise in the draft, so the third star can't light up after the first one.
+  const beaten = preview ? preview.beats.filter((b) => b.beat).length : 0;
+  const toBeat = Math.max(0, beatsNeeded(draft.exercises.length) - beaten);
+  const workDone = !!preview?.checks.work;
+  const beatDone = !!preview?.firstEver || (draft.exercises.length > 0 && toBeat === 0);
+  const liveStars = 1 + (workDone ? 1 : 0) + (beatDone ? 1 : 0);
+  const setsLeft = RULES.workSets - doneSets;
+  const still = [!workDone && `${setsLeft} more ${setsLeft === 1 ? 'set' : 'sets'}`, !beatDone && draft.exercises.length > 0 && `beat ${toBeat} more`].filter(Boolean);
+  const started = (e: DraftEx) => e.sets.some((x) => num(x.reps) > 0);
   const feriado = holidayOn(draft.date);
   const routines = activeRoutines(data);
 
@@ -270,34 +278,30 @@ export function Log({ route }: { route: Route }) {
             {live ? <Elapsed since={draft.startTime} /> : <div className="clock" style={{ fontSize: '1.15rem' }}>{editing ? 'Edit workout' : after ? 'Log workout' : fmtDate(draft.date, { weekday: 'short', day: 'numeric', month: 'short' })}</div>}
             <div className="sub">{live ? `Started ${draft.startTime}` : editing || after ? fmtDate(draft.date, { weekday: 'long', day: 'numeric', month: 'short' }) : 'Past workout'} · {plural(doneSets, 'set')}</div>
           </div>
-          <div style={{ textAlign: 'right', minWidth: 58 }}>
-            <div className="xp">+{fmtNum(preview?.xp ?? 0)}</div>
-            <div className="sub">XP</div>
-          </div>
+          <div style={{ width: 38, flex: 'none' }} />
         </div>
-        {pAfter && (
-          <div className="row" style={{ gap: 8 }}>
-            <span className="tiny bold" style={{ color: pAfter.rank.color }}>Lv {pAfter.level}</span>
-            <div className="grow"><XpBar thin pct={pAfter.pct} gold={levelUp} /></div>
-            {levelUp ? <span className="tiny bold gold">LEVEL UP!</span> : <span className="tiny dim num">{Math.round(pAfter.pct * 100)}%</span>}
-            {preview && preview.prs.length > 0 && <span className="tag gold">🏆 {preview.prs.length}</span>}
-          </div>
-        )}
+        <div className="row between" style={{ gap: 10 }}>
+          <StarRating n={liveStars} size={20} />
+          <span className="tiny dim num" style={{ textAlign: 'right' }}>
+            {preview?.firstEver ? 'Your first workout earns all 3 stars' : still.length ? `To go: ${still.join(' · ')}` : 'All 3 stars earned 💪'}
+            {preview && preview.prs.length > 0 && <span className="tag gold" style={{ marginLeft: 8 }}>🏆 {preview.prs.length}</span>}
+          </span>
+        </div>
       </div>
 
-      {feriado && <div className="banner">🧉 <span><b>{feriado}</b>: training on a feriado earns +{RULES.holidayXp} XP</span></div>}
+      {feriado && <div className="banner">🧉 <span><b>{feriado}</b>: training on a feriado earns a bonus star</span></div>}
 
       {after && (
         <div className="stack" style={{ gap: 10 }}>
           <div className="section-title">When did you train?</div>
           <div className="group">
             <Cell icon={<CellIcon name="calendar" color="#ff453a" />} title="Date">
-              <input className="bare" type="date" value={draft.date} max={today()} onChange={(e) => set((d) => ({ ...d, date: e.target.value }))} aria-label="Date" />
+              <PickerField type="date" value={draft.date} max={today()} label="Date" placeholder="Pick a date" onChange={(v) => set((d) => ({ ...d, date: v }))} />
             </Cell>
-            <Cell icon={<CellIcon name="clock" color="#ff9f0a" />} title="Started at" sub={draft.startTime ? undefined : 'Optional · used for weather and time-of-day awards'}>
-              <input className="bare" type="time" value={draft.startTime} onChange={(e) => set((d) => ({ ...d, startTime: e.target.value }))} aria-label="Start time" />
+            <Cell icon={<CellIcon name="clock" color="#ff9f0a" />} title="Started at" sub={draft.startTime ? undefined : 'Optional · used for weather and time-of-day trophies'}>
+              <PickerField type="time" value={draft.startTime} label="Start time" placeholder="Add time" onChange={(v) => set((d) => ({ ...d, startTime: v }))} />
             </Cell>
-            <Cell icon={<CellIcon name="history" color="#5e5ce6" />} title="Duration" sub="1 XP per minute (max 150)">
+            <Cell icon={<CellIcon name="history" color="#5e5ce6" />} title="Duration" sub="Optional · for your stats">
               <div className="unit-input" style={{ width: 96 }}>
                 <input className="input" inputMode="numeric" placeholder="—" value={draft.durationMin} onChange={(e) => set((d) => ({ ...d, durationMin: e.target.value }))} aria-label="Duration in minutes" style={{ minHeight: 36, paddingLeft: 8, paddingRight: 34 }} />
                 <span>min</span>
@@ -323,11 +327,18 @@ export function Log({ route }: { route: Route }) {
         </div>
       )}
 
+      {draft.exercises.length > 1 && (
+        <div className="row" style={{ justifyContent: 'flex-end', marginBottom: -6 }}>
+          <button className="btn ghost sm" style={{ minHeight: 0, padding: '2px 4px' }} onClick={() => setReordering(true)}><Icon name="sliders" size={14} /> Reorder</button>
+        </div>
+      )}
+
       {draft.exercises.map((e, i) => {
         const ex = exMap.get(e.exerciseId);
         const last = lastTime(data, e.exerciseId, draft.date, draft.id);
         const prs = preview?.prs.filter((p) => p.exerciseId === e.exerciseId) ?? [];
-        const isNew = preview?.newExercises.includes(e.exerciseId);
+        const beat = preview?.beats.find((b) => b.exerciseId === e.exerciseId);
+        const nextAt = nextPosition(draft.exercises, i, started);
         const setting = settingFor(data, e.exerciseId);
         const c = cols(ex);
         return (
@@ -344,11 +355,18 @@ export function Log({ route }: { route: Route }) {
               <button className="icon-btn plain" aria-label="Remove exercise" onClick={() => set((d) => ({ ...d, exercises: d.exercises.filter((_, j) => j !== i) }))}><Icon name="x" size={17} stroke={2.4} /></button>
             </div>
 
-            {(prs.length > 0 || isNew) && (
+            {beat?.beat ? (
+              <span className="beaten"><Icon name="bolt" size={13} fill stroke={0} /> {beat.first ? 'New exercise: this sets your baseline' : `Beaten ${fmtBeat(ex, beat)}`}</span>
+            ) : last ? <span className="to-beat">{toBeatText(ex, last)}</span> : null}
+
+            {prs.length > 0 && (
               <div className="pr-flash">
                 {prs.map((p, k) => <span key={k} className="tag gold">{prText(p)}</span>)}
-                {isNew && <span className="tag accent">✨ New exercise +{RULES.newExerciseXp} XP</span>}
               </div>
+            )}
+
+            {!started(e) && nextAt !== i && (
+              <button className="do-next" onClick={() => set((d) => ({ ...d, exercises: moveTo(d.exercises, i, nextAt) }))} aria-label={`Do ${ex?.name ?? 'this exercise'} next`}><Icon name="arrowUp" size={13} stroke={2.6} /> Do next</button>
             )}
 
             <SettingNote exerciseId={e.exerciseId} value={setting} equipment={ex?.equipment} />
@@ -397,10 +415,10 @@ export function Log({ route }: { route: Route }) {
         {!after && (
           <>
             <Cell icon={<CellIcon name="calendar" color="#ff453a" />} title="Date">
-              <input className="bare" type="date" value={draft.date} max={today()} onChange={(e) => set((d) => ({ ...d, date: e.target.value }))} aria-label="Date" />
+              <PickerField type="date" value={draft.date} max={today()} label="Date" placeholder="Pick a date" onChange={(v) => set((d) => ({ ...d, date: v }))} />
             </Cell>
             <Cell icon={<CellIcon name="clock" color="#ff9f0a" />} title="Start time">
-              <input className="bare" type="time" value={draft.startTime} onChange={(e) => set((d) => ({ ...d, startTime: e.target.value }))} aria-label="Start time" />
+              <PickerField type="time" value={draft.startTime} label="Start time" placeholder="Add time" onChange={(v) => set((d) => ({ ...d, startTime: v }))} />
             </Cell>
           </>
         )}
@@ -408,7 +426,7 @@ export function Log({ route }: { route: Route }) {
           <WeatherField date={draft.date} startTime={draft.startTime} tempC={draft.tempC ?? ''} rain={!!draft.rain} onChange={(w) => set((d) => ({ ...d, ...w }))} />
         </div>
         <Cell icon={<CellIcon name="watch" color="#30d158" />} title="Apple Watch" onClick={() => setShowWatch((v) => !v)} chevron={false}
-          sub={draft.durationMin ? `${draft.durationMin} min · ${draft.kcal || 0} kcal${draft.avgHr ? ` · ${draft.avgHr} bpm` : ''}` : 'Minutes and calories earn XP'}>
+          sub={draft.durationMin ? `${draft.durationMin} min · ${draft.kcal || 0} kcal${draft.avgHr ? ` · ${draft.avgHr} bpm` : ''}` : 'Minutes and calories for your stats'}>
           <Icon name={showWatch ? 'chevU' : 'chevD'} size={16} style={{ color: 'var(--muted)' }} />
         </Cell>
         {showWatch && (
@@ -439,7 +457,7 @@ export function Log({ route }: { route: Route }) {
       {editing && (
         confirmDelete ? (
           <div className="notice bad stack small">
-            Delete this workout? Its XP will be removed.
+            Delete this workout? Its stars will be removed.
             <div className="row"><button className="btn danger grow" onClick={remove}>Delete</button><button className="btn grow" onClick={() => setConfirmDelete(false)}>Cancel</button></div>
           </div>
         ) : (
@@ -450,7 +468,7 @@ export function Log({ route }: { route: Route }) {
       <div className="action-bar">
         <button className="btn primary big block" onClick={save}>
           {editing ? 'Save changes' : 'Finish workout'}
-          {!editing && preview && preview.xp > 0 && <span style={{ opacity: 0.6, fontFamily: 'var(--font-round)' }}>· +{fmtNum(preview.xp)} XP</span>}
+          {!editing && <StarRating n={liveStars} size={16} />}
         </button>
       </div>
 
@@ -472,7 +490,8 @@ export function Log({ route }: { route: Route }) {
           <ExerciseInfo ex={infoEx} />
         </Sheet>
       )}
-      {celebrate && <Celebration result={celebrate} onClose={() => navigate(`session/${celebrate.id}`, true)} />}
+      {reordering && <ReorderSheet ids={draft.exercises.map((e) => e.exerciseId)} exMap={exMap} onMove={(from, to) => set((d) => ({ ...d, exercises: moveTo(d.exercises, from, to) }))} onClose={() => setReordering(false)} />}
+      {celebrate && <Celebration {...celebrate} exMap={exMap} onClose={() => navigate(`session/${celebrate.session.id}`, true)} />}
     </div>
   );
 }

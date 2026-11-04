@@ -1,6 +1,6 @@
 // Routines: the coach's plan (exercises with target sets × reps), the gym-guide checklist
 // and which routine is up next in your rotation.
-import { sortSessions } from './xp';
+import { sortSessions } from './engine';
 import type { AppData, Routine, RoutineItem, SetEntry } from './types';
 
 /** Live routines, sorted by name so "Day A, Day B, Day C" read in order everywhere. */
@@ -77,6 +77,54 @@ export function upNextRoutine(routines: Routine[], done: Map<string, string>): R
   return pick;
 }
 
+/** Move one item to a new position in a list. */
+export function moveTo<T>(list: T[], from: number, to: number): T[] {
+  const next = [...list];
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
+}
+
+/** Where "do this next" puts an item: right after the last one you've already started. */
+export function nextPosition<T>(list: T[], from: number, started: (x: T) => boolean): number {
+  let after = -1;
+  list.forEach((x, i) => { if (i !== from && started(x)) after = i; });
+  return after < from ? after + 1 : after;
+}
+
+// Today's order when the machines you wanted were taken. Per device and throwaway, like the
+// ticks below: the saved routine only changes in the editor.
+const orderKey = (routineId: string, date: string) => `gymxp:order:${routineId}:${date}`;
+
+export function loadOrder(routineId: string, date: string): string[] | null {
+  try {
+    return JSON.parse(localStorage.getItem(orderKey(routineId, date)) ?? 'null') as string[] | null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveOrder(routineId: string, date: string, ids: string[]) {
+  try {
+    clearOldDays(`gymxp:order:${routineId}:`, orderKey(routineId, date));
+    localStorage.setItem(orderKey(routineId, date), JSON.stringify(ids));
+  } catch { /* ignore */ }
+}
+
+/** Items in a saved order. Anything the routine gained since then goes at the end. */
+export function inOrder(items: RoutineItem[], order: string[] | null): RoutineItem[] {
+  if (!order) return items;
+  const rank = new Map(order.map((id, i) => [id, i]));
+  return [...items].sort((a, b) => (rank.get(a.exerciseId) ?? Infinity) - (rank.get(b.exerciseId) ?? Infinity));
+}
+
+function clearOldDays(prefix: string, keep: string) {
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const k = localStorage.key(i);
+    if (k?.startsWith(prefix) && k !== keep) localStorage.removeItem(k);
+  }
+}
+
 // Gym checklist: how many sets of each exercise you've ticked off today. Per device and
 // throwaway (it resets the next day), so plain localStorage is enough.
 export type Ticks = Record<string, number>;
@@ -92,10 +140,7 @@ export function loadTicks(routineId: string, date: string): Ticks {
 
 export function saveTicks(routineId: string, date: string, t: Ticks) {
   try {
-    for (let i = localStorage.length - 1; i >= 0; i--) {
-      const k = localStorage.key(i);
-      if (k?.startsWith(`gymxp:ticks:${routineId}:`) && k !== tickKey(routineId, date)) localStorage.removeItem(k); // old days
-    }
+    clearOldDays(`gymxp:ticks:${routineId}:`, tickKey(routineId, date));
     if (Object.values(t).some(Boolean)) localStorage.setItem(tickKey(routineId, date), JSON.stringify(t));
     else localStorage.removeItem(tickKey(routineId, date));
   } catch { /* ignore */ }

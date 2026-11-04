@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import type { CSSProperties } from 'react';
 import { getStore, useStore } from '../lib/store';
 import { imgUrl } from '../lib/exercises';
 import type { Exercise } from '../lib/types';
-import type { LevelInfo } from '../lib/xp';
+import type { LevelInfo } from '../lib/engine';
 import { back } from '../lib/router';
 import { Icon, type IconName } from './Icon';
 
@@ -43,9 +43,32 @@ export function LevelBadge({ info, size = 76, pct }: { info: LevelInfo; size?: n
   );
 }
 
-export function XpBar({ pct, gold, thin, color }: { pct: number; gold?: boolean; thin?: boolean; color?: string }) {
+/** 1–3 star rating. */
+export function StarRating({ n, size = 16, of = 3 }: { n: number; size?: number; of?: number }) {
   return (
-    <div className={`xpbar${gold ? ' gold' : ''}${thin ? ' thin' : ''}`} role="progressbar" aria-valuenow={Math.round(pct * 100)} aria-valuemin={0} aria-valuemax={100}>
+    <span className="rating" role="img" aria-label={`${n} of ${of} stars`}>
+      {Array.from({ length: of }, (_, i) => <span key={i} className={i < n ? 'on' : ''}><Icon name="star" size={size} fill stroke={0} /></span>)}
+    </span>
+  );
+}
+
+/** A native date or time picker that stays visible and easy to tap when empty. */
+export function PickerField({ type, value, onChange, label, placeholder, max }: { type: 'date' | 'time'; value: string; onChange: (v: string) => void; label: string; placeholder: string; max?: string }) {
+  const openOnDesktop = (e: MouseEvent<HTMLInputElement>) => {
+    if (value || !window.matchMedia('(pointer: fine)').matches) return; // phones open their picker on tap
+    try { e.currentTarget.showPicker(); } catch { /* the browser handles the click itself */ }
+  };
+  return (
+    <span className={`picker-field${value ? '' : ' empty'}`}>
+      {!value && <span className="ph">{placeholder}</span>}
+      <input className="bare" type={type} value={value} max={max} aria-label={label} onClick={openOnDesktop} onChange={(e) => onChange(e.target.value)} />
+    </span>
+  );
+}
+
+export function ProgressBar({ pct, gold, thin, color }: { pct: number; gold?: boolean; thin?: boolean; color?: string }) {
+  return (
+    <div className={`bar${gold ? ' gold' : ''}${thin ? ' thin' : ''}`} role="progressbar" aria-valuenow={Math.round(pct * 100)} aria-valuemin={0} aria-valuemax={100}>
       <div style={{ width: `${Math.max(0, Math.min(1, pct)) * 100}%`, ...(color ? { background: color } : {}) }} />
     </div>
   );

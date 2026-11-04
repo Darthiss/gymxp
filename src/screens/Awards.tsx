@@ -1,15 +1,17 @@
 import { useState, type CSSProperties } from 'react';
 import { useGame } from '../lib/game';
-import { ACHIEVEMENTS, RANKS, RULES, SEASON_TIERS, xpForLevel, type AchievementCategory } from '../lib/xp';
-import { PlayerCard, SeasonCard, Stars } from '../components/Progression';
+import { FLAMES, MEDALS, RANKS, RULES, SEASON_TIERS, starsForLevel } from '../lib/engine';
+import { ACHIEVEMENTS, RARITY_STARS, rarityOf, type AchievementCategory } from '../lib/trophies';
+import { FEATURES } from '../lib/features';
+import { LevelCard, SeasonCard } from '../components/Progression';
 import { compare, LEGENDS, type LegendProgress } from '../lib/legends';
 import { fmtProgress } from '../lib/today';
 import { fmtDate, fmtKg, fmtNum, plural } from '../lib/util';
 import { navigate, type Route } from '../lib/router';
 import { Icon } from '../components/Icon';
-import { Cell, LargeTitle, Ring, Segmented, SectionHead, Sheet, XpBar } from '../components/ui';
+import { Cell, LargeTitle, Ring, Segmented, SectionHead, Sheet, ProgressBar } from '../components/ui';
 
-const CATS: AchievementCategory[] = ['Visits', 'Streaks', 'Strength', 'Records', 'Habits', 'Volume', 'Explorer', 'Sets', 'Time', 'Burn', 'Weather', 'Holidays', 'Special', 'Body', 'Hero'];
+const CATS: AchievementCategory[] = ['Visits', 'Streaks', 'Strength', 'Records', 'Habits', 'Volume', 'Explorer', 'Sets', 'Time', 'Burn', 'Weather', 'Holidays', 'Special', 'Body', ...(FEATURES.hero ? (['Hero'] as const) : [])];
 
 type Tab = 'overview' | 'achievements' | 'legends';
 
@@ -26,7 +28,7 @@ export function Awards({ route }: { route: Route }) {
         title="Career"
         actions={<button className="icon-btn" aria-label="How progression works" onClick={() => setHelp(true)}><Icon name="info" size={19} /></button>}
       />
-      <PlayerCard g={g} big />
+      <LevelCard g={g} />
       <Segmented<Tab>
         value={tab}
         options={[['overview', 'Overview'], ['achievements', `Awards ${g.unlocked.length}`], ['legends', 'Legends']]}
@@ -65,7 +67,7 @@ function Overview() {
         )}
       </div>
 
-      <div className="stack">
+      {FEATURES.hero && <div className="stack">
         <SectionHead title="Hero Physique" link="#/hero" linkLabel="Details" />
         <a href="#/hero" className="card card-link row" style={{ gap: 16 }}>
           <Ring pct={h.pct} size={76} stroke={7}>
@@ -73,12 +75,12 @@ function Overview() {
           </Ring>
           <div className="grow stack" style={{ gap: 4 }}>
             <div className="bold" style={{ fontSize: '1.05rem' }}>{h.stage.icon} {h.stage.name}</div>
-            {h.next && <div className="tiny dim">Next: {h.next.icon} {h.next.name} at {Math.round(h.next.min * 100)}% · +{h.next.xp} XP</div>}
+            {h.next && <div className="tiny dim">Next: {h.next.icon} {h.next.name} at {Math.round(h.next.min * 100)}% · +{RARITY_STARS[rarityOf(h.next.value)]}★</div>}
             {focus && <div className="tiny accent">Focus: {focus.icon} {focus.name}</div>}
           </div>
           <Icon name="chevR" size={18} className="chev" style={{ color: 'var(--muted)' }} />
         </a>
-      </div>
+      </div>}
 
       <div className="stack">
         <SectionHead title="Rank ladder" onLink={() => setAllRanks((v) => !v)} linkLabel={allRanks ? 'Show less' : `All ${RANKS.length}`} />
@@ -92,12 +94,11 @@ function Overview() {
                 <span className="dot" style={{ background: r.color }}>{reached && !current && <Icon name="check" size={11} stroke={3.5} />}</span>
                 <span className="grow">
                   <span className="bold" style={{ color: current ? r.color : undefined }}>{r.title}</span>
-                  {current && <span style={{ marginLeft: 8 }}><Stars info={L} size="0.8rem" /></span>}
                 </span>
                 <span className="tiny dim num" style={{ textAlign: 'right' }}>
-                  Lv {r.minLevel} · {fmtNum(r.minVisits)} visits
+                  Level {r.minLevel}
                   <br />
-                  <span className="muted">{fmtNum(xpForLevel(r.minLevel))} XP</span>
+                  <span className="muted">{fmtNum(starsForLevel(r.minLevel))}★</span>
                 </span>
               </div>
             );
@@ -108,14 +109,16 @@ function Overview() {
       <div className="stack">
         <SectionHead title="Lifetime" />
         <div className="passport">
+          <Stat label="Total stars" value={`${fmtNum(g.totalStars)}★`} />
           <Stat label="Gym visits" value={fmtNum(g.visits)} />
+          <Stat label="Perfect Weeks" value={fmtNum(g.perfectWeeks)} />
           <Stat label="Weight moved" value={fmtKg(g.totalVolume)} />
           <Stat label="Sets" value={fmtNum(g.totalSets)} />
           <Stat label="Time trained" value={`${fmtNum(g.totalMinutes / 60, 1)} h`} />
           <Stat label="Personal records" value={fmtNum(g.prCount)} />
           <Stat label="Exercises tried" value={fmtNum(g.exercisesTried)} />
           <Stat label="Active kcal" value={fmtNum(g.totalKcal)} />
-          <Stat label="Best streak" value={`${g.bestWeekStreak} wk`} />
+          <Stat label="Best streak" value={`${g.streak.best} wk`} />
         </div>
       </div>
     </div>
@@ -145,7 +148,7 @@ function Achievements() {
         </Ring>
         <div className="grow">
           <div className="display" style={{ fontSize: '1.7rem' }}>{g.unlocked.length}<span className="dim" style={{ fontSize: '1rem' }}> / {ACHIEVEMENTS.length}</span></div>
-          <div className="tiny dim" style={{ marginTop: 4 }}>Achievements unlocked · each one pays bonus XP once</div>
+          <div className="tiny dim" style={{ marginTop: 4 }}>Trophies unlocked · each one pays bonus stars once</div>
         </div>
       </div>
 
@@ -181,7 +184,7 @@ function Achievements() {
                 const prog = g.progress[a.id];
                 return (
                   <div key={a.id} className={`ach ${u ? 'unlocked' : 'locked'}`}>
-                    <span className={`xp-chip xp${u ? ' gold' : ''}`}>+{fmtNum(a.xp)}</span>
+                    <span className={`star-chip chip-corner${u ? ' gold' : ''}`}>+{a.stars}★</span>
                     <div className="medal">{a.icon}</div>
                     <div className="title">{a.title}</div>
                     <div className="tiny dim" style={{ lineHeight: 1.35 }}>{a.desc}</div>
@@ -189,7 +192,7 @@ function Achievements() {
                       <div className="tiny gold bold" style={{ marginTop: 4 }}>✓ {fmtDate(u.date, { day: 'numeric', month: 'short', year: 'numeric' })}</div>
                     ) : a.target && prog !== undefined ? (
                       <div className="stack" style={{ gap: 4, marginTop: 6 }}>
-                        <XpBar thin gold pct={prog / a.target} />
+                        <ProgressBar thin gold pct={prog / a.target} />
                         <div className="tiny muted num">{fmtProgress(c, prog)} / {fmtProgress(c, a.target)}</div>
                       </div>
                     ) : null}
@@ -225,7 +228,7 @@ function LegendCard({ p }: { p: LegendProgress }) {
                 <span className="dim">{r.metric.label}</span>
                 <span className="num bold">{fmtNum(r.mine, 1)} <span className="muted">/ {fmtNum(r.metric.target)} {r.metric.unit}</span></span>
               </div>
-              <XpBar thin pct={r.pct} gold />
+              <ProgressBar thin pct={r.pct} gold />
             </div>
           ))}
           {p.legend.note && <p className="tiny muted" style={{ lineHeight: 1.45 }}>{p.legend.note}</p>}
@@ -250,39 +253,32 @@ function Legends() {
 }
 
 function HowItWorks({ onClose }: { onClose: () => void }) {
-  const rule = (xp: number | string, text: React.ReactNode, gold?: boolean) => (
-    <Cell value={<span className={`xp-chip${gold ? ' gold' : ''}`}>+{xp}</span>} style={{ minHeight: 46 } as CSSProperties}>
+  const rule = (stars: string, text: React.ReactNode) => (
+    <Cell value={<span className="star-chip gold">{stars}</span>} style={{ minHeight: 46 } as CSSProperties}>
       <span className="grow small">{text}</span>
     </Cell>
   );
   return (
-    <Sheet onClose={onClose} title="How progression works">
+    <Sheet onClose={onClose} title="How it works">
       <div className="stack-lg">
         <div className="stack prose">
-          <div>⚡ <b>Level</b>: every workout adds XP. Early levels come every few weeks; later ones take months.</div>
-          <div>🎖️ <b>Rank</b> needs a level <i>and</i> enough gym visits, so it can't be rushed. Each rank has <b>4 stars</b>; rank points fill toward the next star. Your slower side (XP or visits) sets the pace.</div>
-          <div>🌦️ <b>Seasons</b> reset every 3 months: earn Bronze → Champion for staying consistent <i>now</i>. Your rank never resets.</div>
-          <div>🎯 <b>Weekly quests</b>: 3 small healthy challenges, new every Monday.</div>
-          <div>🏅 <b>Machine mastery</b>: each exercise earns Bronze → Master as you keep training it (Progress → Strength).</div>
-          <div>👑 Past <b>Olympian</b> you keep earning service stars forever.</div>
+          <div>⭐ <b>Every workout earns up to 3 stars.</b> You showed up. You did the work ({RULES.workSets}+ sets). You beat your last time (more weight or more reps on at least half your exercises).</div>
+          <div>🎖️ <b>Stars fill your level.</b> Levels never go down, and your rank is the name of your level band.</div>
+          <div>🔥 <b>Train at least once a week to keep your streak.</b> Hit your weekly goal for a <b>Perfect Week</b>: bonus stars, and the longer your streak, the bigger the bonus.</div>
+          <div>🏅 <b>Every machine has its own medal,</b> from {MEDALS[0].name} to {MEDALS[MEDALS.length - 1].name}, earned by using it and getting stronger on it.</div>
         </div>
         <div className="stack">
-          <div className="section-title">XP per workout</div>
+          <div className="section-title">Bonus stars</div>
           <div className="group">
-            {rule(RULES.visitXp, 'Per gym day (first workout of the day)')}
-            {rule(RULES.setXp, 'Per completed set')}
-            {rule(1, `Per ${RULES.volumeKgPerXp} kg moved (dumbbells count both, assisted = bodyweight − assist)`)}
-            {rule(1, `Per workout minute (max ${RULES.watchMinCap}) and per ${RULES.kcalPerXp} active kcal (max ${RULES.kcalXpCap})`)}
-            {rule(RULES.weightPrXp, 'Weight PR', true)}
-            {rule(RULES.e1rmPrXp, 'Best set (more reps at a weight)', true)}
-            {rule(RULES.newExerciseXp, 'First time trying an exercise')}
-            {rule(RULES.weeklyGoalXp, 'Hitting your weekly goal')}
-            {rule(`${RULES.streakStepPct}%`, `Base XP per consecutive goal week (up to +${RULES.streakStepPct * RULES.streakCapWeeks}%)`)}
-            {rule(RULES.rainXp, `Rain · ≤5 °C (+${RULES.coldXp}, +${RULES.freezingXp} more at ≤0 °C) · ≥33 °C (+${RULES.heatXp})`)}
-            {rule(RULES.holidayXp, 'Training on an Argentine national holiday')}
-            {rule(RULES.weighInXp, 'A weigh-in (once per week)')}
+            {rule(`×${FLAMES[0].mult}–×${FLAMES[FLAMES.length - 1].mult}`, `A Perfect Week pays your weekly goal in stars, multiplied by your flame: ${FLAMES.map((f) => `${f.name} at ${f.min || 1}+ weeks`).join(', ')}`)}
+            {rule('+1★', `Each new record, up to ${RULES.recordCap} per workout`)}
+            {rule(`+${RARITY_STARS.common}–${RARITY_STARS.legendary}★`, 'Each trophy, by rarity')}
+            {rule(`+${RULES.seasonMedalStars}★`, 'Each season medal, counted in Perfect Weeks and reset every 3 months')}
+            {rule(`+${RULES.challengeStars}★`, "This week's challenge")}
+            {rule(`+${RULES.surpriseStars}★`, 'Surprises: coming back after a missed week, rain, cold, heat or a feriado')}
           </div>
-          <p className="tiny muted" style={{ padding: '0 4px' }}>Everything is recalculated from your log, so editing an old workout updates XP and records correctly.</p>
+          <p className="tiny muted" style={{ padding: '0 4px' }}>🛡 A shield covers a week with no workout. Start with {RULES.startShields}, earn one every {RULES.perfectWeeksPerShield} Perfect Weeks, hold up to {RULES.maxShields}.</p>
+          <p className="tiny muted" style={{ padding: '0 4px' }}>Everything is recalculated from your log, so editing an old workout updates your stars and records correctly.</p>
         </div>
       </div>
     </Sheet>

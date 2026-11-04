@@ -2,13 +2,13 @@ import { useMemo, useState } from 'react';
 import { getStore, useData } from '../lib/store';
 import { fmtSet } from '../lib/exercises';
 import { useExerciseMap, useGame } from '../lib/game';
-import { masteryOf, MASTERY, sortSessions } from '../lib/xp';
+import { medalOf, MEDALS, sortSessions } from '../lib/engine';
 import { addDays, fmtDate, fmtNum, num, plural, today, uid, weekKey } from '../lib/util';
 import { navigate, type Route } from '../lib/router';
 import { ColumnChart, LineChart } from '../components/charts';
 import { WorkoutRow } from '../components/WorkoutRow';
 import { Icon } from '../components/Icon';
-import { Cell, CellIcon, Empty, ExerciseThumb, LargeTitle, PageHead, Ring, Segmented, toast, XpBar } from '../components/ui';
+import { Cell, CellIcon, Empty, ExerciseThumb, LargeTitle, PageHead, Ring, Segmented, toast, ProgressBar } from '../components/ui';
 
 type Tab = 'workouts' | 'body' | 'lifts';
 
@@ -32,7 +32,7 @@ function Workouts() {
   const data = useData();
   const g = useGame();
   const exMap = useExerciseMap();
-  const goal = data.profile.weeklyGoal || 3;
+  const goal = g.weekGoal;
   const sessions = useMemo(() => sortSessions(data.sessions).reverse(), [data.sessions]);
 
   const weeks = useMemo(() => {
@@ -64,7 +64,7 @@ function Workouts() {
   if (!sessions.length)
     return (
       <Empty icon="📒" title="No workouts yet">
-        Your history, weekly chart and XP growth will show up here.
+        Your history, weekly chart and star count will show up here.
         <div style={{ marginTop: 14 }}><a className="btn sm tint" href="#/import"><Icon name="download" size={16} /> Import past workouts</a></div>
       </Empty>
     );
@@ -95,10 +95,10 @@ function Workouts() {
       {g.timeline.length > 1 && (
         <div className="card stack">
           <div>
-            <h3>Total XP</h3>
-            <div className="tiny dim">{fmtNum(g.totalXp)} XP · level {g.level.level}</div>
+            <h3>Total stars</h3>
+            <div className="tiny dim">{fmtNum(g.totalStars)}★ · level {g.level.level}</div>
           </div>
-          <LineChart points={g.timeline.map((t) => ({ date: t.date, y: t.xp }))} label="Total XP over time" format={(v) => `${fmtNum(v)} XP`} />
+          <LineChart points={g.timeline.map((t) => ({ date: t.date, y: t.stars }))} label="Total stars over time" format={(v) => `${fmtNum(v)}★`} />
         </div>
       )}
 
@@ -122,14 +122,14 @@ function Lifts() {
   const g = useGame();
   const exMap = useExerciseMap();
   const list = [...g.bests.entries()].sort((a, b) => b[1].lastDate.localeCompare(a[1].lastDate));
-  if (!list.length) return <Empty icon="📈" title="No lifts yet">Every exercise you log gets its own progress chart, records and mastery.</Empty>;
+  if (!list.length) return <Empty icon="📈" title="No lifts yet">Every exercise you log gets its own progress chart, records and medal.</Empty>;
   return (
     <div className="stack">
-      <p className="tiny dim" style={{ padding: '0 4px' }}>Mastery grows with practice: {MASTERY.map((m) => `${m.icon} ${m.n}`).join(' · ')} sessions.</p>
+      <p className="tiny dim" style={{ padding: '0 4px' }}>Machine medals: +1 point per workout, +3 when you beat your last time. {MEDALS.map((m) => `${m.icon} ${m.n}`).join(' · ')}</p>
       <div className="group">
         {list.map(([id, b]) => {
           const ex = exMap.get(id);
-          const m = masteryOf(b.sessions);
+          const m = medalOf(b.points);
           const reps = !!(ex?.bwFactor || ex?.benchmark);
           return (
             <a key={id} className="cell" href={`#/lift/${encodeURIComponent(id)}`} style={{ '--inset': '68px' } as React.CSSProperties}>
@@ -224,7 +224,7 @@ export function LiftDetail({ id }: { id: string }) {
         </div>
       )}
 
-      {best && <MasteryCard sessions={best.sessions} />}
+      {best && <MedalCard points={best.points} gain={best.gain} />}
 
       <div className="stack">
         <div className="section-title">History</div>
@@ -232,7 +232,7 @@ export function LiftDetail({ id }: { id: string }) {
           {[...hist].reverse().map((h) => (
             <Cell key={h.sessionId} href={`#/session/${h.sessionId}`} title={fmtDate(h.date)} sub={<span className="num">{h.sets.map((s) => fmtSet(ex, s)).join('  ·  ')}</span>} />
           ))}
-          {hist.length === 0 && <Cell title="Not logged yet" sub="Your first time earns bonus XP" />}
+          {hist.length === 0 && <Cell title="Not logged yet" sub="Your first time sets your baseline" />}
         </div>
       </div>
     </div>
@@ -261,7 +261,7 @@ function Body() {
       else d.weights.push({ id: uid(), date, kg: v, updatedAt: Date.now() });
     }, `Weigh-in ${date}`);
     setKg('');
-    toast('⚖️ Weigh-in saved · +10 XP once a week');
+    toast('⚖️ Weigh-in saved');
   };
 
   const del = (id: string) =>
@@ -322,21 +322,21 @@ function Body() {
           </div>
         </div>
       ) : (
-        <Empty icon="⚖️" title="No weigh-ins yet">Weigh in about once a week, same time of day. It also makes assisted machines and Hero estimates count correctly.</Empty>
+        <Empty icon="⚖️" title="No weigh-ins yet">Weigh in about once a week, same time of day. It also makes assisted machines count correctly.</Empty>
       )}
     </div>
   );
 }
 
-function MasteryCard({ sessions }: { sessions: number }) {
-  const m = masteryOf(sessions);
+function MedalCard({ points, gain }: { points: number; gain: number | null }) {
+  const m = medalOf(points);
   return (
     <div className="card row" style={{ gap: 14 }}>
       <Ring pct={m.pct} size={52} stroke={4.5} color="var(--gold)"><span style={{ fontSize: '1.4rem' }}>{m.current?.icon ?? '🔰'}</span></Ring>
       <div className="grow stack" style={{ gap: 4 }}>
-        <span className="bold">{m.current ? `${m.current.name} mastery` : 'No mastery yet'}</span>
-        <span className="tiny dim">{m.next ? `${sessions} of ${m.next.n} sessions → ${m.next.icon} ${m.next.name}` : 'Maxed out. Respect.'}</span>
-        {m.next && <XpBar thin gold pct={m.pct} />}
+        <span className="bold">{m.current ? `${m.current.name} medal` : 'No medal yet'}{gain !== null && gain >= 0.005 && <span className="tag accent" style={{ marginLeft: 8 }}>+{Math.round(gain * 100)}% since you started</span>}</span>
+        <span className="tiny dim">{m.next ? `${points} of ${m.next.n} points → ${m.next.icon} ${m.next.name}` : 'Maxed out. Respect.'}</span>
+        {m.next && <ProgressBar thin gold pct={m.pct} />}
       </div>
     </div>
   );

@@ -5,7 +5,7 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { getStore, IMPORT_DRAFT_KEY, useData } from '../lib/store';
 import { useExerciseMap, useGame } from '../lib/game';
-import { computeGame, RULES, type LevelInfo } from '../lib/xp';
+import { computeGame, type LevelInfo } from '../lib/engine';
 import { holidayOn } from '../lib/holidays';
 import { lookupWeather } from '../components/WeatherField';
 import { navigate } from '../lib/router';
@@ -14,7 +14,7 @@ import type { AppData, Routine } from '../lib/types';
 import { activeRoutines, firstReps, routineItems } from '../lib/routines';
 import { buildSessions, freshImportDraft, PLAN_NAMES, type ImportDraft, type Plan, type PlanItem, type Row } from '../lib/backfill';
 import { ExercisePicker } from '../components/ExercisePicker';
-import { Confetti, ExerciseThumb, LevelBadge, PageHead, Sheet, toast, XpBar } from '../components/ui';
+import { Confetti, ExerciseThumb, LevelBadge, PageHead, Sheet, toast, ProgressBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 
 export function Backfill() {
@@ -257,7 +257,7 @@ export function Backfill() {
               </div>
               <button className={`btn sm${r.rain ? ' primary' : ''}`} style={{ flex: 1, minHeight: 44 }} aria-pressed={!!r.rain} onClick={() => setRow(r.id, { rain: !r.rain })}>{r.rain ? '🌧️ Rain' : '☀️ No rain'}</button>
             </div>
-            {holidayOn(r.date) && <span className="tiny accent">🧉 {holidayOn(r.date)}: +{RULES.holidayXp} XP</span>}
+            {holidayOn(r.date) && <span className="tiny accent">🧉 {holidayOn(r.date)}: bonus star</span>}
             {loggedDates.has(r.date) && <span className="tiny" style={{ color: 'var(--fire)' }}>You already logged a workout on {fmtDate(r.date)}; this adds a second one.</span>}
             {r.date > today() && <span className="tiny danger">Date is in the future and will be skipped.</span>}
           </div>
@@ -276,7 +276,7 @@ export function Backfill() {
         <div className="card stack">
           <div className="row between">
             <span className="bold">{plural(preview.sessions.length, 'workout')} · {plural(preview.sets, 'set')}</span>
-            <span className="xp-pill" style={{ fontSize: '1.2rem' }}>+{fmtNum(preview.after.totalXp - g.totalXp)} XP</span>
+            <span className="star-pill" style={{ fontSize: '1.2rem' }}>+{fmtNum(preview.after.totalStars - g.totalStars)}★</span>
           </div>
           <div className="row">
             <LevelBadge info={La} size={56} />
@@ -284,7 +284,7 @@ export function Backfill() {
               <span className="small">
                 Level {Lb.level} → <b className={La.level > Lb.level ? 'gold' : ''}>{La.level}</b> · <span style={{ color: La.rank.color }}>{La.rank.title}</span>
               </span>
-              <XpBar pct={La.pct} />
+              <ProgressBar pct={La.pct} />
             </div>
           </div>
           {preview.sessions.some((s) => !s.exercises.length) && <p className="tiny muted">Days whose workout has no machines yet only count the visit and watch stats.</p>}
@@ -309,7 +309,7 @@ function ImportDone({ before: L0, after: L1, count, achievements }: { before: Le
         <div className="celebrate stack-lg">
           <div className="stack" style={{ alignItems: 'center' }}>
             <div className="muted small">{plural(count, 'workout')} imported</div>
-            <div className="big-xp">+{fmtNum(L1.xp - L0.xp)} XP</div>
+            <div className="big-stars">+{fmtNum(L1.stars - L0.stars)}★</div>
             {L1.level > L0.level && <div className="levelup">LEVEL {L0.level} → {L1.level}!</div>}
             {rankUp && <div className="tag gold" style={{ fontSize: '0.9rem', padding: '4px 12px' }}>Rank: {L1.rank.title}</div>}
           </div>
