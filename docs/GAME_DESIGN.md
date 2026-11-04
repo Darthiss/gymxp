@@ -37,10 +37,10 @@ It also fixes what XP got wrong:
 
 | Problem with XP, on simulated histories | With stars |
 |---|---|
-| A 2×/week lifter doing 8 exercises × 6 sets out-levels someone training 3×/week (L22 vs L20), though they trained 30% fewer times | Attendance wins (L37 vs L43) |
+| A 2×/week lifter doing 8 exercises × 6 sets out-levels someone training 3×/week (L22 vs L20), though they trained 30% fewer times | Attendance wins (L37 vs L44) |
 | Logging Apple Watch data earns about 26% more XP for the same workout | No effect on stars |
 | Volume XP favors big machines: a leg press pays far more than a lateral raise | Every exercise counts equally |
-| Records are only 5% of XP, and 1% for a plateaued lifter | Progress is 23% of stars, plus its own machine medals |
+| Records are only 5% of XP, and 1% for a plateaued lifter | Progress is 22% of stars, plus its own machine medals |
 
 Riot [states the same principle for LoL mastery](https://www.leagueoflegends.com/en-us/news/dev/dev-updating-champion-mastery/): it should reflect real accomplishment, not grinding, and higher per-game grades earn more. Duolingo's clearest failed streak experiment was [tying the streak to XP, which confused users](https://www.lennysnewsletter.com/p/behind-the-product-duolingo-streaks).
 
@@ -203,6 +203,31 @@ These appear as surprises, so nobody has to learn them up front.
 
 The weather and holiday bonuses keep their local charm but collapse from six XP lines into one sticker. Unpredictable bonuses are also what keep a routine from feeling mechanical.
 
+### Trophies
+
+A big collection is part of the fun, so there are **121: 109 on the Awards tab and 12 legend challenges.** The point of the list is that each one means something.
+
+| Rarity | Count | Pays | When you unlock it |
+|---|---|---|---|
+| Common | 51 | +1★ | A chip on the end screen |
+| Rare | 39 | +2★ | A chip, and a line in your story |
+| Epic | 18 | +5★ | Full-screen reveal, and your story |
+| Legendary | 13 | +10★ | Full-screen reveal, and your story |
+
+- **Ladders share a card.** The 12 tiered families, such as gym visits or weight moved, each show one card with the current tier and the next. Tap it to see the whole ladder.
+- **Cut, 14:** steps too close to their neighbours (4 visit tiers, 1 explorer), filler that only re-measures showing up (3 sets, 2 time, 1 burn, 2 volume), and a fixed weekday that goes against "any day, any time" (Monday Club). Rep Factory and Volume Beast stay: stars cap at 3 a day, so a monster session is a fun one-off and not a way to farm.
+- **Added, 20:** trophies for what the game is now about: Perfect Weeks, 3-star workouts, machine medals, getting stronger on a machine, season medals, and a 2-year streak.
+- **Your story:** Career lists your first workout, every rank and every Rare-or-better trophy, with dates, each linking to its workout.
+
+### Legends
+
+For someone training on machines, the old score barely moved: Arnold was 1.6% after 2 years. Comparing absolute lifts with world champions was never going to be fun, so each legend card now tells a story and sets challenges you can actually beat:
+
+- **Career clock:** "You've trained as many days as Arnold's first 6 months."
+- **Equivalents:** "You've moved Eddie's 500 kg deadlift 377 times." Machines count, so it grows every workout.
+- **3 challenges each,** paid as trophies, and only by real workouts. Machines count, so the first of each is within reach in weeks: Eddie's *The 500* is 500 kg in one set (weight × reps). The last ones take months or years.
+- **Lift bars** appear only once you've logged that barbell lift, so they no longer drag anything down.
+
 ## The screens
 
 ### Today: the habit comes first
@@ -260,22 +285,25 @@ The stars land one at a time, with weight, like Angry Birds. **This is the scree
 
    ✓ Showed up   ✓ 15 sets   ✓ Beat 4 of 5
 
-   Leg Press        +5 kg     🏆 Record  +1★
+   Leg Press        🏆 120 → 125 kg
    Lat Pulldown     +2 reps
    Seated Row       +1 rep
    Face Pull        +2.5 kg
    Pec Deck         same
 
-   🔥 Perfect Week!  14 weeks, ×2        +6★
-   🥇 Leg Press reached Gold
+   🏆 1 new record                        +1★
+   🔥 Perfect Week · 14 weeks, ×2         +6★
+   [🥇 Leg Press: Gold]
 
    LVL 23  ★ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░  41 / 47
            6★ to Level 24
 
+   3 of 3 this week · Perfect Week.   Next: Day B
+
    [ Done ]
 ```
 
-The first thing it shows is what you did and how you got stronger, not a list of points.
+The first thing it shows is what you did and how you got stronger, not a list of points. An Epic or Legendary trophy, or a new rank, then takes over the whole screen, one at a time. Everything smaller shares a row, so a normal workout fits on a phone without scrolling.
 
 ### "How does this work?"
 
@@ -313,18 +341,18 @@ The real engine ran on 9 simulated lifters, averaged over 7 seeds each. They hav
 
 | Lifter (2 years) | Workouts | Perfect weeks | 3-star workouts | Level | Old XP level |
 |---|---|---|---|---|---|
-| Solid 3× | 279 | 76% | 60% | **43** | 20 |
+| Solid 3× | 279 | 76% | 60% | **44** | 20 |
 | Solid 3×, no watch | 288 | 80% | 60% | **44** | 18 |
-| Plateaued veteran 3× | 297 | 82% | 47% | **41** | 19 |
-| Enthusiast 5× | 496 | 74% | 60% | **54** | 26 |
+| Plateaued veteran 3× | 297 | 82% | 47% | **42** | 19 |
+| Enthusiast 5× | 496 | 74% | 60% | **55** | 26 |
 | Grinder 2×, 8 exercises × 6 sets | 195 | 86% | 63% | **37** | 22 |
-| Yo-yo, quits for weeks at a time | 220 | 59% | 56% | **35** | 15 |
-| Busy, goal 2, misses often | 157 | 60% | 72% | **31** | 12 |
+| Yo-yo, quits for weeks at a time | 220 | 59% | 56% | **36** | 15 |
+| Busy, goal 2, misses often | 157 | 60% | 72% | **32** | 12 |
 | Once a week | 96 | 88% | 60% | **28** | 12 |
 
 Levels are on a new scale, so compare the order, not the numbers. Attendance and consistency now decide the order. A plateaued veteran stays close to a fast-progressing beginner, and the watch makes no difference.
 
-**Where stars come from (solid 3×):** consistency 50% (show up 15, Perfect Weeks 32, seasons 3), work 15%, progress 23% (beat 9, records 14), extras 13% (trophies 7, challenge 4, surprises 2).
+**Where stars come from (solid 3×):** consistency 49% (show up 14, Perfect Weeks 32, seasons 3), work 14%, progress 22% (beat 9, records 13), extras 14% (trophies 8, challenge 4, surprises 2).
 
 **Workouts with something worth celebrating:**
 
@@ -332,7 +360,7 @@ Levels are on a new scale, so compare the order, not the numbers. Attendance and
 |---|---|---|
 | Solid 3×, 2 years | 66% | 82% |
 | Solid 3×, 5 years | 43% | 69% |
-| Plateaued veteran | 31% | 65% |
+| Plateaued veteran | 31% | 64% |
 
 **Level pace at 3×/week:** about 1 a week for the first 12 weeks, 1 every 2 weeks to month 6, 1 every 3 weeks to the end of year 1, 1 every 4 weeks in year 2, then 1 every 7 weeks through year 5.
 

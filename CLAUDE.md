@@ -48,7 +48,7 @@ Boot sequence (`src/App.tsx`): `boot` → `setup` or `locked` → `open`. Once o
 **Game engine (`lib/engine.ts`, `lib/trophies.ts`).** `computeGame(data, exMap)` replays the whole log in date order and returns a `GameState`. Stars, levels, streaks, records, trophies and seasons are never stored.
 - Changing `RULES`, `RANKS`, `FLAMES` or the trophy tables needs no migration, but it re-scores every user's history on next load and can change their level. Treat that as a product decision.
 - `useGame()` (`lib/game.ts`) shares one result per data object across components. The logger (`screens/Log.tsx`) also recomputes on every deferred draft edit for its live stars, so engine cost is felt while typing.
-- To add a trophy: define it in `lib/trophies.ts` and add its unlock check in the per-session loop. `unlock()` ignores ids that aren't defined. Trophies with a `target` also need a value in the `progress` map. Never rename a trophy id.
+- To add a trophy: define it in `lib/trophies.ts` and add its unlock check in the per-session loop. `unlock()` ignores ids that aren't defined. Trophies with a `target` also need a value in the `progress` map, and tiers made with `tierDefs` share a family card on the Awards tab. Never rename a trophy id.
 - A week's goal comes from `goalAt()`, not `profile.weeklyGoal`, and changes go through `withWeeklyGoal()`, so past weeks are never rewritten.
 - Hero Physique is shelved behind `FEATURES.hero` (`lib/features.ts`). `lib/hero.ts` still runs, because non-Hero trophies such as `str-pullup` read its rep tracking.
 
@@ -64,4 +64,5 @@ Boot sequence (`src/App.tsx`): `boot` → `setup` or `locked` → `open`. Once o
 - **CSP** (`vite.config.ts`) applies only to production builds, so a violation won't show in `npm run dev`. Beyond same-origin, `connect-src` allows only `api.github.com` and `api.open-meteo.com`, and images must be same-origin, `data:` or `blob:`. Any new external host has to be added there.
 - **Service worker** (`public/sw.js`) serves same-origin non-navigation requests cache-first with a fixed cache name. If you replace a file at the same URL (for example a photo in `public/ex/`), bump `CACHE`.
 - **localStorage** keys use the `gymxp:` prefix. Anything sensitive must be sealed with `seal()` and added to the list in `wipeDevice()`. Non-sensitive per-device data (`logmode`, `ticks`, `order`, `autolock`) stays in plain text.
+- **Fixed overlays** inside a `.fade-in` child are trapped by its animation and can open off-screen. `Sheet` renders on `<body>` to avoid this, so use it instead of a new overlay.
 - **Demo mode** (`src/dev/demo.ts`) overwrites `Store` methods by name through an `unknown` cast. Renaming one won't fail the type check; it will make demo mode touch real storage or GitHub.

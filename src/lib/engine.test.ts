@@ -2,8 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   beatsNeeded, compareToLast, computeGame, flameFor, goalAt, levelForStars, levelInfo, medalOf, perfectWeekStars, rankFor, RANKS, RULES, seasonOf, starsForLevel, withWeeklyGoal,
 } from './engine';
-import { ACHIEVEMENTS, RARITY_STARS, rarityOf } from './trophies';
-import { allExercises, BUILTIN, exerciseMap, fmtBeat, fmtSet, toBeatText } from './exercises';
+import { ACHIEVEMENTS, RARITY_STARS, rarityOf, TROPHY_GROUPS } from './trophies';
+import { allExercises, BUILTIN, exerciseMap, fmtBeat, fmtPr, fmtSet, toBeatText } from './exercises';
+import { careerClock, compare, LEGENDS, timesMoved } from './legends';
+import { bigMoments, careerStory } from './career';
 import { gameFor } from './game';
 import { emptyData, type AppData, type Exercise, type Routine, type Session } from './types';
 import { activeRoutines, firstReps, fmtRest, fmtTarget, hitTarget, inOrder, lastDone, moveTo, nextPosition, repsForSet, routineItems, upNextRoutine } from './routines';
@@ -529,14 +531,212 @@ describe('trophies', () => {
     expect(g.visits).toBe(1);
   });
 
+  it('is a big collection with no loose ends', () => {
+    expect(ACHIEVEMENTS).toHaveLength(121);
+    expect(new Set(ACHIEVEMENTS.map((a) => a.id)).size).toBe(ACHIEVEMENTS.length);
+    const grouped = new Set(TROPHY_GROUPS.flatMap((g) => g.categories));
+    for (const a of ACHIEVEMENTS) expect(grouped.has(a.category) || a.category === 'Legends', a.id).toBe(true);
+    for (const f of new Set(ACHIEVEMENTS.flatMap((a) => (a.family ? [a.family] : [])))) {
+      const targets = ACHIEVEMENTS.filter((a) => a.family === f).map((a) => a.target!);
+      expect(targets.length, f).toBeGreaterThanOrEqual(3);
+      expect([...targets].sort((x, y) => x - y), f).toEqual(targets);
+    }
+    for (const id of ['hab-monday', 'visits-75', 'sets-100']) expect(ACHIEVEMENTS.some((a) => a.id === id), id).toBe(false);
+  });
+
+  it('rewards Perfect Weeks, 3-star workouts, medals and getting stronger', () => {
+    const d = emptyData();
+    d.profile.weeklyGoal = 1;
+    for (let i = 0; i < 12; i++) add(d, new Date(Date.UTC(2026, 0, 5 + i * 7)).toISOString().slice(0, 10), [ex('Leg_Press', 100 + i * 5, ...TEN_SETS)]);
+    const g = game(d);
+    expect(g.unlockedIds.has('perfect-1') && g.unlockedIds.has('perfect-4')).toBe(true);
+    expect(g.unlockedIds.has('perfect-13')).toBe(false);
+    expect(g.progress['perfect-13']).toBe(12);
+    expect(g.unlockedIds.has('allstar-10')).toBe(true); // every workout here beats the last
+    expect(g.unlockedIds.has('medal-10')).toBe(true);
+    expect(g.progress['medal-75']).toBe(36); // 12 workouts × 3 points
+    expect(g.unlockedIds.has('gain-25')).toBe(true); // 100 → 155 kg
+    expect(g.unlockedIds.has('gain-50')).toBe(true);
+    expect(g.unlockedIds.has('gain-100')).toBe(false);
+  });
+
+  it('does not count strength gained until 5 workouts on a machine', () => {
+    const d = emptyData();
+    add(d, '2026-01-05', [ex('Leg_Press', 50, 10)]);
+    add(d, '2026-01-07', [ex('Leg_Press', 150, 10)]);
+    expect(game(d).unlockedIds.has('gain-100')).toBe(false);
+  });
+
+  it('awards season trophies', () => {
+    const d = emptyData();
+    d.profile.weeklyGoal = 1;
+    for (let i = 0; i < 9; i++) add(d, new Date(Date.UTC(2026, 3, 6 + i * 7)).toISOString().slice(0, 10), [ex('Leg_Press', 50, 10)]);
+    expect(game(d).unlockedIds.has('season-gold')).toBe(false);
+    add(d, '2026-06-08', [ex('Leg_Press', 50, 10)]);
+    expect(game(d).unlockedIds.has('season-gold')).toBe(true);
+    expect(game(d).unlockedIds.has('season-champion')).toBe(false);
+  });
+
   it('legend comparison uses barbell e1RM and visits', async () => {
-    const { compare, LEGENDS } = await import('./legends');
     const d = emptyData();
     d.sessions.push(sess('2026-01-03', [{ exerciseId: 'Barbell_Deadlift', sets: [{ kg: 100, reps: 1 }] }]));
     const p = compare(game(d), LEGENDS.find((l) => l.id === 'eddie')!);
     const dl = p.rows.find((r) => r.metric.key === 'deadlift')!;
     expect(dl.mine).toBe(103.3); // Epley: 100 × (1 + 1/30)
     expect(dl.pct).toBeCloseTo(103.3 / 500);
+  });
+});
+
+describe('legends', () => {
+  const byId = (id: string) => LEGENDS.find((l) => l.id === id)!;
+  const has = (d: AppData, id: string) => game(d).unlockedIds.has(id);
+
+  it('each has three challenges', () => {
+    for (const l of LEGENDS) expect(ACHIEVEMENTS.filter((a) => a.legend === l.id), l.id).toHaveLength(3);
+  });
+
+  it('tell your gym days as a story', () => {
+    const arnold = byId('arnold');
+    expect(careerClock(1, arnold)).toBe("You've trained as many days as Arnold's first week.");
+    expect(careerClock(18, arnold)).toBe("You've trained as many days as Arnold's first 3 weeks.");
+    expect(careerClock(156, arnold)).toBe("You've trained as many days as Arnold's first 6 months.");
+    expect(careerClock(1000, arnold)).toBe("You've trained as many days as Arnold's first 3.2 years.");
+    expect(careerClock(6000, arnold)).toBe("You've trained more days than Arnold's whole estimated career.");
+  });
+
+  it('count how many times you have moved their famous lift', () => {
+    expect(timesMoved(1600, byId('eddie'))).toBe(3);
+    expect(timesMoved(100, byId('eddie'))).toBe(0);
+  });
+
+  it('only show lift bars once you have logged that lift', () => {
+    const d = emptyData();
+    add(d, '2026-01-03', [ex('Leg_Press', 200, 10)]);
+    expect(compare(game(d), byId('arnold')).rows).toEqual([]);
+    add(d, '2026-01-05', [ex('Barbell_Squat', 100, 5)]);
+    expect(compare(game(d), byId('arnold')).rows.map((r) => r.metric.key)).toEqual(['squat']);
+  });
+
+  it('Eddie: moving 500 kg in a set, on a machine, then more', () => {
+    const d = emptyData();
+    add(d, '2026-01-05', [ex('Leg_Press', 40, 12)]);
+    expect(has(d, 'leg-eddie-500')).toBe(false);
+    add(d, '2026-01-07', [ex('Leg_Press', 50, 10)]);
+    expect(has(d, 'leg-eddie-500')).toBe(true);
+    expect(has(d, 'leg-eddie-ten')).toBe(false);
+    add(d, '2026-01-09', [ex('Leg_Press', 100, 10, 10, 10, 10, 10)]);
+    expect(has(d, 'leg-eddie-ten')).toBe(true);
+    expect(has(d, 'leg-eddie-week')).toBe(false);
+    add(d, '2026-01-10', [ex('Leg_Press', 200, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10)]);
+    expect(has(d, 'leg-eddie-week')).toBe(true);
+  });
+
+  it('Thor: a heavy farmer\'s walk, a heavy short set, a big month', () => {
+    const d = emptyData();
+    add(d, '2026-01-05', [ex('Farmers_Walk', 30, 45)]);
+    expect(has(d, 'leg-thor-carry')).toBe(false);
+    add(d, '2026-01-07', [ex('Farmers_Walk', 30, 60)]);
+    expect(has(d, 'leg-thor-carry')).toBe(true);
+    add(d, '2026-01-08', [ex('Leg_Press', 50, 12)]); // 600 kg, but 12 reps
+    expect(has(d, 'leg-thor-501')).toBe(false);
+    add(d, '2026-01-09', [ex('Leg_Press', 110, 5)]);
+    expect(has(d, 'leg-thor-501')).toBe(true);
+    expect(has(d, 'leg-thor-mountain')).toBe(false);
+    for (const date of ['2026-01-12', '2026-01-14', '2026-01-16', '2026-01-19', '2026-01-21']) add(d, date, [ex('Leg_Press', 200, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10)]);
+    expect(has(d, 'leg-thor-mountain')).toBe(true);
+  });
+
+  it('Ronnie: light weight for reps, records in a week', () => {
+    const d = emptyData();
+    add(d, '2026-01-05', [ex('Leg_Press', 100, 11)]);
+    expect(has(d, 'leg-ronnie-light')).toBe(false);
+    add(d, '2026-01-07', [ex('Leg_Press', 100, 12)]);
+    expect(has(d, 'leg-ronnie-light')).toBe(true);
+    const ids = ['Leg_Extensions', 'Seated_Leg_Curl', 'Butterfly', 'Face_Pull', 'Machine_Bicep_Curl', 'Wide-Grip_Lat_Pulldown', 'Seated_Cable_Rows', 'Machine_Bench_Press'];
+    add(d, '2026-01-09', ids.map((id) => ex(id, 20, 10)));
+    add(d, '2026-01-12', ids.slice(0, 7).map((id) => ex(id, 30, 10)));
+    expect(has(d, 'leg-ronnie-records')).toBe(false);
+    add(d, '2026-01-14', [ex(ids[7], 30, 10)]);
+    expect(has(d, 'leg-ronnie-records')).toBe(true);
+  });
+
+  it('Arnold: sets in a day, six days in a week, seven Perfect Weeks in a row', () => {
+    const d = emptyData();
+    d.profile.weeklyGoal = 1;
+    const twelve = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10];
+    add(d, '2026-01-05', [ex('Leg_Press', 50, ...twelve)]);
+    expect(has(d, 'leg-arnold-pump')).toBe(false);
+    add(d, '2026-01-05', [ex('Butterfly', 30, 10, 10, 10, 10, 10, 10, 10, 10)]); // 20 across two workouts
+    expect(has(d, 'leg-arnold-pump')).toBe(true);
+    for (const date of ['2026-01-06', '2026-01-07', '2026-01-08', '2026-01-09']) add(d, date, [ex('Leg_Press', 50, 10)]);
+    expect(has(d, 'leg-arnold-split')).toBe(false);
+    add(d, '2026-01-10', [ex('Leg_Press', 50, 10)]);
+    expect(has(d, 'leg-arnold-split')).toBe(true);
+    for (let i = 1; i < 6; i++) add(d, new Date(Date.UTC(2026, 0, 5 + i * 7)).toISOString().slice(0, 10), [ex('Leg_Press', 50, 10)]);
+    expect(has(d, 'leg-arnold-seven')).toBe(false);
+    add(d, '2026-02-16', [ex('Leg_Press', 50, 10)]);
+    expect(has(d, 'leg-arnold-seven')).toBe(true);
+  });
+
+  it('challenges need real workouts', () => {
+    const d = emptyData();
+    add(d, '2026-01-05', [ex('Leg_Press', 100, 12)], { estimated: true });
+    expect(has(d, 'leg-eddie-500')).toBe(false);
+    expect(has(d, 'leg-ronnie-light')).toBe(false);
+  });
+});
+
+describe('big moments', () => {
+  it('gives Epic and Legendary trophies and a new rank the full screen, biggest last', () => {
+    const d = emptyData();
+    const before = game(d);
+    add(d, '2026-01-05', [ex('Leg_Press', 20000, 50)]); // 1,000 tonnes in one go
+    const moments = bigMoments(before, game(d));
+    const kinds = moments.map((m) => m.kind);
+    expect(kinds).toContain('Epic trophy');
+    expect(kinds).toContain('Legendary trophy');
+    expect(kinds[kinds.length - 1]).toBe('New rank');
+    expect(kinds.indexOf('Legendary trophy')).toBeGreaterThan(kinds.lastIndexOf('Epic trophy'));
+    expect(moments.find((m) => m.id === 'volume-1000000')).toMatchObject({ rarity: 'legendary', stars: RARITY_STARS.legendary });
+  });
+
+  it('stays quiet for common and rare unlocks, and when nothing new happened', () => {
+    const d = emptyData();
+    add(d, '2026-01-05', [ex('Leg_Press', 50, 10)]);
+    const before = game(d);
+    add(d, '2026-01-07', [ex('Leg_Press', 50, 10)]);
+    const after = game(d);
+    expect(after.unlocked.filter((a) => !before.unlockedIds.has(a.id)).every((a) => a.rarity === 'common' || a.rarity === 'rare')).toBe(true);
+    expect(bigMoments(before, after).filter((m) => m.rarity)).toEqual([]);
+    expect(bigMoments(after, after)).toEqual([]);
+  });
+
+  it('never celebrates a rank you only dropped into', () => {
+    const d = emptyData();
+    add(d, '2026-01-05', [ex('Leg_Press', 20000, 50)]);
+    expect(bigMoments(game(d), game(emptyData())).some((m) => m.kind === 'New rank')).toBe(false);
+  });
+});
+
+describe('your story', () => {
+  it('collects the first workout, ranks and rare trophies, newest first', () => {
+    const d = emptyData();
+    d.profile.weeklyGoal = 1;
+    for (let i = 0; i < 16; i++) add(d, new Date(Date.UTC(2026, 0, 5 + i * 7)).toISOString().slice(0, 10), [ex('Leg_Press', 100 + i * 5, ...TEN_SETS)]);
+    const events = careerStory(game(d));
+    expect(events[events.length - 1]).toMatchObject({ id: 'first', title: 'Your first workout' });
+    expect(events.some((e) => e.kind.startsWith('New rank'))).toBe(true); // a big first day can skip early ranks
+    expect(events.some((e) => e.rarity === 'rare')).toBe(true);
+    expect(events.some((e) => e.rarity === 'common')).toBe(false);
+    for (let i = 1; i < events.length; i++) expect(events[i - 1].date >= events[i].date).toBe(true);
+    expect(careerStory(game(emptyData()))).toEqual([]);
+  });
+
+  it('shows records as old → new', () => {
+    expect(fmtPr({ exerciseId: 'x', kind: 'weight', value: 125, prev: 120 })).toBe('120 → 125 kg');
+    expect(fmtPr({ exerciseId: 'x', kind: 'hold', value: 70, prev: 60 })).toBe('60 → 70 s');
+    expect(fmtPr({ exerciseId: 'x', kind: 'assist', value: 30, prev: 40 })).toBe('40 → 30 kg assist');
+    expect(fmtPr({ exerciseId: 'x', kind: 'e1rm', value: 133.3333, prev: 130 })).toBe('Best set yet');
   });
 });
 
@@ -962,6 +1162,19 @@ describe("farmer's walk", () => {
   });
 });
 
+describe('big-session trophies', () => {
+  it('Rep Factory counts reps in one workout, and Volume Beast counts its tonnage', () => {
+    const d = emptyData();
+    const sets = Array.from({ length: 25 }, () => 20);
+    add(d, '2026-01-05', [ex('Leg_Press', 10, ...sets.slice(0, 24))]); // 480 reps, 4,800 kg
+    expect(game(d).unlockedIds.has('hab-reps')).toBe(false);
+    expect(game(d).unlockedIds.has('special-beast')).toBe(false);
+    add(d, '2026-01-07', [ex('Leg_Press', 20, ...sets)]); // 500 reps, 10,000 kg
+    expect(game(d).unlockedIds.has('hab-reps')).toBe(true);
+    expect(game(d).unlockedIds.has('special-beast')).toBe(true);
+  });
+});
+
 describe('timed holds (plank)', () => {
   it('logs seconds: gentle volume, no reps, hold PRs instead of rep PRs', () => {
     const d = emptyData();
@@ -981,4 +1194,5 @@ describe('timed holds (plank)', () => {
     d.sessions = [sess('2026-01-05', [{ exerciseId: 'Plank', sets: [{ kg: 0, reps: 300 }, { kg: 0, reps: 300 }] }])];
     expect(game(d).unlocked.some((a) => a.id === 'hab-reps')).toBe(false); // 600 s would be 600 "reps"
   });
+
 });

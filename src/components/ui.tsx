@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import type { CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { getStore, useStore } from '../lib/store';
 import { imgUrl } from '../lib/exercises';
 import type { Exercise } from '../lib/types';
@@ -177,7 +178,8 @@ export function Sheet({ onClose, children, full, title }: { onClose: () => void;
       document.body.style.overflow = prev;
     };
   }, [onClose]);
-  return (
+  // Rendered on <body>: an animated ancestor (.fade-in) would otherwise trap a fixed overlay inside it.
+  return createPortal(
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className={`sheet${full ? ' full' : ''}`} role="dialog" aria-modal="true">
         {title !== undefined && (
@@ -188,7 +190,8 @@ export function Sheet({ onClose, children, full, title }: { onClose: () => void;
         )}
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

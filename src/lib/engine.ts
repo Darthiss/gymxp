@@ -6,7 +6,7 @@ import { FEATURES } from './features';
 import { weekKey, addDays, today, parseDate } from './util';
 import { holidayOn } from './holidays';
 import { capacityFrom, emptyCapacity, HERO_IDS, HERO_TARGETS, HERO_VOLUME_WEEKS, HERO_STAGES, heroMuscle, ladderWork, scoreHero, type Capacity, type HeroMuscle, type HeroResult } from './hero';
-import { ACH_BY_ID, ACHIEVEMENTS, BURN_TIERS, EXPLORER_TIERS, PR_TIERS, SET_TIERS, STREAK_TIERS, STRENGTH, TIME_TIERS, VISIT_TIERS, VOLUME_TIERS, type AchievementDef, type Tier, type UnlockedAchievement } from './trophies';
+import { ACH_BY_ID, ACHIEVEMENTS, ALLSTAR_TIERS, BURN_TIERS, EXPLORER_TIERS, GAIN_TIERS, MEDAL_TIERS, PERFECT_TIERS, PR_TIERS, SET_TIERS, STREAK_TIERS, STRENGTH, TIME_TIERS, VISIT_TIERS, VOLUME_TIERS, type AchievementDef, type Tier, type UnlockedAchievement } from './trophies';
 
 export const RULES = {
   workSets: 10, // ★ Do the work: completed sets in one gym day…
@@ -431,7 +431,8 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
   const prStreak = new Map<string, number>();
   const holidayNames = new Set<string>();
   let totalVolume = 0, totalSets = 0, totalMinutes = 0, totalKcal = 0, prCount = 0, weighInCount = 0;
-  let mondays = 0, rainDays = 0, holidayDays = 0, bestLegStreak = 0;
+  let rainDays = 0, holidayDays = 0, bestLegStreak = 0, threeStarDays = 0, bestPoints = 0, bestGain = 0, bestSeasonTier = -1;
+  const monthVolume = new Map<string, number>();
 
   // --- streak ---
   let streak = 0, bestStreak = 0, shields = RULES.startShields, perfectWeeks = 0, lastActiveWeek = '';
@@ -604,7 +605,6 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
       weekVisits.set(wk, (weekVisits.get(wk) ?? 0) + 1);
       const mk = s.date.slice(0, 7);
       monthVisits.set(mk, (monthVisits.get(mk) ?? 0) + 1);
-      if (dow === 1) mondays++;
       if (wk !== lastActiveWeek) {
         settleGaps(wk);
         streak++;
@@ -619,6 +619,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     let sets = 0;
     let volume = 0;
     let reps = 0;
+    let maxSetLoad = 0, maxShortSet = 0, lightWeight = false, strongCarry = false; // for the legend challenges
     const prs: PR[] = [];
     const beats: Beat[] = [];
     const medalUps: MedalUp[] = [];
@@ -655,10 +656,16 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
         if (ex?.hold) { // seconds, not reps: no rep count or strength estimate, gentle volume
           exVol += load * (st.reps / HOLD_SECONDS_PER_REP);
           bestKg = Math.max(bestKg, st.kg);
+          if (log.exerciseId === 'Farmers_Walk' && st.kg >= 30 && st.reps >= 60) strongCarry = true;
           continue;
         }
         reps += bench === 'cindy' ? st.reps * 30 : st.reps;
         exVol += load * st.reps;
+        if (!bench) {
+          maxSetLoad = Math.max(maxSetLoad, load * st.reps);
+          if (st.reps <= 5) maxShortSet = Math.max(maxShortSet, load * st.reps);
+          if (load >= 100 && st.reps >= 12) lightWeight = true;
+        }
         effE = Math.max(effE, e1rm(load, st.reps));
         if (ex?.assisted) bestKg = Math.min(bestKg, st.kg);
         else { bestKg = Math.max(bestKg, st.kg); bestE = Math.max(bestE, bodyweightEx ? e1rm(load, st.reps) : e1rm(st.kg, st.reps)); }
@@ -740,6 +747,8 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
         if (m.tier > tierBefore && m.current) medalUps.push({ exerciseId: log.exerciseId, name: m.current.name, icon: m.current.icon });
         const t = strength.get(log.exerciseId);
         best.gain = t && t.base > 0 ? t.best / t.base - 1 : null;
+        bestPoints = Math.max(bestPoints, best.points);
+        if (best.sessions >= 5 && best.gain !== null) bestGain = Math.max(bestGain, best.gain * 100);
       }
       prStreak.set(log.exerciseId, weightPr ? (prStreak.get(log.exerciseId) ?? 0) + 1 : 0);
       const h = history.get(log.exerciseId) ?? [];
@@ -759,6 +768,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
       : { show: true, work: day.sets >= RULES.workSets || day.minutes >= RULES.workMinutes, beat: day.exercises.size > 0 && day.beaten.size >= beatsNeeded(day.exercises.size) };
     const earnedNow = 1 + (checks.work ? 1 : 0) + (checks.beat ? 1 : 0);
     const gained = Math.max(0, earnedNow - day.stars);
+    if (day.stars < 3 && earnedNow === 3) threeStarDays++;
     day.stars = Math.max(day.stars, earnedNow);
     let stars = gained;
     if (gained) items.push({ label: 'Workout', stars: gained, kind: 'workout' });
@@ -808,6 +818,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
         items.push({ label: `${t.icon} ${season.label} season: ${t.name}`, stars: RULES.seasonMedalStars, kind: 'season' });
         stars += RULES.seasonMedalStars;
       }
+      bestSeasonTier = Math.max(bestSeasonTier, season.tier);
     }
 
     // --- weekly challenge ---
@@ -829,6 +840,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     checkChallenge((label, v) => { items.push({ label, stars: v, kind: 'challenge' }); stars += v; });
 
     totalVolume += volume;
+    monthVolume.set(s.date.slice(0, 7), (monthVolume.get(s.date.slice(0, 7)) ?? 0) + volume);
     totalSets += sets;
     totalMinutes += minutes;
     totalKcal += kcal;
@@ -844,6 +856,12 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     stars += checkTiers('sets', SET_TIERS, totalSets, s.date, items, s.id);
     stars += checkTiers('time', TIME_TIERS, totalMinutes, s.date, items, s.id);
     stars += checkTiers('burn', BURN_TIERS, totalKcal, s.date, items, s.id);
+    stars += checkTiers('perfect', PERFECT_TIERS, perfectWeeks, s.date, items, s.id);
+    stars += checkTiers('allstar', ALLSTAR_TIERS, threeStarDays, s.date, items, s.id);
+    stars += checkTiers('medal', MEDAL_TIERS, bestPoints, s.date, items, s.id);
+    stars += checkTiers('gain', GAIN_TIERS, bestGain, s.date, items, s.id);
+    if (bestSeasonTier >= SEASON_TIERS.findIndex((t) => t.name === 'Gold')) A('season-gold');
+    if (bestSeasonTier >= SEASON_TIERS.length - 1) A('season-champion');
     // strength standards
     for (const st of STRENGTH) {
       const hit = strengthHits.find((h) => h.ex === st.ex);
@@ -867,7 +885,6 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     // habits
     if (firstOfDay && gapDays >= 14 && visitsBefore >= 3) A('hab-comeback');
     if (dow === 0 && visitDays.has(addDays(s.date, -1))) A('hab-weekend');
-    if (mondays >= 10) A('hab-monday');
     const legStreak = consecutive(legWeeks, wk);
     bestLegStreak = Math.max(bestLegStreak, legStreak);
     if (legStreak >= 8) A('hab-legs');
@@ -895,6 +912,21 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     if (s.startTime && s.startTime >= '21:00') A('special-night');
     if ((monthVisits.get(s.date.slice(0, 7)) ?? 0) >= 12) A('special-month');
     if (prs.length >= 3) A('special-double');
+    // legend challenges, for real workouts only
+    if (!s.estimated) {
+      if (day.sets >= 20) A('leg-arnold-pump');
+      if ((weekVisits.get(wk) ?? 0) >= 6) A('leg-arnold-split');
+      if (consecutive(perfectSet, wk) >= 7) A('leg-arnold-seven');
+      if (lightWeight) A('leg-ronnie-light');
+      if (week.prs >= 8) A('leg-ronnie-records');
+      if ([...seasons.values()].filter((x) => x.tier >= 0).length >= 8) A('leg-ronnie-eight');
+      if (maxSetLoad >= 500) A('leg-eddie-500');
+      if (volume >= 5000) A('leg-eddie-ten');
+      if (week.volume >= 25000) A('leg-eddie-week');
+      if (strongCarry) A('leg-thor-carry');
+      if (maxShortSet >= 501) A('leg-thor-501');
+      if ((monthVolume.get(s.date.slice(0, 7)) ?? 0) >= 100000) A('leg-thor-mountain');
+    }
 
     totalStars += stars;
     if (firstOfDay) lastVisit = s.date;
@@ -915,13 +947,14 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
   const metric: Record<string, number> = {
     visits: visitDays.size, volume: totalVolume, streak: bestStreak, prs: prCount,
     explorer: seen.size, sets: totalSets, time: totalMinutes, burn: totalKcal,
+    perfect: perfectWeeks, allstar: threeStarDays, medal: bestPoints, gain: Math.floor(bestGain),
   };
   for (const a of ACHIEVEMENTS) {
     const prefix = a.id.split('-')[0];
     if (a.target && prefix in metric) progress[a.id] = metric[prefix];
   }
   Object.assign(progress, {
-    'body-10': weighInCount, 'hab-monday': mondays, 'hab-legs': bestLegStreak,
+    'body-10': weighInCount, 'hab-legs': bestLegStreak,
     'wx-rain-10': rainDays, 'hol-5': holidayDays, 'hol-10': holidayNames.size,
   });
 

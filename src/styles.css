@@ -298,7 +298,7 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
 /* ---------- Stars ---------- */
 .rating { display: inline-flex; gap: 0.12em; vertical-align: middle; color: rgba(255, 255, 255, 0.16); line-height: 1; }
 .rating .on { color: var(--gold); filter: drop-shadow(0 0 5px rgba(255, 210, 90, 0.45)); }
-.star-reveal { display: flex; justify-content: center; align-items: center; gap: 14px; padding: 6px 0; color: rgba(255, 255, 255, 0.13); }
+.star-reveal { display: flex; justify-content: center; align-items: center; gap: 12px; padding: 2px 0; color: rgba(255, 255, 255, 0.13); }
 .star-reveal .s { display: grid; animation: fade 0.4s ease both; animation-delay: 0.1s; }
 .star-reveal .s:nth-child(2) { transform: translateY(-10px); }
 .star-reveal .s.on { color: var(--gold); filter: drop-shadow(0 0 16px rgba(255, 210, 90, 0.55)); animation: slam 0.55s var(--spring) both; animation-delay: calc(0.25s + var(--i) * 0.38s); }
@@ -318,6 +318,8 @@ select.input { appearance: none; -webkit-appearance: none; background-image: lin
 .reward-list .line + .line::before { content: ''; position: absolute; top: 0; left: 14px; right: 0; height: 0.5px; background: var(--line); }
 .reward-list .delta { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--accent); }
 .reward-list .delta.dim { color: var(--muted); font-weight: 600; }
+.reward-list .delta.record { color: var(--gold); }
+.reward-list.compact .line { min-height: 38px; padding: 8px 14px; font-size: 0.88rem; }
 .reward-list .line.record .what, .reward-list .line.perfect .what { color: var(--gold); font-weight: 650; }
 .reward-list .line.trophy .what { color: var(--purple); font-weight: 650; }
 .reward-list .line.medal .what { font-weight: 650; }
@@ -493,8 +495,52 @@ ol.steps li::before { content: counter(s); width: 24px; height: 24px; border-rad
 .ach .title { font-weight: 700; font-size: 0.9rem; line-height: 1.25; }
 .ach.locked .medal, .ach.locked .icon { filter: grayscale(1); opacity: 0.4; }
 .ach.locked .title { color: var(--text-2); }
-.ach.unlocked .medal { background: radial-gradient(circle at 35% 30%, rgba(255, 225, 140, 0.45), rgba(255, 180, 60, 0.12) 70%); box-shadow: inset 0 0 0 1px rgba(255, 210, 90, 0.4); }
-.ach.unlocked { background: linear-gradient(165deg, rgba(255, 210, 90, 0.09), var(--surface) 55%); }
+.ach.unlocked .medal { background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--rar) 45%, transparent), color-mix(in srgb, var(--rar) 12%, transparent) 70%); box-shadow: inset 0 0 0 1px var(--rar); }
+.ach.unlocked { background: linear-gradient(165deg, color-mix(in srgb, var(--rar) 11%, transparent), var(--surface) 55%); }
+.sheet .ach { background: var(--surface-3); }
+.ach .rarity { font-size: 0.64rem; font-weight: 750; letter-spacing: 0.05em; text-transform: uppercase; color: var(--rar); margin-top: 2px; }
+.ach.locked .rarity { opacity: 0.6; }
+
+/* Rarity: one colour per tier, on trophies, chips and the reveal */
+.rar-common { --rar: #aab2bf; }
+.rar-rare { --rar: var(--info); }
+.rar-epic { --rar: var(--purple); }
+.rar-legendary { --rar: var(--gold); }
+.rarity-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; border-top: 0.5px solid var(--line); padding-top: 12px; }
+.rarity-row > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rarity-row b { font-family: var(--font-round); font-size: 1.05rem; font-weight: 800; color: var(--rar); }
+.rarity-row b small { font-size: 0.68em; font-weight: 650; color: var(--muted); }
+.rarity-row span { font-size: 0.64rem; font-weight: 650; color: var(--text-2); white-space: nowrap; }
+.rchip { background: color-mix(in srgb, var(--rar) 15%, transparent); color: var(--rar); }
+.rchip b { font-family: var(--font-round); font-weight: 800; }
+.reward-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.reward-chips .chip { cursor: default; height: 30px; padding: 0 11px; font-size: 0.8rem; }
+
+/* A ladder of tiers as one card */
+.family { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border: 0; border-radius: var(--r-lg); background: var(--surface); color: inherit; text-align: left; cursor: pointer; transition: transform 0.16s var(--ease); }
+.family:active { transform: scale(0.985); }
+.family .medal { width: 46px; height: 46px; border-radius: 50%; flex: none; display: grid; place-items: center; font-size: 1.5rem; background: color-mix(in srgb, var(--rar) 16%, transparent); box-shadow: inset 0 0 0 1px var(--rar); }
+.family.none .medal { background: var(--fill); box-shadow: none; filter: grayscale(1); opacity: 0.45; }
+
+/* Your story */
+.story-icon { width: 34px; height: 34px; border-radius: 50%; flex: none; display: grid; place-items: center; font-size: 1.05rem; background: var(--fill); box-shadow: inset 0 0 0 1.5px var(--rar, currentColor); }
+
+/* Legends */
+.legend-icon { width: 46px; height: 46px; border-radius: 50%; flex: none; display: grid; place-items: center; font-size: 1.4rem; background: var(--fill); }
+.legend-fact { display: flex; gap: 8px; font-size: 0.86rem; line-height: 1.35; color: var(--text-2); }
+.challenges { background: var(--surface-2); border-radius: var(--r-md); overflow: hidden; }
+.challenge { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+.challenge + .challenge::before { content: ''; position: absolute; top: 0; left: 50px; right: 0; height: 0.5px; background: var(--line); }
+.challenge .c-icon { width: 28px; height: 28px; border-radius: 50%; flex: none; display: grid; place-items: center; font-size: 0.95rem; background: var(--fill); }
+.challenge.done .c-icon { background: var(--accent); color: var(--accent-ink); }
+.challenge.done .star-chip { opacity: 0.45; }
+
+/* The full-screen moment */
+.reveal { position: fixed; inset: 0; z-index: 58; display: grid; place-items: center; padding: 24px; text-align: center; background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); animation: fade 0.25s ease; }
+.reveal .glow { width: 170px; height: 170px; border-radius: 50%; display: grid; place-items: center; font-size: 5rem; background: radial-gradient(circle, color-mix(in srgb, var(--rar) 50%, transparent), transparent 70%); animation: reveal-pop 0.7s var(--spring) both; }
+.reveal .kind { font-size: 0.82rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--rar); animation: rise 0.4s var(--ease) 0.2s both; }
+.reveal .name { font-family: var(--font-round); font-size: 2rem; font-weight: 850; letter-spacing: -0.02em; line-height: 1.1; animation: rise 0.4s var(--ease) 0.28s both; }
+@keyframes reveal-pop { 0% { opacity: 0; scale: 0.3; rotate: -14deg; } 100% { opacity: 1; scale: 1; rotate: 0deg; } }
 .ach .chip-corner { position: absolute; top: 14px; right: 14px; }
 
 .ladder { display: flex; flex-direction: column; }

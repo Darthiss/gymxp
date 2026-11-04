@@ -23,9 +23,9 @@ Phases 1 and 2 shipped together, because they touch the same screens.
 - [ ] **2.5** Playtest and tune for 2–4 weeks · S · *in progress*
 
 **Phase 3: Make the big moments matter**
-- [ ] **3.1** New end-of-workout screen · M
-- [ ] **3.2** Trophies and milestones · M
-- [ ] **3.3** Legends rework · M
+- [x] **3.1** New end-of-workout screen · M
+- [x] **3.2** Trophies and milestones · M
+- [x] **3.3** Legends rework · M
 
 **Phase 4: Spanish**
 - [ ] **4.1** i18n foundation · M
@@ -172,7 +172,7 @@ Shipped as one change, because a half-switched app would make no sense.
 
 ### 2.5 Playtest and tune · S
 
-Train with it for 2–4 weeks before starting Phase 3. The design doc lists what to check. The riskiest question is whether you actually look at "to beat" while training, because the whole system leans on that moment.
+Train with it for 2–4 weeks. Phase 3 was built before this finished, so tune both together. The design doc lists what to check. The riskiest question is whether you actually look at "to beat" while training, because the whole system leans on that moment.
 
 ---
 
@@ -180,36 +180,31 @@ Train with it for 2–4 weeks before starting Phase 3. The design doc lists what
 
 ### 3.1 New end-of-workout screen · M
 
-Most of this shipped in step 2.4, because the playtest needs it: the stars landing, what changed on each exercise, and correct numbers for edited and backdated workouts (it compares the whole game before and after the save).
+The layout is in the [design doc](docs/GAME_DESIGN.md#end-of-workout-the-big-moment).
 
-**Left to do, informed by the playtest:**
-- Show records as old → new values.
-- Add the week's status: days against goal and the next routine up.
-- Shorten it. A workout with many rewards still needs scrolling, so consider grouping small rewards into one row.
+- The stars land one by one, then each exercise shows what changed, with records as old → new.
+- Small rewards share one row each or become chips, and the week's status and next routine sit under the level bar.
+- Done stays pinned, and a normal workout fits a phone screen without scrolling.
+- It compares the whole game before and after saving, so edited and backdated workouts show what really changed.
 
-**Done when.** You can read the result at a glance without scrolling.
+**To tune after playtesting:** whether 2.2 seconds is the right wait before a reveal, and how long the screen gets on a day with many rewards.
 
 ### 3.2 Trophies and milestones · M
 
-**Why they feel unimportant.** An unlock is one more line in a list, and the full set sits on the second tab of Career. There are also a lot of them: 103 with Hero shelved, with 8 unlocked in the first week and about 49 in the first year. Rarity and bonus stars already exist from step 2.2, as does the "Habit Formed" trophy at a 26-week streak.
+The list and its reasoning are in the [design doc](docs/GAME_DESIGN.md#trophies): 14 cut, 20 added, 12 legend challenges, 121 in all.
 
-**Do, keeping every id:**
-- **Fewer cards:** 8 tiered families (Visits, Streaks, Records, Volume, Explorer, Sets, Time, Burn) hold 60 trophies. Show one card per family with its current and next tier.
-- **A real moment:** Epic and Legendary get a full-screen reveal at the end of the workout. Others share one compact row.
-- **Milestones timeline (*hitos*):** a dated career story in Career using ranks and Rare-or-better unlocks, each linking to its workout. `unlocked[]` already has dates and session ids.
+- **Awards tab:** a rarity summary, 4 groups, one card per ladder with a sheet for all its tiers, and "See all" for the rest. About 4 screens, down from about 7.
+- **A real moment:** Epic and Legendary trophies and new ranks get a full-screen reveal (`bigMoments()` in `career.ts`).
+- **Your story (*hitos*):** a dated list in Career (`careerStory()`).
+- **Today:** the closest goal skips Common trophies.
 
-**Done when.** A Legendary unlock is impossible to miss, and the Awards tab fits on far fewer screens.
+**Removed trophies are gone from history too,** because everything derives from the log, so stars shift slightly on the next load. Use this list sparingly once there are other players.
 
 ### 3.3 Legends rework · M
 
-**Why it's flat.** For someone training on machines, the lift bars stay at 0 forever and only gym days move. Arnold's score after steady 3×/week training: **0.8% at 1 year, 1.6% at 2 years, 3.9% at 5 years.** Nothing visibly changes, ever.
+The design is in the [design doc](docs/GAME_DESIGN.md#legends): career clock, equivalents, 3 challenges each, and lift bars only for lifts you've logged. The percentage score is gone.
 
-**Do.** Keep it as flavor over existing data, with no new currency:
-- **Career clock:** "You've trained as many days as Arnold's first 6 months." It uses the existing estimates, and reads as a story instead of 1.6%.
-- **Equivalents:** "You've moved Eddie's 500 kg deadlift N times." Machines count, so it grows every workout.
-- **Signature challenges:** 2–3 per legend, beatable in weeks, paid out as trophies in a new `Legends` category. For example, Eddie's "The 500": move 500 kg in one set (weight × reps).
-- **Lift bars only once you've logged that barbell lift,** so they stop dragging the score down.
-- Build the card so a friend can use the same layout in 6.4.
+The card has no fixed idea of who it's showing beyond a name, a short story and a list of challenges, so a friend can use the same layout in 6.4.
 
 Keep legend numbers labeled as "commonly reported", and don't invent quotes or facts.
 
@@ -232,7 +227,7 @@ Nothing visible changes yet.
 
 ### 4.2 Translate the app and add the setting · L
 
-Move all text into the dictionaries: 11 screens, 10 components, engine text in `engine.ts` and `trophies.ts` (about 100 trophies, 17 ranks, the challenges, flames, season names), and errors in `vault.ts` and `github.ts`. Hero stays in English while shelved. Type the Spanish dictionary from the English one, so a missing key fails the build.
+Move all text into the dictionaries: 11 screens, 10 components, engine text in `engine.ts`, `trophies.ts` and `legends.ts` (121 trophies, 17 ranks, the challenges, flames, season names, legend facts), and errors in `vault.ts` and `github.ts`. Hero stays in English while shelved. Type the Spanish dictionary from the English one, so a missing key fails the build.
 
 Add the language setting to Settings and the sign-in screens, but keep it hidden until 4.3's first slice ships. `num()` already accepts decimal commas, and `extractDate` already understands Spanish months.
 

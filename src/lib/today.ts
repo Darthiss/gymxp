@@ -20,7 +20,7 @@ const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
 /** Trophy progress in its natural unit: tonnes for volume, hours for time. */
 export const fmtProgress = (cat: AchievementCategory, v: number) =>
-  cat === 'Volume' ? `${fmtNum(v / 1000, 1)} t` : cat === 'Time' ? `${fmtNum(v / 60, 1)} h` : fmtNum(v);
+  cat === 'Volume' ? `${fmtNum(v / 1000, 1)} t` : cat === 'Time' ? `${fmtNum(v / 60, 1)} h` : cat === 'Stronger' ? `${fmtNum(v)}%` : cat === 'Medals' ? `${fmtNum(v)} pts` : fmtNum(v);
 
 /** Season medal progress, shared by the Today goal and the Career season card. */
 export function seasonProgress(s: GameState['season']) {
@@ -58,8 +58,8 @@ export function upNext(g: GameState): Goal[] {
     });
   }
 
-  // Locked trophies already in motion (visit milestones are covered above).
-  ACHIEVEMENTS.filter((a) => a.target && a.category !== 'Visits' && !g.unlockedIds.has(a.id) && (g.progress[a.id] ?? 0) > 0)
+  // Locked trophies worth chasing that are already in motion (visit milestones are covered above).
+  ACHIEVEMENTS.filter((a) => a.target && a.rarity !== 'common' && a.category !== 'Visits' && !g.unlockedIds.has(a.id) && (g.progress[a.id] ?? 0) > 0)
     .map((a) => ({ a, pct: (g.progress[a.id] ?? 0) / a.target! }))
     .sort((x, y) => y.pct - x.pct)
     .slice(0, 3)

@@ -1,5 +1,5 @@
 import raw from '../data/exercises.json';
-import type { Beat } from './engine';
+import type { Beat, PR } from './engine';
 import { FEATURES } from './features';
 import type { AppData, Exercise, SetEntry } from './types';
 
@@ -85,6 +85,13 @@ export function fmtBeat(ex: Exercise | undefined, b: Beat): string {
   if (b.kg > 0) return ex?.benchmark === 'ladder' ? `${trim(b.kg)} min faster` : ex?.assisted ? `−${trim(b.kg)} kg assist` : `+${trim(b.kg)} kg`;
   const unit = ex?.benchmark === 'ladder' ? 'rungs' : ex?.benchmark === 'cindy' ? 'rounds' : ex?.hold ? 's' : b.reps === 1 ? 'rep' : 'reps';
   return `+${b.reps}${ex?.hold ? '' : ' '}${unit}`;
+}
+
+/** A record as old → new: "120 → 125 kg". */
+export function fmtPr(p: PR): string {
+  const v = trim(p.value), was = trim(p.prev);
+  return p.kind === 'weight' ? `${was} → ${v} kg` : p.kind === 'assist' ? `${was} → ${v} kg assist` : p.kind === 'reps' ? `${was} → ${v} reps` : p.kind === 'hold' ? `${was} → ${v} s`
+    : p.kind === 'rounds' ? `${was} → ${v} rounds` : p.kind === 'rungs' ? `${was} → ${v} rungs` : p.kind === 'time' ? `${was} → ${v} min` : 'Best set yet';
 }
 
 /** What you need to do to beat your last time on an exercise. */
