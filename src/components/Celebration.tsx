@@ -48,7 +48,7 @@ function BeatLines({ session, result, exMap }: { session: Session; result: Sessi
 function RevealOverlay({ r, onNext }: { r: BigMoment; onNext: () => void }) {
   return (
     <>
-      <Confetti key={r.id} burst={r.rarity === 'legendary' ? 260 : 150} />
+      <Confetti key={r.id} burst={r.rarity === 'mythic' ? 400 : r.rarity === 'legendary' ? 260 : 150} />
       <div className={`reveal${r.rarity ? ` rar-${r.rarity}` : ''}`} style={r.color ? ({ '--rar': r.color } as CSSProperties) : undefined} role="dialog" aria-modal="true" aria-label={`${r.kind}: ${r.title}`} onClick={onNext}>
         <div className="stack" style={{ alignItems: 'center', gap: 12 }}>
           <div className="glow">{r.icon}</div>

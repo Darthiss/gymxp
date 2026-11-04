@@ -4,7 +4,7 @@ import { useSession } from '../lib/session';
 import { checkRepo } from '../lib/github';
 import { AUTOLOCK_OPTIONS, changePin, getAutolockMin, setAutolockMin, touchKey, updateConfig, wipeDevice } from '../lib/vault';
 import { mergeData, normalizeData } from '../lib/merge';
-import { withWeeklyGoal } from '../lib/engine';
+import { RULES, withWeeklyGoal } from '../lib/engine';
 import { fmtDate, num, toISODate, today } from '../lib/util';
 import type { Profile, Sex } from '../lib/types';
 import { CellIcon, PageHead, SyncBadge, toast } from '../components/ui';
@@ -68,6 +68,7 @@ function ProfileCard() {
             <button key={n} className={`chip${String(n) === f.weeklyGoal ? ' on' : ''}`} onClick={() => setF({ ...f, weeklyGoal: String(n) })}>{n}</button>
           ))}
         </div>
+        {num(f.weeklyGoal) > RULES.perfectGoalCap && <span className="tiny muted">Perfect Weeks pay the same from {RULES.perfectGoalCap} days up, because rest is part of training.</span>}
       </label>
       <button className="btn primary" onClick={save}>Save profile</button>
       {p.weatherLat != null && (

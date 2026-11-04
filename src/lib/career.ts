@@ -13,11 +13,11 @@ export interface StoryEvent {
   color?: string;
 }
 
-const RARITY_NAME: Record<Rarity, string> = { common: 'Trophy', rare: 'Rare trophy', epic: 'Epic trophy', legendary: 'Legendary trophy' };
+const RARITY_NAME: Record<Rarity, string> = { common: 'Trophy', rare: 'Rare trophy', epic: 'Epic trophy', legendary: 'Legendary trophy', mythic: 'Mythic trophy' };
 
 export interface BigMoment { id: string; kind: string; icon: string; title: string; desc?: string; stars?: number; rarity?: Rarity; color?: string }
 
-/** What a save unlocked that deserves the full screen: Epic and Legendary trophies, then a new rank. */
+/** What a save unlocked that deserves the full screen: Epic trophies and above, then a new rank. */
 export function bigMoments(before: GameState, after: GameState): BigMoment[] {
   const fresh = after.unlocked.filter((a) => !before.unlockedIds.has(a.id));
   const trophies = (rarity: Rarity, kind: string): BigMoment[] =>
@@ -27,6 +27,7 @@ export function bigMoments(before: GameState, after: GameState): BigMoment[] {
   return [
     ...trophies('epic', 'Epic trophy'),
     ...trophies('legendary', 'Legendary trophy'),
+    ...trophies('mythic', 'Mythic trophy'),
     ...(rankUp ? [{ id: 'rank', kind: 'New rank', icon: '🎖️', title: L1.rank.title, desc: `You reached level ${L1.rank.minLevel}`, color: L1.rank.color }] : []),
   ];
 }

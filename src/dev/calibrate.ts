@@ -41,6 +41,7 @@ export function calibrationReport(raw: unknown): string {
   const medals = MEDALS.map((m, i) => `${m.icon} ${[...g.bests.values()].filter((b) => medalOf(b.points).tier === i).length}`).join('  ');
 
   const verdict = (ok: boolean) => (ok ? 'OK  ' : 'LOOK');
+  const gapLimit = g.level.level >= 60 ? 20 : 8; // levels get rarer near the summit, on purpose
   const enough = rated.length >= 8;
   // 40-60 is a long-run rate. Most exercises still improve every session in the first months.
   const tooSoon = weeks < 26 || rated.length < 30;
@@ -60,7 +61,7 @@ export function calibrationReport(raw: unknown): string {
       : `${verdict(threeStar >= 40 && threeStar <= 60)} 3-star workouts ${threeStar}% (target 40-60). If off, adjust beatsNeeded() in engine.ts.`,
     `${verdict(missedWork < 15)} Workouts missing the second star ${missedWork}% (target under 15). If off, adjust RULES.workSets.`,
     gaps.length
-      ? `${verdict(median(recentGaps) >= 1 && Math.max(...recentGaps) <= 8)} Weeks between recent level-ups: median ${median(recentGaps).toFixed(1)}, longest ${Math.max(...recentGaps).toFixed(1)} (target 1-8). If off, adjust starsForLevel().`
+      ? `${verdict(median(recentGaps) >= 1 && Math.max(...recentGaps) <= gapLimit)} Weeks between recent level-ups: median ${median(recentGaps).toFixed(1)}, longest ${Math.max(...recentGaps).toFixed(1)} (target 1-${gapLimit}). If off, adjust starsForLevel().`
       : 'LOOK Not enough level-ups yet to judge the pace.',
   ].join('\n');
 }

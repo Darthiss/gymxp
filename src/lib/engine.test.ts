@@ -10,7 +10,7 @@ import { gameFor } from './game';
 import { emptyData, type AppData, type Exercise, type Routine, type Session } from './types';
 import { activeRoutines, firstReps, fmtRest, fmtTarget, hitTarget, inOrder, lastDone, moveTo, nextPosition, repsForSet, routineItems, upNextRoutine } from './routines';
 import { mergeData } from './merge';
-import { parseDuration, parseWatchText, parseWorkoutLine, weekKey } from './util';
+import { addDays, parseDuration, parseWatchText, parseWorkoutLine, weekKey } from './util';
 import { deriveKey, seal, unseal } from './crypto';
 import { upNext, weekMessage } from './today';
 
@@ -49,16 +49,28 @@ describe('levels and ranks', () => {
   it('reports progress inside a level', () => {
     const L = levelInfo(starsForLevel(23) + 31);
     expect(L).toMatchObject({ level: 23, into: 31, span: 47 });
-    expect(L.rank.title).toBe('Gold Lifter');
-    expect(L.nextRank?.title).toBe('Platinum Lifter');
+    expect(L.rank.title).toBe('Silver Lifter');
+    expect(L.nextRank?.title).toBe('Gold Lifter');
   });
 
   it('ranks come from the level alone', () => {
     expect(rankFor(1).title).toBe('Rookie');
     expect(rankFor(2).title).toBe('Beginner');
-    expect(rankFor(20).title).toBe('Gold Lifter');
-    expect(rankFor(100).title).toBe('Olympian');
-    expect(RANKS).toHaveLength(17);
+    expect(rankFor(31).title).toBe('Gold Lifter');
+    expect(rankFor(100).title).toBe('Titan');
+    expect(rankFor(124).title).toBe('Demigod');
+    expect(rankFor(125).title).toBe('Olympian');
+    expect(RANKS).toHaveLength(18);
+  });
+
+  it('keeps Olympian out of reach for years, even with a flawless log', () => {
+    const d = emptyData();
+    d.profile.weeklyGoal = 5;
+    let date = '2010-01-04'; // a Monday
+    for (let week = 0; week < 8 * 52; week++, date = addDays(date, 7)) {
+      for (let day = 0; day < 5; day++) add(d, addDays(date, day), [ex('Leg_Press', 100, 10, 10, 10, 10, 10), ex('Leg_Extensions', 50, 10, 10, 10, 10, 10 + ((week + day) % 2))]);
+    }
+    expect(game(d).level.rank.title).not.toBe('Olympian'); // about 2,000 workouts, no week missed
   });
 });
 
@@ -366,6 +378,7 @@ describe('streak, shields and Perfect Weeks', () => {
     expect(perfectWeekStars(3, 26)).toBe(8);
     expect(perfectWeekStars(5, 52)).toBe(15);
     expect(perfectWeekStars(1, 1)).toBe(1);
+    expect(perfectWeekStars(7, 52)).toBe(perfectWeekStars(5, 52)); // nothing pays for skipping rest days
     const d = emptyData();
     d.profile.weeklyGoal = 2;
     const [a, b, c] = weekly(d, ['2026-03-23', '2026-03-25', '2026-03-27']);
@@ -501,6 +514,7 @@ describe('trophies', () => {
     expect(rarityOf(300)).toBe('rare');
     expect(rarityOf(1000)).toBe('epic');
     expect(rarityOf(2500)).toBe('legendary');
+    expect(rarityOf(10000)).toBe('mythic');
     for (const a of ACHIEVEMENTS) expect(a.stars).toBe(RARITY_STARS[a.rarity]);
   });
 
@@ -532,7 +546,7 @@ describe('trophies', () => {
   });
 
   it('is a big collection with no loose ends', () => {
-    expect(ACHIEVEMENTS).toHaveLength(121);
+    expect(ACHIEVEMENTS).toHaveLength(136);
     expect(new Set(ACHIEVEMENTS.map((a) => a.id)).size).toBe(ACHIEVEMENTS.length);
     const grouped = new Set(TROPHY_GROUPS.flatMap((g) => g.categories));
     for (const a of ACHIEVEMENTS) expect(grouped.has(a.category) || a.category === 'Legends', a.id).toBe(true);
@@ -686,18 +700,55 @@ describe('legends', () => {
   });
 });
 
+describe('imported history', () => {
+  const importYears = (d: ReturnType<typeof emptyData>, years: number) => {
+    d.profile.weeklyGoal = 3;
+    let date = '2015-01-05'; // a Monday
+    for (let week = 0; week < years * 52; week++, date = addDays(date, 7)) {
+      for (const day of [0, 2, 4]) {
+        add(d, addDays(date, day), [ex('Leg_Press', 100, ...TEN_SETS)]);
+        d.sessions[d.sessions.length - 1].estimated = true;
+      }
+    }
+    return date;
+  };
+
+  it('is a head start, not a shortcut: stars stop at the cap', () => {
+    const d = emptyData();
+    importYears(d, 10);
+    const g = game(d);
+    expect(g.totalStars).toBe(RULES.importedStarCap);
+    expect(g.level.rank.title).toBe('Gold Lifter');
+    expect(g.unlockedIds.has('visits-1000')).toBe(true); // still counts for trophies
+    expect(g.streak.best).toBeGreaterThan(500); // and for the streak
+    for (const r of g.sessions.values()) expect(r.items.reduce((n, i) => n + i.stars, 0)).toBe(r.stars);
+  });
+
+  it('leaves real workouts paying in full after the cap', () => {
+    const d = emptyData();
+    const after = importYears(d, 3);
+    const before = game(d).totalStars;
+    const real = add(d, after, [ex('Leg_Press', 110, ...TEN_SETS)]);
+    const g = game(d);
+    expect(result(g, real).dayStars).toBe(3);
+    expect(g.totalStars).toBeGreaterThan(before + 2);
+  });
+});
+
 describe('big moments', () => {
-  it('gives Epic and Legendary trophies and a new rank the full screen, biggest last', () => {
+  it('gives Epic trophies and above and a new rank the full screen, biggest last', () => {
     const d = emptyData();
     const before = game(d);
-    add(d, '2026-01-05', [ex('Leg_Press', 20000, 50)]); // 1,000 tonnes in one go
+    add(d, '2026-01-05', [ex('Leg_Press', 200000, 300)]); // 60,000 tonnes in one go
     const moments = bigMoments(before, game(d));
     const kinds = moments.map((m) => m.kind);
     expect(kinds).toContain('Epic trophy');
     expect(kinds).toContain('Legendary trophy');
     expect(kinds[kinds.length - 1]).toBe('New rank');
     expect(kinds.indexOf('Legendary trophy')).toBeGreaterThan(kinds.lastIndexOf('Epic trophy'));
-    expect(moments.find((m) => m.id === 'volume-1000000')).toMatchObject({ rarity: 'legendary', stars: RARITY_STARS.legendary });
+    expect(kinds.indexOf('Mythic trophy')).toBeGreaterThan(kinds.lastIndexOf('Legendary trophy'));
+    expect(moments.find((m) => m.id === 'volume-7300000')).toMatchObject({ rarity: 'legendary', stars: RARITY_STARS.legendary });
+    expect(moments.find((m) => m.id === 'volume-53000000')).toMatchObject({ rarity: 'mythic', stars: RARITY_STARS.mythic });
   });
 
   it('stays quiet for common and rare unlocks, and when nothing new happened', () => {

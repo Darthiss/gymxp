@@ -12,6 +12,8 @@ export const RULES = {
   workSets: 10, // ★ Do the work: completed sets in one gym day…
   workMinutes: 30, // …or logged minutes, for a cardio day
   recordCap: 3, // +1 star per record, at most this many per workout
+  perfectGoalCap: 5, // goals above this pay like it: nothing should reward skipping rest days
+  importedStarCap: 960, // level 31, Gold Lifter: imported history is a head start, not a shortcut
   challengeStars: 2,
   surpriseStars: 1, // comeback, rain, cold, heat or feriado, once per gym day
   seasonMedalStars: 3,
@@ -40,17 +42,18 @@ export const RANKS: Rank[] = [
   { minLevel: 6, title: 'Committed', color: '#5fd0a0' },
   { minLevel: 8, title: 'Iron Apprentice', color: '#6fb1d6' },
   { minLevel: 10, title: 'Iron Adept', color: '#5a8dee' },
-  { minLevel: 13, title: 'Bronze Lifter', color: '#cd8a4f' },
-  { minLevel: 16, title: 'Silver Lifter', color: '#c7d0dc' },
-  { minLevel: 20, title: 'Gold Lifter', color: '#f5c542' },
-  { minLevel: 25, title: 'Platinum Lifter', color: '#7fe0d6' },
-  { minLevel: 30, title: 'Diamond Lifter', color: '#8fd3ff' },
-  { minLevel: 36, title: 'Athlete', color: '#9fe870' },
-  { minLevel: 43, title: 'Elite', color: '#b388ff' },
-  { minLevel: 50, title: 'Master', color: '#d17bff' },
-  { minLevel: 60, title: 'Grandmaster', color: '#ff7ad9' },
-  { minLevel: 75, title: 'Titan', color: '#ff7a59' },
-  { minLevel: 100, title: 'Olympian', color: '#ffd166' },
+  { minLevel: 15, title: 'Bronze Lifter', color: '#cd8a4f' },
+  { minLevel: 21, title: 'Silver Lifter', color: '#c7d0dc' },
+  { minLevel: 31, title: 'Gold Lifter', color: '#f5c542' },
+  { minLevel: 38, title: 'Platinum Lifter', color: '#7fe0d6' },
+  { minLevel: 45, title: 'Diamond Lifter', color: '#8fd3ff' },
+  { minLevel: 53, title: 'Athlete', color: '#9fe870' },
+  { minLevel: 61, title: 'Elite', color: '#b388ff' },
+  { minLevel: 70, title: 'Master', color: '#d17bff' },
+  { minLevel: 84, title: 'Grandmaster', color: '#ff7ad9' },
+  { minLevel: 100, title: 'Titan', color: '#ff7a59' },
+  { minLevel: 112, title: 'Demigod', color: '#ffa45c' },
+  { minLevel: 125, title: 'Olympian', color: '#ffd166' },
 ];
 
 export function rankFor(level: number): Rank {
@@ -97,7 +100,7 @@ export function flameFor(weeks: number): Flame {
   return f;
 }
 
-export const perfectWeekStars = (goal: number, streakWeeks: number) => Math.round(goal * flameFor(streakWeeks).mult);
+export const perfectWeekStars = (goal: number, streakWeeks: number) => Math.round(Math.min(goal, RULES.perfectGoalCap) * flameFor(streakWeeks).mult);
 
 /** The weekly goal in force for a week (Monday). Changing it never rewrites past weeks. */
 export function goalAt(p: Profile, week: string): number {
@@ -413,7 +416,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     ...sessions.map((s, i) => ({ date: s.date, order: 100000 + i, kind: 's' as const, s })),
   ].sort((a, b) => a.date.localeCompare(b.date) || a.order - b.order);
 
-  let totalStars = 0;
+  let totalStars = 0, importedStars = 0;
   const results = new Map<string, SessionResult>();
   const unlocked: UnlockedAchievement[] = [];
   const unlockedIds = new Set<string>();
@@ -893,6 +896,8 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     if (reps >= 500) A('hab-reps');
     if ((s.watch?.avgHr ?? 0) >= 140 && minutes >= 45) A('hab-heart');
     if (firstVisit && s.date >= addDays(firstVisit, 365)) A('hab-anniversary');
+    if (firstVisit && s.date >= addDays(firstVisit, 1826)) A('hab-anniversary-5');
+    if (firstVisit && s.date >= addDays(firstVisit, 3652)) A('hab-anniversary-10');
     // weather & holidays
     if (rainDays >= 1) A('wx-rain-1');
     if (rainDays >= 10) A('wx-rain-10');
@@ -926,6 +931,14 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
       if (strongCarry) A('leg-thor-carry');
       if (maxShortSet >= 501) A('leg-thor-501');
       if ((monthVolume.get(s.date.slice(0, 7)) ?? 0) >= 100000) A('leg-thor-mountain');
+    }
+
+    // Past the cap, imported workouts still count for your streak and trophies but stop paying stars.
+    if (s.estimated) {
+      let left = Math.min(stars, Math.max(0, RULES.importedStarCap - importedStars));
+      importedStars += left;
+      stars = left;
+      for (const it of items) { it.stars = Math.min(it.stars, left); left -= it.stars; }
     }
 
     totalStars += stars;

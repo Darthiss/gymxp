@@ -160,7 +160,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-const RARITIES: Rarity[] = ['common', 'rare', 'epic', 'legendary'];
+const RARITIES: Rarity[] = ['common', 'rare', 'epic', 'legendary', 'mythic'];
 const cap = (x: string) => x[0].toUpperCase() + x.slice(1);
 
 function TrophyCard({ a, u, prog }: { a: AchievementDef; u?: UnlockedAchievement; prog?: number }) {
@@ -240,7 +240,8 @@ function Achievements() {
           {RARITIES.map((r) => (
             <div key={r} className={`rar-${r}`}>
               <b className="num">{g.unlocked.filter((a) => a.rarity === r).length}<small> / {ACHIEVEMENTS.filter((a) => a.rarity === r).length}</small></b>
-              <span>{cap(r)} · +{RARITY_STARS[r]}★</span>
+              <span>{cap(r)}</span>
+              <span>+{RARITY_STARS[r]}★</span>
             </div>
           ))}
         </div>
@@ -382,9 +383,9 @@ function HowItWorks({ onClose }: { onClose: () => void }) {
         <div className="stack">
           <div className="section-title">Bonus stars</div>
           <div className="group">
-            {rule(`×${FLAMES[0].mult}–×${FLAMES[FLAMES.length - 1].mult}`, `A Perfect Week pays your weekly goal in stars, multiplied by your flame: ${FLAMES.map((f) => `${f.name} at ${f.min || 1}+ weeks`).join(', ')}`)}
+            {rule(`×${FLAMES[0].mult}–×${FLAMES[FLAMES.length - 1].mult}`, `A Perfect Week pays your weekly goal in stars, up to ${RULES.perfectGoalCap}, multiplied by your flame: ${FLAMES.map((f) => `${f.name} at ${f.min || 1}+ weeks`).join(', ')}`)}
             {rule('+1★', `Each new record, up to ${RULES.recordCap} per workout`)}
-            {rule(`+${RARITY_STARS.common}–${RARITY_STARS.legendary}★`, 'Each trophy, by rarity')}
+            {rule(`+${RARITY_STARS.common}–${RARITY_STARS.mythic}★`, 'Each trophy, by rarity')}
             {rule(`+${RULES.seasonMedalStars}★`, 'Each season medal, counted in Perfect Weeks and reset every 3 months')}
             {rule(`+${RULES.challengeStars}★`, "This week's challenge")}
             {rule(`+${RULES.surpriseStars}★`, 'Surprises: coming back after a missed week, rain, cold, heat or a feriado')}

@@ -506,11 +506,12 @@ ol.steps li::before { content: counter(s); width: 24px; height: 24px; border-rad
 .rar-rare { --rar: var(--info); }
 .rar-epic { --rar: var(--purple); }
 .rar-legendary { --rar: var(--gold); }
-.rarity-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; border-top: 0.5px solid var(--line); padding-top: 12px; }
+.rar-mythic { --rar: #ff5d8f; }
+.rarity-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; border-top: 0.5px solid var(--line); padding-top: 12px; }
 .rarity-row > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .rarity-row b { font-family: var(--font-round); font-size: 1.05rem; font-weight: 800; color: var(--rar); }
 .rarity-row b small { font-size: 0.68em; font-weight: 650; color: var(--muted); }
-.rarity-row span { font-size: 0.64rem; font-weight: 650; color: var(--text-2); white-space: nowrap; }
+.rarity-row span { font-size: 0.6rem; font-weight: 650; color: var(--text-2); white-space: nowrap; }
 .rchip { background: color-mix(in srgb, var(--rar) 15%, transparent); color: var(--rar); }
 .rchip b { font-family: var(--font-round); font-weight: 800; }
 .reward-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }

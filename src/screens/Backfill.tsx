@@ -5,7 +5,7 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { getStore, IMPORT_DRAFT_KEY, useData } from '../lib/store';
 import { useExerciseMap, useGame } from '../lib/game';
-import { computeGame, type LevelInfo } from '../lib/engine';
+import { computeGame, levelForStars, rankFor, RULES, type LevelInfo } from '../lib/engine';
 import { holidayOn } from '../lib/holidays';
 import { lookupWeather } from '../components/WeatherField';
 import { navigate } from '../lib/router';
@@ -16,6 +16,8 @@ import { buildSessions, freshImportDraft, PLAN_NAMES, type ImportDraft, type Pla
 import { ExercisePicker } from '../components/ExercisePicker';
 import { Confetti, ExerciseThumb, LevelBadge, PageHead, Sheet, toast, ProgressBar } from '../components/ui';
 import { Icon } from '../components/Icon';
+
+const IMPORT_RANK = rankFor(levelForStars(RULES.importedStarCap)).title;
 
 export function Backfill() {
   const data = useData();
@@ -157,7 +159,7 @@ export function Backfill() {
     <div className="stack-lg">
       <PageHead title="Import past workouts" backTo="settings" />
       <p className="small dim">
-        Been training before GymXP? Add those days from memory. Estimates are fine: describe each kind of workout once, then list the days you went. The workouts get tagged <span className="tag">≈ estimated</span> and you can edit any of them later.
+        Been training before GymXP? Add those days from memory. Estimates are fine: describe each kind of workout once, then list the days you went. The workouts get tagged <span className="tag">≈ estimated</span> and you can edit any of them later. They count toward your streak and trophies, and can earn stars up to {IMPORT_RANK}. Past that, stars come from workouts you log.
       </p>
 
       {/* ---------- 1. Workout plans ---------- */}

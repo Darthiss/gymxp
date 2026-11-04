@@ -8,11 +8,13 @@ export type AchievementCategory =
   | 'Time' | 'Burn' | 'Weather' | 'Holidays' | 'Special' | 'Body' | 'Hero'
   | 'Perfect Weeks' | 'All-Stars' | 'Medals' | 'Stronger' | 'Seasons' | 'Legends';
 
-export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
+export type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
 
-export const RARITY_STARS: Record<Rarity, number> = { common: 1, rare: 2, epic: 5, legendary: 10 };
+export const RARITY_STARS: Record<Rarity, number> = { common: 1, rare: 3, epic: 10, legendary: 25, mythic: 50 };
 
-export const rarityOf = (value: number): Rarity => (value >= 2500 ? 'legendary' : value >= 1000 ? 'epic' : value >= 300 ? 'rare' : 'common');
+// Roughly how long a solid 3× lifter takes: common under 3 months, rare up to 1.5 years, epic up to 5,
+// legendary up to 10, mythic longer. Hard one-offs, like a first pull-up, are judged by difficulty instead.
+export const rarityOf = (value: number): Rarity => (value >= 10000 ? 'mythic' : value >= 2500 ? 'legendary' : value >= 1000 ? 'epic' : value >= 300 ? 'rare' : 'common');
 
 interface RawDef {
   id: string;
@@ -45,51 +47,61 @@ export const VISIT_TIERS: Tier[] = [
   { n: 25, value: 200, title: 'Quarter Century', icon: '🎟️' },
   { n: 50, value: 300, title: 'Half Century', icon: '💪' },
   { n: 100, value: 600, title: 'Centurion', icon: '🛡️' },
-  { n: 200, value: 1000, title: 'Bicentennial', icon: '🏛️' },
+  { n: 200, value: 900, title: 'Bicentennial', icon: '🏛️' },
   { n: 300, value: 1500, title: 'Spartan', icon: '⚔️' },
   { n: 400, value: 2000, title: 'Unbreakable', icon: '💎' },
-  { n: 500, value: 2500, title: 'Half a Thousand', icon: '🏅' },
+  { n: 500, value: 2000, title: 'Half a Thousand', icon: '🏅' },
   { n: 750, value: 3500, title: 'Gym Rat Royalty', icon: '👑' },
   { n: 1000, value: 5000, title: 'The Thousand', icon: '🏆' },
   { n: 2000, value: 10000, title: 'Immortal', icon: '🔱' },
+  { n: 3000, value: 15000, title: 'Mount Olympus', icon: '🗻' },
 ];
 
 export const VOLUME_TIERS: Tier[] = [
   { n: 1_000, value: 50, title: '1 Tonne', desc: 'about a small car', icon: '🚗' },
   { n: 5_000, value: 100, title: '5 Tonnes', desc: 'about an orca', icon: '🐋' },
   { n: 10_000, value: 150, title: '10 Tonnes', desc: 'more than a T. rex', icon: '🦖' },
-  { n: 50_000, value: 400, title: '50 Tonnes', desc: 'nearly a battle tank', icon: '🪖' },
-  { n: 100_000, value: 600, title: '100 Tonnes', desc: 'about a blue whale', icon: '🐳' },
-  { n: 250_000, value: 1000, title: '250 Tonnes', desc: 'more than the Statue of Liberty', icon: '🗽' },
-  { n: 500_000, value: 1500, title: '500 Tonnes', desc: 'nearly an A380 at take-off', icon: '✈️' },
-  { n: 1_000_000, value: 2500, title: '1,000 Tonnes', desc: 'about a train of loaded freight cars', icon: '🚂' },
+  { n: 50_000, value: 200, title: '50 Tonnes', desc: 'nearly a battle tank', icon: '🪖' },
+  { n: 100_000, value: 250, title: '100 Tonnes', desc: 'about a blue whale', icon: '🐳' },
+  { n: 250_000, value: 400, title: '250 Tonnes', desc: 'more than the Statue of Liberty', icon: '🗽' },
+  { n: 500_000, value: 600, title: '500 Tonnes', desc: 'nearly an A380 at take-off', icon: '✈️' },
+  { n: 1_000_000, value: 1000, title: '1,000 Tonnes', desc: 'about a train of loaded freight cars', icon: '🚂' },
+  { n: 3_000_000, value: 1500, title: 'Saturn V', desc: 'about a fully fuelled Saturn V rocket', icon: '🚀' },
   { n: 7_300_000, value: 7000, title: 'Eiffel Tower', desc: 'the weight of the Eiffel Tower (7,300 t)', icon: '🗼' },
+  { n: 53_000_000, value: 20000, title: 'Titanic', desc: 'about the Titanic, fully loaded', icon: '🚢' },
 ];
 
 export const STREAK_TIERS: Tier[] = [
   { n: 2, value: 100, title: 'Back to Back', icon: '🔥' },
   { n: 4, value: 200, title: 'One Month Strong', icon: '🔥' },
-  { n: 8, value: 400, title: 'Two Months Strong', icon: '🔥' },
+  { n: 8, value: 250, title: 'Two Months Strong', icon: '🔥' },
   { n: 12, value: 600, title: 'Quarter Year', icon: '☄️' },
   { n: 26, value: 1200, title: 'Habit Formed', desc: 'about when a gym habit tends to set in', icon: '🌋' },
-  { n: 52, value: 2500, title: 'Full Year', icon: '🌞' },
-  { n: 104, value: 5000, title: 'Two Years Strong', icon: '🏔️' },
+  { n: 52, value: 1500, title: 'Full Year', icon: '🌞' },
+  { n: 104, value: 2000, title: 'Two Years Strong', icon: '🏔️' },
+  { n: 260, value: 3000, title: 'Five Years Strong', icon: '🗿' },
+  { n: 520, value: 10000, title: 'Unbroken Decade', icon: '⛰️' },
 ];
 
 export const PERFECT_TIERS: Tier[] = [
   { n: 1, value: 100, title: 'First Perfect Week', icon: '✅' },
   { n: 4, value: 250, title: 'Four Perfect', icon: '🍀' },
   { n: 13, value: 600, title: "Baker's Dozen", icon: '🥖' },
-  { n: 26, value: 1500, title: 'Half a Year of Perfect', icon: '🎖️' },
-  { n: 52, value: 3000, title: "A Perfect Year's Worth", icon: '🏵️' },
+  { n: 26, value: 600, title: 'Half a Year of Perfect', icon: '🎖️' },
+  { n: 52, value: 1000, title: "A Perfect Year's Worth", icon: '🏵️' },
+  { n: 104, value: 1500, title: 'Two Perfect Years', icon: '🎗️' },
+  { n: 260, value: 3000, title: 'Five Perfect Years', icon: '🏆' },
+  { n: 520, value: 10000, title: 'Ten Perfect Years', icon: '👑' },
 ];
 
 export const ALLSTAR_TIERS: Tier[] = [
   { n: 10, value: 100, title: 'Rising Star', icon: '⭐' },
   { n: 25, value: 300, title: 'Star Student', icon: '🌟' },
   { n: 50, value: 600, title: 'Constellation', icon: '✨' },
-  { n: 100, value: 1200, title: 'Galaxy', icon: '🌌' },
-  { n: 250, value: 3000, title: 'Hall of Fame', icon: '🏛️' },
+  { n: 100, value: 600, title: 'Galaxy', icon: '🌌' },
+  { n: 250, value: 1500, title: 'Hall of Fame', icon: '🏛️' },
+  { n: 500, value: 3000, title: 'Walk of Fame', icon: '🎬' },
+  { n: 1000, value: 10000, title: 'The Universe', icon: '🪐' },
 ];
 
 export const MEDAL_TIERS: Tier[] = [
@@ -112,6 +124,7 @@ export const PR_TIERS: Tier[] = [
   { n: 50, value: 300, title: 'Progress Machine', icon: '🚀' },
   { n: 100, value: 500, title: 'Limit Breaker', icon: '⚡' },
   { n: 250, value: 1000, title: 'Ever Stronger', icon: '🌠' },
+  { n: 500, value: 2500, title: 'No Ceiling', icon: '🧗' },
 ];
 
 export const EXPLORER_TIERS: Tier[] = [
@@ -125,12 +138,14 @@ export const SET_TIERS: Tier[] = [
   { n: 1000, value: 300, title: '1,000 Sets', icon: '🔁' },
   { n: 5000, value: 1200, title: '5,000 Sets', icon: '🔁' },
   { n: 10000, value: 2500, title: '10,000 Sets', icon: '🔁' },
+  { n: 25000, value: 10000, title: '25,000 Sets', icon: '🔁' },
 ];
 
 export const TIME_TIERS: Tier[] = [
   { n: 600, value: 100, title: '10 Hours', icon: '⏱️' },
   { n: 6000, value: 600, title: '100 Hours', icon: '⌛' },
-  { n: 30000, value: 2500, title: '500 Hours', icon: '🕰️' },
+  { n: 30000, value: 1500, title: '500 Hours', icon: '🕰️' },
+  { n: 60000, value: 3000, title: '1,000 Hours', icon: '🧭' },
 ];
 
 export const BURN_TIERS: Tier[] = [
@@ -179,7 +194,7 @@ const ALL: RawDef[] = [
   ...tierDefs('gain', 'Stronger', GAIN_TIERS, (t) => `Get ${t.n}% stronger on any machine, over 5+ workouts`),
   ...tierDefs('streak', 'Streaks', STREAK_TIERS, (t) => `Train at least once a week for ${t.n} weeks in a row${t.desc ? `: ${t.desc}` : ''}`),
   ...STRENGTH.map((s) => ({ id: s.id, category: 'Strength' as const, icon: s.icon, title: s.title, desc: `${s.desc} (barbell, 1+ rep)`, value: s.value })),
-  { id: 'str-pullup', category: 'Strength', icon: '🦸', title: 'First Real Pull-up', desc: 'A pull-up with zero assistance (assisted machine at 0 kg)', value: 250 },
+  { id: 'str-pullup', category: 'Strength', icon: '🦸', title: 'First Real Pull-up', desc: 'A pull-up with zero assistance (assisted machine at 0 kg)', value: 300 },
   { id: 'str-pullup-10', category: 'Strength', icon: '🕷️', title: 'Ten Strict Pull-ups', desc: '10 unassisted pull-ups in one set: superhero territory', value: 600 },
   ...tierDefs('prs', 'Records', PR_TIERS, (t) => (t.n === 1 ? 'Set your first personal record' : `Set ${fmt(t.n)} personal records`)),
   { id: 'hab-overload', category: 'Records', icon: '📶', title: 'Progressive Overload', desc: 'Weight PR on the same exercise 3 sessions in a row', value: 200 },
@@ -189,9 +204,11 @@ const ALL: RawDef[] = [
   { id: 'hab-legs', category: 'Habits', icon: '🍗', title: 'Never Skip Leg Day', desc: 'Train legs 8 weeks in a row', value: 300, target: 8 },
   { id: 'hab-fullbody', category: 'Habits', icon: '🧩', title: 'Full Body Week', desc: 'Chest, back, shoulders, arms and legs in one week', value: 100 },
   { id: 'hab-variety', category: 'Habits', icon: '🎨', title: 'Variety Pack', desc: '8+ different exercises in one workout', value: 75 },
-  { id: 'hab-reps', category: 'Habits', icon: '🏭', title: 'Rep Factory', desc: '500+ reps in one workout', value: 100 },
+  { id: 'hab-reps', category: 'Habits', icon: '🏭', title: 'Rep Factory', desc: '500+ reps in one workout', value: 300 },
   { id: 'hab-heart', category: 'Habits', icon: '❤️‍🔥', title: 'Heart of Steel', desc: 'Average 140+ bpm in a 45+ minute workout', value: 100 },
-  { id: 'hab-anniversary', category: 'Habits', icon: '🎂', title: 'Iron Anniversary', desc: 'Still training one year after your first workout', value: 1000 },
+  { id: 'hab-anniversary', category: 'Habits', icon: '🎂', title: 'Iron Anniversary', desc: 'Still training one year after your first workout', value: 600 },
+  { id: 'hab-anniversary-5', category: 'Habits', icon: '🥂', title: 'Five Years of Iron', desc: 'Still training five years after your first workout', value: 3000 },
+  { id: 'hab-anniversary-10', category: 'Habits', icon: '🍾', title: 'A Decade of Iron', desc: 'Still training ten years after your first workout', value: 10000 },
   ...tierDefs('explorer', 'Explorer', EXPLORER_TIERS, (t) => `Train ${t.n} different exercises`),
   ...tierDefs('sets', 'Sets', SET_TIERS, (t) => `Complete ${fmt(t.n)} sets`),
   ...tierDefs('time', 'Time', TIME_TIERS, (t) => `Log ${fmt(t.n / 60)} hours of workouts from your watch`),
@@ -207,10 +224,10 @@ const ALL: RawDef[] = [
   { id: 'hol-newyear', category: 'Holidays', icon: '🎆', title: 'New Year, Same Me', desc: 'Train in the first week of January', value: 100 },
   { id: 'hol-xmas', category: 'Holidays', icon: '🎄', title: 'Iron Navidad', desc: 'Train between Dec 24 and 26', value: 100 },
   { id: 'special-marathon', category: 'Special', icon: '🏃', title: 'Marathon Session', desc: 'A workout of 90+ minutes', value: 100 },
-  { id: 'special-beast', category: 'Special', icon: '🦍', title: 'Volume Beast', desc: 'Move 10 t in a single session', value: 150 },
+  { id: 'special-beast', category: 'Special', icon: '🦍', title: 'Volume Beast', desc: 'Move 10 t in a single session', value: 300 },
   { id: 'special-early', category: 'Special', icon: '🌅', title: 'Early Bird', desc: 'Start a workout before 7:00', value: 50 },
   { id: 'special-night', category: 'Special', icon: '🌙', title: 'Night Owl', desc: 'Start a workout at 21:00 or later', value: 50 },
-  { id: 'special-month', category: 'Special', icon: '📅', title: 'Iron Month', desc: 'Go 12+ days in one calendar month', value: 300 },
+  { id: 'special-month', category: 'Special', icon: '📅', title: 'Iron Month', desc: 'Go 12+ days in one calendar month', value: 200 },
   { id: 'special-double', category: 'Special', icon: '⚡', title: 'Triple PR', desc: 'Set 3+ records in one session', value: 75 },
   { id: 'body-first', category: 'Body', icon: '⚖️', title: 'On the Scale', desc: 'Log your bodyweight for the first time', value: 25 },
   { id: 'body-10', category: 'Body', icon: '📊', title: 'Tracking Pro', desc: 'Log your bodyweight 10 times', value: 75, target: 10 },
@@ -228,7 +245,7 @@ const ALL: RawDef[] = [
   { id: 'leg-arnold-split', category: 'Legends', legend: 'arnold', icon: '📆', title: 'Six-Day Split', desc: 'Train 6 days in one week, like his reported schedule', value: 300 },
   { id: 'leg-arnold-seven', category: 'Legends', legend: 'arnold', icon: '🏆', title: 'Seven Straight', desc: '7 Perfect Weeks in a row: one for each Mr. Olympia title', value: 1000 },
   { id: 'leg-ronnie-light', category: 'Legends', legend: 'ronnie', icon: '🪶', title: 'Light Weight!', desc: '12+ reps with 100+ kg in one set', value: 100 },
-  { id: 'leg-ronnie-records', category: 'Legends', legend: 'ronnie', icon: '🗣️', title: 'Yeah Buddy!', desc: '8 records in one week: one for each Mr. Olympia title', value: 300 },
+  { id: 'leg-ronnie-records', category: 'Legends', legend: 'ronnie', icon: '🗣️', title: 'Yeah Buddy!', desc: '8 records in one week: one for each Mr. Olympia title', value: 100 },
   { id: 'leg-ronnie-eight', category: 'Legends', legend: 'ronnie', icon: '👑', title: 'Eight Titles', desc: 'Earn a medal in 8 different seasons', value: 1500 },
   { id: 'leg-eddie-500', category: 'Legends', legend: 'eddie', icon: '🎯', title: 'The 500', desc: 'Move 500 kg in one set (weight × reps)', value: 75 },
   { id: 'leg-eddie-ten', category: 'Legends', legend: 'eddie', icon: '🔟', title: 'Ten Times Over', desc: 'Move 5,000 kg in one workout: his lift, 10 times', value: 150 },

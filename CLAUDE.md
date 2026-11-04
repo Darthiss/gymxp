@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-GymXP is a gamified gym tracker: an installable React PWA with no backend. The app is a public static site on GitHub Pages; each user's data lives in their own private GitHub repo, accessed from the browser with their own token.
+GymXP is a gamified gym tracker: an installable React PWA with no backend. The app is a public static site on GitHub Pages; each user's data lives in their own private GitHub repo, accessed from the browser with their own token. Public sign-up without GitHub is planned as the last roadmap phase.
 
 Planned work and its order live in [ROADMAP.md](ROADMAP.md). Check it before starting a feature, and tick off steps as they merge.
 
@@ -11,23 +11,23 @@ Planned work and its order live in [ROADMAP.md](ROADMAP.md). Check it before sta
 ## Commands
 
 ```bash
-npm run dev                        # http://localhost:5173
-                                   #   ?demo        sample data, no vault or GitHub (dev only)
-                                   #   ?demo&draft  same, plus a workout in progress
-npm test                           # all tests (vitest)
-npx vitest run -t "level curve"    # one test, by name
-npm run build                      # tsc --noEmit, then vite build. This is the type check
-npm run preview                    # serve the build. The only local way to exercise the CSP and service worker
-npm run icons                      # re-render the app icons
-npm run calibrate -- backup.json   # score a real exported log against the design's targets
+npm run dev                         # http://localhost:5173
+                                    #   ?demo        sample data, no vault or GitHub (dev only)
+                                    #   ?demo&draft  same, plus a workout in progress
+npm test                            # all tests (vitest)
+npx vitest run -t "reaching level"  # one test, by name
+npm run build                       # tsc --noEmit, then vite build. This is the type check
+npm run preview                     # serve the build. The only local way to exercise the CSP and service worker
+npm run icons                       # re-render the app icons
+npm run calibrate -- backup.json    # score a real exported log against the design's targets
 node scripts/import-exercises.mjs <path-to-free-exercise-db/exercises.json> [--no-images]
 ```
 
 There is no linter. `tsconfig.json` sets `noUnusedLocals` and `noUnusedParameters`, so dead code fails the build.
 
-Pushing to `main` deploys to production straight away (`.github/workflows/deploy.yml` runs tests and build first). There is no staging, so use a branch per change.
+**Releasing.** Pushing to `main` deploys to production straight away (`.github/workflows/deploy.yml` runs tests and build first). There is no staging. Work on a branch, fast-forward `main` when asked to ship, and afterwards confirm the Actions run succeeded and check the live site at <https://darthiss.github.io/gymxp/>. The repo is public, including these docs, so keep real training data and other personal details out of them.
 
-All tests are in `src/lib/engine.test.ts` and cover pure logic (engine, merge, crypto, routines, parsing). There are no UI tests; check UI in the browser with `?demo`.
+**Testing.** All tests are in `src/lib/engine.test.ts` and cover pure logic (engine, trophies, legends, merge, crypto, routines, parsing). They run in UTC on CI, so try a pinned `TZ` when touching dates. There are no UI tests and no browser driver in the repo, so check UI changes in a real browser with `?demo`, and look at it: unit tests passed while a tap skipped a reveal and a sheet opened off-screen. `?demo#/log?add=<exerciseId>` and `?demo#/log?routine=r0` open the logger with something loaded. To exercise big unlocks, log an absurd workout, such as 200,000 kg × 300.
 
 WebCrypto needs a secure context, so the app won't run on a phone over `http://<lan-ip>`. To test on a device, deploy it or use an HTTPS tunnel.
 
@@ -37,7 +37,7 @@ Boot sequence (`src/App.tsx`): `boot` → `setup` or `locked` → `open`. Once o
 
 **Vault (`lib/vault.ts`, `lib/crypto.ts`).** The GitHub token and repo name are sealed with a key derived from the user's PIN. The non-extractable key stays in IndexedDB until the auto-lock window expires.
 
-**Store (`lib/store.ts`).** One instance per unlocked session, read through `useStore()` / `useData()` and written through `getStore()`. Every change goes through `getStore().update(mutator, commitMessage)`: the mutator gets a deep copy, the encrypted cache in localStorage updates at once, and the whole `data.json` is PUT to GitHub after a short debounce. Each sync is one commit in the data repo. A SHA conflict triggers fetch, merge, retry.
+**Store (`lib/store.ts`).** One instance per unlocked session, read through `useStore()` / `useData()` and written through `getStore()`. Every change goes through `getStore().update(mutator, commitMessage)`: the mutator gets a deep copy, the encrypted cache in localStorage updates at once, and the whole `data.json` is PUT to GitHub after a short debounce. Each sync is one commit in the data repo. A SHA conflict triggers fetch, merge, retry. Keep network code behind `Store`: Phase 6 replaces it.
 
 **Data rules (`lib/types.ts`, `lib/merge.ts`).** Syncable records extend `Rec` and merge last-writer-wins per record, by `updatedAt`.
 - Set `updatedAt: Date.now()` on every change.
@@ -46,17 +46,29 @@ Boot sequence (`src/App.tsx`): `boot` → `setup` or `locked` → `open`. Once o
 - `Routine.exerciseIds` must stay in sync with `Routine.items`.
 
 **Game engine (`lib/engine.ts`, `lib/trophies.ts`).** `computeGame(data, exMap)` replays the whole log in date order and returns a `GameState`. Stars, levels, streaks, records, trophies and seasons are never stored.
-- Changing `RULES`, `RANKS`, `FLAMES` or the trophy tables needs no migration, but it re-scores every user's history on next load and can change their level. Treat that as a product decision.
-- `useGame()` (`lib/game.ts`) shares one result per data object across components. The logger (`screens/Log.tsx`) also recomputes on every deferred draft edit for its live stars, so engine cost is felt while typing.
-- To add a trophy: define it in `lib/trophies.ts` and add its unlock check in the per-session loop. `unlock()` ignores ids that aren't defined. Trophies with a `target` also need a value in the `progress` map, and tiers made with `tierDefs` share a family card on the Awards tab. Never rename a trophy id.
-- A week's goal comes from `goalAt()`, not `profile.weeklyGoal`, and changes go through `withWeeklyGoal()`, so past weeks are never rewritten.
-- Hero Physique is shelved behind `FEATURES.hero` (`lib/features.ts`). `lib/hero.ts` still runs, because non-Hero trophies such as `str-pullup` read its rep tracking.
+- Changing `RULES`, `RANKS`, `FLAMES` or the trophy tables needs no migration, but it re-scores every user's history on next load and can change their level. Treat that as a product decision. `npm run calibrate` shows the effect on a real log.
+- Stars are scored per gym day, so two workouts on one date share one 1–3 rating. Each `SessionResult` holds that rating (`dayStars`), everything the session earned (`stars`, `items`) and how each exercise compared with last time (`beats`).
+- `useGame()` (`lib/game.ts`) shares one result per data object across components, through `gameFor()`. The logger (`screens/Log.tsx`) also recomputes on every deferred draft edit for its live stars, so engine cost is felt while typing.
+- To add a trophy: define it in `lib/trophies.ts` and add its unlock check in the per-session loop. `unlock()` ignores ids that aren't defined. Trophies with a `target` also need a value in the `progress` map, and tiers made with `tierDefs` share a family card on the Awards tab. `value` in those tables only sets the rarity, and rarity sets the stars. The comment on `rarityOf` says how long each rarity should take. A new category must be added to `TROPHY_GROUPS` too, unless it's for the Legends tab. Never rename a trophy id.
+- A week's goal comes from `goalAt()`, not `profile.weeklyGoal` (which can be a change that starts next Monday), and changes go through `withWeeklyGoal()`, so past weeks are never rewritten.
+- `lib/career.ts` builds Career's story (`careerStory()`) and decides what gets a full-screen reveal (`bigMoments()`). `components/Celebration.tsx` compares the game before and after a save, so edited and backdated workouts show what really changed.
+- Hero Physique is shelved behind `FEATURES.hero` (`lib/features.ts`), with its code and tests intact. `lib/hero.ts` still runs, because non-Hero trophies such as `str-pullup` read its rep tracking.
 
-**Exercises.** `src/data/exercises.json` is generated from the `CURATED` list in `scripts/import-exercises.mjs` plus free-exercise-db, so edit `CURATED` and regenerate instead of editing the JSON. Photos live in `public/ex/<id>/`. Stored sessions reference exercises by `id`, so never rename one.
-- `exerciseMap()` includes deleted custom exercises so old sessions still resolve. `allExercises()` is the live list for pickers.
-- Every set is stored as `{ kg, reps }`, but the exercise's flags change what those mean: `assisted` (kg is assistance), `hold` (reps is seconds), `loadFactor` (kg per dumbbell), `barKg` (kg includes the bar), `bwFactor` (kg is added weight), `benchmark` (`ladder`: kg is minutes, reps is rungs; `cindy`: reps is rounds). Check these when reading or displaying sets: `effectiveLoad` and `compareToLast` in `engine.ts`, `fmtBeat` in `exercises.ts`, `cols` in `Log.tsx`, the unit labels in `Progress.tsx`.
+**Exercises.** `src/data/exercises.json` is generated from the `CURATED` list in `scripts/import-exercises.mjs` plus free-exercise-db, so edit `CURATED` and regenerate instead of editing the JSON. The source is the dataset's [`dist/exercises.json`](https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json), and existing photos aren't downloaded again. Photos live in `public/ex/<id>/`. Stored sessions reference exercises by `id`, so never rename one.
+- `exerciseMap()` includes deleted custom exercises and shelved ones so old sessions still resolve. `allExercises()` is the live list for pickers.
+- Every set is stored as `{ kg, reps }`, but the exercise's flags change what those mean: `assisted` (kg is assistance), `hold` (reps is seconds), `loadFactor` (kg per dumbbell), `barKg` (kg includes the bar), `bwFactor` (kg is added weight), `benchmark` (`ladder`: kg is minutes, reps is rungs; `cindy`: reps is rounds). Flags combine: a farmer's walk is `hold` + `loadFactor: 2`. Check these when reading or displaying sets: `effectiveLoad` and `compareToLast` in `engine.ts`, `fmtSet`, `fmtBeat` and `toBeatText` in `exercises.ts`, `cols` in `Log.tsx`, the unit labels in `Progress.tsx`.
 
-**UI.** `components/ui.tsx` holds the primitives (`Cell`, `Sheet`, `Segmented`, `Ring`, `XpBar`, `toast`). Styling is one global `styles.css` plus inline styles. Charts (`components/charts.tsx`), routing (`lib/router.ts`) and crypto are hand-written; `react` and `react-dom` are the only runtime dependencies. UI text is hard-coded English for now, including text generated inside the engine.
+**UI.** `components/ui.tsx` holds the primitives (`Cell`, `Sheet`, `Segmented`, `Ring`, `ProgressBar`, `StarRating`, `PickerField`, `toast`). Styling is one global `styles.css` plus inline styles. Charts (`components/charts.tsx`), routing (`lib/router.ts`) and crypto are hand-written; `react` and `react-dom` are the only runtime dependencies. UI text is hard-coded English for now, including text generated inside the engine. Phase 4 changes that.
+
+## Product rules to respect
+
+The reasoning is in the game design doc. In short:
+- The streak stays weekly with a bar of one visit, and rest days never cost anything. Nothing rewards a fixed day or time as a goal.
+- Workout stars cap at 3 a day. Levels, medals and trophies are never taken away by not training.
+- Olympian means about 2,500 workouts, roughly a decade of hard training. Check any scoring change against that. Perfect Weeks pay up to a goal of 5 (`RULES.perfectGoalCap`), so nothing pays for skipping rest days, and imported workouts stop paying stars at `RULES.importedStarCap`.
+- Copy never blames or guilts. A broken streak reads "Your streak ended at 14 weeks. Your best is still 31."
+- The owner likes a big trophy collection, including ones they may never reach. Trim only what's truly redundant, and ask first.
+- Legend numbers stay labeled as commonly reported. Don't invent quotes or facts about real people.
 
 ## Things that bite
 
@@ -65,4 +77,6 @@ Boot sequence (`src/App.tsx`): `boot` → `setup` or `locked` → `open`. Once o
 - **Service worker** (`public/sw.js`) serves same-origin non-navigation requests cache-first with a fixed cache name. If you replace a file at the same URL (for example a photo in `public/ex/`), bump `CACHE`.
 - **localStorage** keys use the `gymxp:` prefix. Anything sensitive must be sealed with `seal()` and added to the list in `wipeDevice()`. Non-sensitive per-device data (`logmode`, `ticks`, `order`, `autolock`) stays in plain text.
 - **Fixed overlays** inside a `.fade-in` child are trapped by its animation and can open off-screen. `Sheet` renders on `<body>` to avoid this, so use it instead of a new overlay.
+- **The logger reads its URL params only on mount.** Changing the hash to `#/log?add=…` while it's open does nothing, so load the URL fresh when testing.
 - **Demo mode** (`src/dev/demo.ts`) overwrites `Store` methods by name through an `unknown` cast. Renaming one won't fail the type check; it will make demo mode touch real storage or GitHub.
+- **Windows.** Text files contain non-ASCII (`★`, `→`, `·`), and Windows PowerShell 5.1's `Get-Content` and `Set-Content` corrupt them, so edit with the dedicated tools. Git may leave CRLF line endings in the working copy, so scripts that patch files should not assume LF. Stopping a background `npx vite` can leave the node process holding the port; check the listener before starting another.
