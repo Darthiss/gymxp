@@ -95,7 +95,7 @@ const prText = (p: PR) =>
   p.kind === 'weight' ? `🏆 New weight PR: ${p.value} kg (was ${p.prev})`
   : p.kind === 'assist' ? `🏆 PR: less assistance (${p.value} kg)`
   : p.kind === 'reps' ? `🏆 Rep PR: ${p.value} reps (was ${p.prev})`
-  : p.kind === 'hold' ? `🏆 Longest hold: ${p.value} s (was ${p.prev})`
+  : p.kind === 'hold' ? `🏆 Longest yet: ${p.value} s (was ${p.prev})`
   : p.kind === 'rounds' ? `🏆 PR: ${p.value} rounds (was ${p.prev})`
   : p.kind === 'rungs' ? `🏆 PR: ${p.value} rungs (was ${p.prev})`
   : p.kind === 'time' ? `🏆 Fastest ladder: ${p.value} min`
@@ -105,7 +105,7 @@ const prText = (p: PR) =>
 function cols(ex?: Exercise) {
   if (ex?.benchmark === 'ladder') return { kg: 'Minutes', reps: 'Rungs /19', kgUnit: 'min', repsUnit: 'rungs' };
   if (ex?.benchmark === 'cindy') return { kg: 'Vest kg', reps: 'Rounds', kgUnit: 'kg', repsUnit: 'rnds' };
-  if (ex?.hold) return { kg: '+ kg (plate)', reps: 'Seconds', kgUnit: 'kg', repsUnit: 'sec' };
+  if (ex?.hold) return { kg: ex.loadFactor === 2 ? 'kg each' : '+ kg (plate)', reps: 'Seconds', kgUnit: 'kg', repsUnit: 'sec' };
   if (ex?.bwFactor) return { kg: '+ kg (vest)', reps: 'Reps', kgUnit: 'kg', repsUnit: 'reps' };
   if (ex?.assisted) return { kg: 'Assist kg', reps: 'Reps', kgUnit: 'kg', repsUnit: 'reps' };
   if (ex?.loadFactor === 2) return { kg: 'kg each', reps: 'Reps', kgUnit: 'kg', repsUnit: 'reps' };

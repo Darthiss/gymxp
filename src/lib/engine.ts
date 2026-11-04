@@ -705,7 +705,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
             prs.push({ exerciseId: log.exerciseId, kind: 'time', value: fullLadderMin, prev: prev.maxKg });
             prev.maxKg = fullLadderMin; prev.maxKgDate = s.date; weightPr = true;
           }
-        } else if (bodyweightEx) {
+        } else if (bodyweightEx || ex?.hold) {
           if (bestKg > prev.maxKg && bestKg > 0) {
             prs.push({ exerciseId: log.exerciseId, kind: 'weight', value: bestKg, prev: prev.maxKg });
             prev.maxKg = bestKg; prev.maxKgDate = s.date; weightPr = true;
@@ -766,7 +766,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     // --- records ---
     prs.forEach((pr, i) => {
       const name = exMap.get(pr.exerciseId)?.name ?? 'Unknown';
-      const what = pr.kind === 'weight' ? `${pr.value} kg` : pr.kind === 'assist' ? `less assist (${pr.value} kg)` : pr.kind === 'reps' ? `${pr.value} reps` : pr.kind === 'hold' ? `${pr.value} s hold`
+      const what = pr.kind === 'weight' ? `${pr.value} kg` : pr.kind === 'assist' ? `less assist (${pr.value} kg)` : pr.kind === 'reps' ? `${pr.value} reps` : pr.kind === 'hold' ? `${pr.value} s`
         : pr.kind === 'rounds' ? `${pr.value} rounds` : pr.kind === 'rungs' ? `${pr.value} rungs` : pr.kind === 'time' ? `${pr.value} min` : 'best set';
       const paid = !s.estimated && i < RULES.recordCap ? 1 : 0;
       items.push({ label: `🏆 ${name}: ${what}`, stars: paid, kind: 'record' });

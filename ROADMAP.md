@@ -256,7 +256,7 @@ Use `src/data/exercises.es.json` keyed by id, loaded with a dynamic import only 
 
 ### 5.1 Muscle volume library · S
 
-**The data is already there.** All 116 exercises have primary muscles, across 16 distinct names. No schema change is needed.
+**The data is already there.** All 117 exercises have primary muscles, across 16 distinct names. No schema change is needed.
 
 **Do.** Add a pure, tested `lib/muscles.ts` that returns weighted sets per muscle: primary counts as 1 set, secondary as 0.5. It must accept both logged sessions and a planned routine, since 5.2 and 5.3 both use it. Custom exercises have no muscle data, so map them from their `group`. Skip benchmarks.
 

@@ -136,8 +136,8 @@ export function RoutineGuide({ id }: { id: string }) {
             )}
             {it.note && <div className="coach-note">“{it.note}”</div>}
             <SettingNote exerciseId={it.exerciseId} value={settingFor(data, it.exerciseId)} equipment={ex?.equipment} />
-            <div className="small dim num">{last ? `Last time: ${last.map((s) => fmtSet(ex, s)).join(' · ')}` : ex?.hold ? 'First time · hold as long as your form stays solid' : 'First time · pick a weight you can do with good form'}</div>
-            {hitTarget(it, last) && <span className="tag gold" style={{ alignSelf: 'flex-start' }}>⬆ You hit every target last time · try {ex?.hold ? 'holding longer' : ex?.assisted ? 'less assistance' : 'a bit heavier'}</span>}
+            <div className="small dim num">{last ? `Last time: ${last.map((s) => fmtSet(ex, s)).join(' · ')}` : ex?.hold ? 'First time · go as long as your form stays solid' : 'First time · pick a weight you can do with good form'}</div>
+            {hitTarget(it, last) && <span className="tag gold" style={{ alignSelf: 'flex-start' }}>⬆ You hit every target last time · try {ex?.hold ? 'going longer' : ex?.assisted ? 'less assistance' : 'a bit heavier'}</span>}
             <div className="set-dots" role="group" aria-label={`${ex?.name ?? 'Exercise'} sets`}>
               {Array.from({ length: it.sets }, (_, k) => {
                 const reps = repsForSet(it.reps, k);

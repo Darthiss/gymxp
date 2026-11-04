@@ -3,7 +3,7 @@ import {
   beatsNeeded, compareToLast, computeGame, flameFor, goalAt, levelForStars, levelInfo, medalOf, perfectWeekStars, rankFor, RANKS, RULES, seasonOf, starsForLevel, withWeeklyGoal,
 } from './engine';
 import { ACHIEVEMENTS, RARITY_STARS, rarityOf } from './trophies';
-import { allExercises, BUILTIN, exerciseMap, fmtBeat, toBeatText } from './exercises';
+import { allExercises, BUILTIN, exerciseMap, fmtBeat, fmtSet, toBeatText } from './exercises';
 import { gameFor } from './game';
 import { emptyData, type AppData, type Exercise, type Routine, type Session } from './types';
 import { activeRoutines, firstReps, fmtRest, fmtTarget, hitTarget, inOrder, lastDone, moveTo, nextPosition, repsForSet, routineItems, upNextRoutine } from './routines';
@@ -917,6 +917,48 @@ describe('reordering exercises', () => {
       return result(game(d), s).dayStars;
     };
     expect(run(['Leg_Press', 'Butterfly', 'Face_Pull'])).toBe(run(['Face_Pull', 'Leg_Press', 'Butterfly']));
+  });
+});
+
+describe("farmer's walk", () => {
+  const walk = BUILTIN.find((e) => e.id === 'Farmers_Walk') as Exercise;
+
+  it('is a timed exercise with the weight logged per hand', () => {
+    expect(walk).toMatchObject({ name: "Farmer's Walk", hold: true, loadFactor: 2, equipment: 'Dumbbell', group: 'Core' });
+    expect(walk.images).toHaveLength(2);
+    expect(walk.primaryMuscles).toContain('Forearms');
+    expect(allExercises(emptyData()).some((e) => e.id === 'Farmers_Walk')).toBe(true);
+  });
+
+  it('counts both hands toward volume, at one rep per 3 seconds', () => {
+    const d = emptyData();
+    add(d, '2026-01-05', [ex('Farmers_Walk', 30, 60, 45)]);
+    expect(game(d).history.get('Farmers_Walk')![0].volume).toBeCloseTo(2 * 30 * (105 / 3));
+  });
+
+  it('counts heavier as a weight record, and longer at the same weight as a time record', () => {
+    const d = emptyData();
+    add(d, '2026-01-05', [ex('Farmers_Walk', 30, 60)]);
+    const heavier = add(d, '2026-01-07', [ex('Farmers_Walk', 35, 40)]);
+    const longer = add(d, '2026-01-09', [ex('Farmers_Walk', 35, 75)]);
+    const same = add(d, '2026-01-12', [ex('Farmers_Walk', 35, 75)]);
+    const g = game(d);
+    expect(result(g, heavier).prs).toEqual([{ exerciseId: 'Farmers_Walk', kind: 'weight', value: 35, prev: 30 }]);
+    expect(result(g, longer).prs).toEqual([{ exerciseId: 'Farmers_Walk', kind: 'hold', value: 75, prev: 60 }]);
+    expect(result(g, same).prs).toEqual([]);
+    expect(g.bests.get('Farmers_Walk')).toMatchObject({ maxKg: 35, maxReps: 75 });
+  });
+
+  it('beats last time with more weight or more seconds, and says so', () => {
+    const d = emptyData();
+    add(d, '2026-01-05', [ex('Farmers_Walk', 30, 60)]);
+    const s = add(d, '2026-01-07', [ex('Farmers_Walk', 30, 70)]);
+    const r = result(game(d), s);
+    expect(r.beats[0]).toMatchObject({ beat: true, kg: 0, reps: 10 });
+    expect(fmtBeat(walk, r.beats[0])).toBe('+10s');
+    expect(fmtBeat(walk, compareToLast(walk, 'x', [{ kg: 32.5, reps: 40 }], [{ kg: 30, reps: 60 }]))).toBe('+2.5 kg');
+    expect(toBeatText(walk, [{ kg: 30, reps: 60 }])).toBe('To beat: 30 kg for 61+ s in total, or add weight');
+    expect(fmtSet(walk, { kg: 30, reps: 60 })).toBe('30 kg · 60 s');
   });
 });
 

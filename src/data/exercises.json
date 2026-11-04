@@ -3066,6 +3066,45 @@
   "hold": true
  },
  {
+  "id": "Farmers_Walk",
+  "name": "Farmer's Walk",
+  "aliases": [
+   "Farmer's Carry",
+   "Farmers Walk",
+   "Farmer Carry",
+   "Loaded Carry",
+   "Caminata del granjero",
+   "Paseo del granjero"
+  ],
+  "group": "Core",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Forearms"
+  ],
+  "secondaryMuscles": [
+   "Abdominals",
+   "Glutes",
+   "Hamstrings",
+   "Lower Back",
+   "Quadriceps",
+   "Traps"
+  ],
+  "look": "You pick up a heavy dumbbell in each hand (or farmer handles, if your gym has them) and simply walk, tall and steady, with your arms hanging at your sides. It works your grip, traps and core. Log the weight of ONE dumbbell and the seconds you walked.",
+  "instructions": [
+   "Stand between two heavy dumbbells. Bend your knees, keep your back straight and grip the handles hard.",
+   "Stand up by driving through your heels, with your chest up and shoulders back.",
+   "Walk with short, quick steps. Keep your core tight and don't let the weights swing or pull you sideways. Breathe normally.",
+   "Stop before your grip gives out, then set the weights down the way you picked them up: knees bent, back straight.",
+   "In GymXP log the weight of one dumbbell and how many seconds you walked. To progress, walk longer or go heavier."
+  ],
+  "images": [
+   "ex/Farmers_Walk/0.jpg",
+   "ex/Farmers_Walk/1.jpg"
+  ],
+  "loadFactor": 2,
+  "hold": true
+ },
+ {
   "id": "Crunches",
   "name": "Crunch",
   "aliases": [

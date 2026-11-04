@@ -198,7 +198,8 @@ export function LiftDetail({ id }: { id: string }) {
               <div className="chips" style={{ margin: 0, padding: 0 }}>
                 {repMode && <button className={`chip${metric === 'reps' ? ' on' : ''}`} onClick={() => setMetric('reps')}>Best {repUnit}</button>}
                 {!repMode && <button className={`chip${metric === 'kg' ? ' on' : ''}`} onClick={() => setMetric('kg')}>{ex?.assisted ? 'Assistance' : 'Top weight'}</button>}
-                {!ex?.assisted && !repMode && <button className={`chip${metric === 'e1rm' ? ' on' : ''}`} onClick={() => setMetric('e1rm')}>Est. 1RM</button>}
+                {ex?.hold && !repMode && <button className={`chip${metric === 'reps' ? ' on' : ''}`} onClick={() => setMetric('reps')}>Longest</button>}
+                {!ex?.assisted && !ex?.hold && !repMode && <button className={`chip${metric === 'e1rm' ? ' on' : ''}`} onClick={() => setMetric('e1rm')}>Est. 1RM</button>}
                 <button className={`chip${metric === 'volume' ? ' on' : ''}`} onClick={() => setMetric('volume')}>Volume</button>
               </div>
               <LineChart points={pts} unit={unit} label={`${ex?.name} ${metric}`} format={(v) => `${fmtNum(v, 1)} ${unit}`} />
@@ -214,10 +215,10 @@ export function LiftDetail({ id }: { id: string }) {
             ex?.benchmark === 'ladder'
               ? <div><div className="label">Fastest ladder</div><div className="value">{best.maxKg ? best.maxKg : '—'}<small>min</small></div></div>
               : <div><div className="label">{ex?.benchmark ? 'Best vest' : 'Most added'}</div><div className="value">{best.maxKg}<small>kg</small></div></div>
-          ) : !ex?.assisted ? (
+          ) : !ex?.assisted && !ex?.hold ? (
             <div><div className="label">Est. 1RM</div><div className="value">{fmtNum(best.maxE1rm, 1)}<small>kg</small></div></div>
           ) : (
-            <div><div className="label">{ex?.hold ? 'Longest hold' : 'Most reps'}</div><div className="value">{best.maxReps}</div></div>
+            <div><div className="label">{ex?.hold ? 'Longest' : 'Most reps'}</div><div className="value">{best.maxReps}{ex?.hold && <small>s</small>}</div></div>
           )}
           <div><div className="label">Sessions</div><div className="value">{best.sessions}</div></div>
           <div><div className="label">Last</div><div className="value" style={{ fontSize: '1.05rem', paddingTop: 4 }}>{fmtDate(best.lastDate, { day: 'numeric', month: 'short' })}</div></div>

@@ -403,6 +403,17 @@ const CURATED = [
       'Switch sides and hold the same time. In GymXP log one set per side (or the time of one side), in seconds.',
       'Too hard? Bend your knees and rest on them instead of your feet.',
     ] },
+  // Also timed, but the load is what you carry: the weight column is per hand and volume counts both.
+  { src: 'Farmers_Walk', name: "Farmer's Walk", group: 'Core', equipment: 'Dumbbell', loadFactor: 2, hold: true,
+    aliases: ["Farmer's Carry", 'Farmers Walk', 'Farmer Carry', 'Loaded Carry', 'Caminata del granjero', 'Paseo del granjero'],
+    look: 'You pick up a heavy dumbbell in each hand (or farmer handles, if your gym has them) and simply walk, tall and steady, with your arms hanging at your sides. It works your grip, traps and core. Log the weight of ONE dumbbell and the seconds you walked.',
+    instructions: [
+      'Stand between two heavy dumbbells. Bend your knees, keep your back straight and grip the handles hard.',
+      'Stand up by driving through your heels, with your chest up and shoulders back.',
+      "Walk with short, quick steps. Keep your core tight and don't let the weights swing or pull you sideways. Breathe normally.",
+      'Stop before your grip gives out, then set the weights down the way you picked them up: knees bent, back straight.',
+      'In GymXP log the weight of one dumbbell and how many seconds you walked. To progress, walk longer or go heavier.',
+    ] },
   { src: 'Crunches', name: 'Crunch', group: 'Core', equipment: 'Bodyweight', bwFactor: 0.2,
     aliases: ['Crunches', 'Abdominal Crunch', 'Floor Crunch'],
     look: 'Lying on your back, knees bent and feet flat. You curl just your head and shoulders up off the floor toward your knees, then lower. Smaller than a sit-up: your lower back stays down.' },
