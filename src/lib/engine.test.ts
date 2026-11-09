@@ -972,6 +972,15 @@ describe('holidays', () => {
     expect(holidayOn('2026-11-23')).toContain('trasladado'); // …moved to Monday
     expect(holidayOn('2026-10-13')).toBeUndefined();
   });
+
+  it('applies one-time holidays only on their exact dates', async () => {
+    const { holidayOn } = await import('./holidays');
+    expect(holidayOn('2026-11-09')).toBe('Visita del Papa');
+    expect(holidayOn('2026-11-10')).toBe('Visita del Papa');
+    expect(holidayOn('2026-11-11')).toBeUndefined();
+    expect(holidayOn('2025-11-09')).toBeUndefined();
+    expect(holidayOn('2027-11-10')).toBeUndefined();
+  });
 });
 
 describe('hero physique, while shelved', () => {

@@ -1,7 +1,7 @@
 // Argentine national holidays (feriados nacionales, Ley 27.399), computed locally.
 // Movable ("trasladables") holidays count on BOTH their original date and the Monday they
 // move to, so you get the bonus whichever day the government's calendar uses.
-// Not included: one-off "días puente" decreed each year.
+// One-time holidays go in ONE_OFF by exact date. Not included: the "días puente" decreed each year.
 import { addDays, toISODate } from './util';
 
 function easter(year: number): Date {
@@ -32,6 +32,11 @@ const MOVABLE: [string, string][] = [
   ['11-20', 'Día de la Soberanía Nacional'],
 ];
 
+const ONE_OFF: [string, string][] = [
+  ['2026-11-09', 'Visita del Papa'],
+  ['2026-11-10', 'Visita del Papa'],
+];
+
 const cache = new Map<number, Map<string, string>>();
 
 export function holidaysOf(year: number): Map<string, string> {
@@ -51,6 +56,7 @@ export function holidaysOf(year: number): Map<string, string> {
     const shift = dow === 2 ? -1 : dow === 3 ? -2 : dow === 4 ? 4 : dow === 5 ? 3 : 0;
     if (shift && !m.has(addDays(iso, shift))) m.set(addDays(iso, shift), `${name} (trasladado)`);
   }
+  for (const [iso, name] of ONE_OFF) if (iso.startsWith(`${year}-`)) m.set(iso, name);
   cache.set(year, m);
   return m;
 }
