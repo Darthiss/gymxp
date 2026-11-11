@@ -7,6 +7,7 @@ import type { Exercise } from '../lib/types';
 import type { LevelInfo } from '../lib/engine';
 import { back } from '../lib/router';
 import { Icon, type IconName } from './Icon';
+import { Bro } from './Bro';
 
 /** Circular progress ring; children render in the middle. */
 export function Ring({ pct, size = 44, stroke = 4, color = 'var(--accent)', track = 'rgba(255,255,255,0.09)', children, className = '' }: {
@@ -276,7 +277,7 @@ export function Confetti({ burst = 160 }: { burst?: number }) {
     const dpr = window.devicePixelRatio || 1;
     c.width = innerWidth * dpr;
     c.height = innerHeight * dpr;
-    const colors = ['#3ee08f', '#b4f45c', '#ffd25a', '#64b5ff', '#ff9f0a', '#bf8bff', '#ffffff'];
+    const colors = ['#c3f73a', '#62e89b', '#ffc43d', '#64b5ff', '#ff8a1f', '#bf8bff', '#ffffff'];
     const parts = Array.from({ length: burst }, () => ({
       x: innerWidth / 2 + (Math.random() - 0.5) * 80,
       y: innerHeight * 0.32,
@@ -314,10 +315,11 @@ export function Confetti({ burst = 160 }: { burst?: number }) {
   return <canvas ref={ref} className="confetti" style={{ width: '100vw', height: '100vh' }} />;
 }
 
-export function Empty({ icon, title, children }: { icon: ReactNode; title: string; children?: ReactNode }) {
+/** An empty state. Bro stands in unless the caller brings its own icon. */
+export function Empty({ icon, title, children }: { icon?: ReactNode; title: string; children?: ReactNode }) {
   return (
     <div className="card center stack" style={{ padding: '32px 24px', alignItems: 'center' }}>
-      <div style={{ fontSize: '2.4rem', lineHeight: 1 }}>{icon}</div>
+      {icon ? <div style={{ fontSize: '2.4rem', lineHeight: 1 }}>{icon}</div> : <Bro mood="wink" size={88} arms alive />}
       <h3>{title}</h3>
       {children && <div className="dim small" style={{ lineHeight: 1.5 }}>{children}</div>}
     </div>

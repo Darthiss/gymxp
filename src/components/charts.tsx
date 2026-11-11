@@ -1,6 +1,6 @@
 // Small hand-rolled SVG charts (single series): 2px line + 10% area wash, end-dot with
 // surface ring, hairline grid, crosshair + tooltip on hover/touch.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useId } from 'react';
 import { parseDate, fmtDate } from '../lib/util';
 
 function useWidth<T extends HTMLElement>(): [React.RefObject<T>, number] {
@@ -95,6 +95,7 @@ export function LineChart({
 
   const last = points.length - 1;
   const hp = hover !== null ? points[hover] : null;
+  const fadeId = useId();
 
   return (
     <div
@@ -124,8 +125,14 @@ export function LineChart({
             <text x={W - pad.r} y={y(refLine.y) - 6} textAnchor="end" fontSize={11} fill="var(--text-2)">{refLine.label}</text>
           </g>
         )}
-        <path d={area} fill={color} opacity={0.1} />
-        <path d={path} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        <defs>
+          <linearGradient id={fadeId} gradientUnits="userSpaceOnUse" x1={0} y1={pad.t} x2={0} y2={H - pad.b}>
+            <stop offset="0" style={{ stopColor: color, stopOpacity: 0.26 }} />
+            <stop offset="1" style={{ stopColor: color, stopOpacity: 0 }} />
+          </linearGradient>
+        </defs>
+        <path d={area} fill={`url(#${fadeId})`} />
+        <path d={path} fill="none" stroke={color} strokeWidth={2.4} strokeLinejoin="round" strokeLinecap="round" />
         {points.length <= 40 && points.map((p, i) => i !== last && (
           <circle key={i} cx={x(ts[i])} cy={y(p.y)} r={2.5} fill={color} />
         ))}
@@ -172,13 +179,20 @@ export function ColumnChart({
   const ticks = niceTicks(0, max, 3);
   const top = ticks[ticks.length - 1];
   const band = (W - pad.l - pad.r) / Math.max(1, bars.length);
-  const bw = Math.min(24, band - 2);
+  const bw = Math.min(22, band * 0.68);
+  const fadeId = useId();
   const y = (v: number) => pad.t + (1 - v / top) * (H - pad.t - pad.b);
   const base = y(0);
 
   return (
     <div ref={ref} className="chart" onPointerLeave={() => setHover(null)} role="img" aria-label={label}>
       <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H}>
+        <defs>
+          <linearGradient id={fadeId} gradientUnits="userSpaceOnUse" x1={0} y1={pad.t} x2={0} y2={base}>
+            <stop offset="0" style={{ stopColor: color }} />
+            <stop offset="1" style={{ stopColor: color, stopOpacity: 0.38 }} />
+          </linearGradient>
+        </defs>
         {ticks.map((t) => (
           <g key={t}>
             <line x1={pad.l} x2={W - pad.r} y1={y(t)} y2={y(t)} stroke="var(--grid)" strokeWidth={1} />
@@ -188,13 +202,13 @@ export function ColumnChart({
         {bars.map((b, i) => {
           const cx = pad.l + band * i + band / 2;
           const h = Math.max(0, base - y(b.value));
-          const r = Math.min(4, h);
+          const r = Math.min(bw / 2, 7, h);
           const x0 = cx - bw / 2;
           const d = h <= 0 ? '' : `M${x0},${base}V${base - h + r}Q${x0},${base - h} ${x0 + r},${base - h}H${x0 + bw - r}Q${x0 + bw},${base - h} ${x0 + bw},${base - h + r}V${base}Z`;
           return (
             <g key={b.key} onPointerEnter={() => setHover(i)} onPointerDown={() => setHover(i)}>
               <rect x={cx - band / 2} y={pad.t} width={band} height={H - pad.t - pad.b} fill="transparent" />
-              {d && <path d={d} fill={color} opacity={hover === null || hover === i ? 1 : 0.55} />}
+              {d && <path d={d} fill={`url(#${fadeId})`} opacity={hover === null || hover === i ? 1 : 0.55} />}
               {(i === 0 || i === bars.length - 1 || i === Math.floor(bars.length / 2)) && (
                 <text x={cx} y={H - 6} textAnchor="middle" fontSize={11} fill="var(--muted)">{b.label}</text>
               )}

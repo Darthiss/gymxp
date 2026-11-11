@@ -48,7 +48,7 @@ export function PlateCalc({ barKg, current, sets, onApply, onClose }: {
           <h2 className="grow">Bar + plates</h2>
           <CloseButton onClick={onClose} />
         </div>
-        <p className="small dim">Tap the plates on <b>one side</b> of the bar. GymXP doubles them and adds the bar.</p>
+        <p className="small dim">Tap the plates on <b>one side</b> of the bar. Bro doubles them and adds the bar.</p>
 
         <div className="chips">
           {BARS.map((b) => (

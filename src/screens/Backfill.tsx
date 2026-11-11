@@ -1,4 +1,4 @@
-// "Import past workouts": back-fill sessions you did before using GymXP, from memory.
+// "Import past workouts": back-fill sessions you did before using Bro, from memory.
 // You describe each workout type once (machines, sets × reps, a start → end weight
 // estimate), list the days you went (with Apple Watch stats), and it generates the
 // sessions, spreading the weights over time so your progress and PRs look realistic.
@@ -159,7 +159,7 @@ export function Backfill() {
     <div className="stack-lg">
       <PageHead title="Import past workouts" backTo="settings" />
       <p className="small dim">
-        Been training before GymXP? Add those days from memory. Estimates are fine: describe each kind of workout once, then list the days you went. The workouts get tagged <span className="tag">≈ estimated</span> and you can edit any of them later. They count toward your streak and trophies, and can earn stars up to {IMPORT_RANK}. Past that, stars come from workouts you log.
+        Been training before Bro? Add those days from memory. Estimates are fine: describe each kind of workout once, then list the days you went. The workouts get tagged <span className="tag">≈ estimated</span> and you can edit any of them later. They count toward your streak and trophies, and can earn stars up to {IMPORT_RANK}. Past that, stars come from workouts you log.
       </p>
 
       {/* ---------- 1. Workout plans ---------- */}

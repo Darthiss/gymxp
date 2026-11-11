@@ -1,4 +1,4 @@
-# GymXP game design
+# Bro game design
 
 **Status:** live since November 2026, when it replaced XP, rank points and stars-per-rank. What's left is playtesting and rechecking the numbers on a longer real log: see [ROADMAP.md](../ROADMAP.md). The rules live in `src/lib/engine.ts` and `src/lib/trophies.ts`, and the legends in `src/lib/legends.ts`.
 
@@ -364,7 +364,7 @@ The in-app explanation is the [box at the top of this document](#the-whole-game-
 | Streak % multiplier on all XP | Weather and holiday lines → one surprise star | Replay from the log: everything still derives from it |
 | Volume and watch rewards | | Stats: volume, time and kcal stay as numbers to look at |
 
-Hero Physique is shelved behind a flag, with its code and tests intact. The app keeps the name GymXP. "XP" just reads as "experience".
+Hero Physique is shelved behind a flag, with its code and tests intact. The app is now called Bro (it began as GymXP), and its mascot, a cast-iron kettlebell in a lime sweatband, is Bro too. Bro only ever encourages: its lines follow the same no-guilt rule as the rest of the copy.
 
 ## What makes it sticky, and where it stops
 

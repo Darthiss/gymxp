@@ -1,4 +1,4 @@
-# GymXP roadmap
+# Bro roadmap
 
 Work top to bottom. Each step is one branch, small enough to ship alone. Tick it here when it merges.
 
@@ -102,7 +102,7 @@ The design and its reasoning are in [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md).
 
 - **2.1 Hero Physique shelved** behind `FEATURES.hero`. Old Hero workouts still open, its plain strength milestones moved to Strength, and tests run with the flag both off and on.
 - **2.2 Star engine.** Stars per gym day, level from stars (`n² − 1`), ranks by level, a one-visit weekly streak with shields, Perfect Weeks with flame multipliers, season medals, machine medals, bonus stars and one weekly challenge, all derived from the log. It also fixed an old bug: changing your weekly goal rewrote every past week. `Profile.goalHistory` now holds changes, which start the following Monday.
-- **2.3 Calibration.** `npm run calibrate -- path/to/gymxp-backup.json` compares a real log with the [targets](docs/GAME_DESIGN.md#how-well-know-it-works) and says which number to adjust. On the first pass (November 2026, 10 real gym days) the second star and level pace were on target. The third star ran well above the long-run range, which is expected this early, so the rule stayed and the tool now says `WAIT` until it has 6 months and 30 gym days of history.
+- **2.3 Calibration.** `npm run calibrate -- path/to/bro-backup.json` compares a real log with the [targets](docs/GAME_DESIGN.md#how-well-know-it-works) and says which number to adjust. On the first pass (November 2026, 10 real gym days) the second star and level pace were on target. The third star ran well above the long-run range, which is expected this early, so the rule stayed and the tool now says `WAIT` until it has 6 months and 30 gym days of history.
 - **2.4 The switch.** XP, rank points and the visit requirement on ranks are gone from every screen. Today leads with the streak, the logger shows live stars and what it takes to beat last time, and history shows star ratings.
 - **2.5 Playtest: still open.** The riskiest question is whether you actually look at "to beat" while training, because the whole system leans on that moment. The design doc lists what else to check.
 
@@ -203,7 +203,7 @@ Then compare with what you actually logged over the last 4 weeks, which catches 
 
 ## Phase 6: Public launch
 
-Anyone can register and use GymXP in the browser or install it from there, with no GitHub. The owner's 2–3 friends are the first users. This is the largest change on the roadmap, and it's deliberately last.
+Anyone can register and use Bro in the browser or install it from there, with no GitHub. The owner's 2–3 friends are the first users. This is the largest change on the roadmap, and it's deliberately last.
 
 Research the details when this phase starts, since prices and platform rules will have moved by then.
 

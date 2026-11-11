@@ -8,6 +8,7 @@ import { weekMessage } from '../lib/today';
 import { fmtNum, plural, today, weekKey } from '../lib/util';
 import type { Exercise, Session } from '../lib/types';
 import { Icon } from './Icon';
+import { Bro } from './Bro';
 import { Confetti, ProgressBar, Sheet } from './ui';
 
 /** Every star a workout earned beyond the 3-star rating itself. */
@@ -121,6 +122,7 @@ export function Celebration({ result, session, before, after, edited, exMap, onC
       <Sheet onClose={onClose}>
         <div className="celebrate stack" style={{ paddingTop: 4, gap: 14 }}>
           <div className="stack" style={{ alignItems: 'center', gap: 8 }}>
+            <Bro mood={edited ? 'happy' : stars === 3 ? 'hype' : stars === 2 ? 'happy' : 'wink'} size={84} arms className="pop" />
             <div className="kicker">{edited ? 'Workout updated' : 'Workout complete'}</div>
             <div className="star-reveal" role="img" aria-label={`${stars} of 3 stars`}>
               {[0, 1, 2].map((i) => (

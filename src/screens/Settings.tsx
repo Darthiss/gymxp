@@ -18,7 +18,7 @@ export function Settings() {
       <WatchCard />
       <SecurityCard />
       <DataCard />
-      <p className="tiny muted center">GymXP · exercise photos & instructions from free-exercise-db (public domain)</p>
+      <p className="tiny muted center">Bro · exercise photos & instructions from free-exercise-db (public domain)</p>
     </div>
   );
 }
@@ -95,20 +95,20 @@ function WatchCard() {
         <div className="stack small">
           <ol className="steps-guide">
             <li>Install the free app <b>Actions</b> (by Sindre Sorhus) from the App Store. It adds a <b>Find Workouts</b> action to Shortcuts, which can read your Apple Health workouts.</li>
-            <li>Open <b>Shortcuts</b> → <b>+</b> → name it <b>GymXP</b>.</li>
+            <li>Open <b>Shortcuts</b> → <b>+</b> → name it <b>Bro</b>.</li>
             <li>Add <b>Find Workouts</b> (Actions app): sort by <b>start date, latest first</b>, limit <b>1</b>. Allow Health access when asked.</li>
             <li>Add a <b>Text</b> action and type the line below. Replace each [bracket] by tapping the workout variable and picking its <b>Duration</b>, <b>Active Energy</b>, <b>Average Heart Rate</b> and <b>Start Date</b> (format the date as HH:mm):
               <div className="code" style={{ marginTop: 6 }}>dur=[Duration] kcal=[Active Energy] hr=[Average Heart Rate] start=[Start Date]</div>
             </li>
             <li>Add <b>Copy to Clipboard</b>.</li>
-            <li>After the gym: run the Shortcut (or ask Siri “GymXP”), open GymXP → Workout → ⌚ <b>Paste from Shortcut</b>.</li>
+            <li>After the gym: run the Shortcut (or ask Siri “Bro”), open Bro → Workout → ⌚ <b>Paste from Shortcut</b>.</li>
           </ol>
           <div className="notice small">
             <b>Alternative:</b> instead of Copy to Clipboard, use <b>Open URLs</b> with:
             <div className="code" style={{ marginTop: 6 }}>{appUrl}#/log?dur=[Duration]&kcal=[Active Energy]&hr=[Average Heart Rate]</div>
-            <span className="muted">On iPhone this opens in Safari (not the home-screen app), which keeps its own login, so you'd set GymXP up in Safari too. The clipboard route avoids that.</span>
+            <span className="muted">On iPhone this opens in Safari (not the home-screen app), which keeps its own login, so you'd set Bro up in Safari too. The clipboard route avoids that.</span>
           </div>
-          <p className="muted tiny">Duration can arrive as minutes, seconds or h:mm:ss; GymXP understands all of them. Plain text like “62 min 410 kcal 128 bpm” pastes fine too.</p>
+          <p className="muted tiny">Duration can arrive as minutes, seconds or h:mm:ss; Bro understands all of them. Plain text like “62 min 410 kcal 128 bpm” pastes fine too.</p>
         </div>
       )}
     </div>
@@ -186,7 +186,7 @@ function SecurityCard() {
         </div>
       )}
       {mode !== 'wipe' ? (
-        <button className="btn danger" onClick={() => setMode('wipe')}>Remove GymXP from this device…</button>
+        <button className="btn danger" onClick={() => setMode('wipe')}>Remove Bro from this device…</button>
       ) : (
         <div className="notice bad stack small">
           Deletes the encrypted token and cached data from this device only. Your workouts stay in GitHub. Use this if you lose or sell a device (also revoke the token on GitHub).
@@ -207,7 +207,7 @@ function DataCard() {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `gymxp-backup-${today()}.json`;
+    a.download = `bro-backup-${today()}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   };
@@ -218,7 +218,7 @@ function DataCard() {
       getStore().update((d) => Object.assign(d, mergeData(d, incoming)), 'Import backup');
       toast(`Imported ${incoming.sessions.length} workouts (merged)`);
     } catch {
-      toast('That file is not a GymXP backup');
+      toast('That file is not a Bro backup');
     }
   };
   return (

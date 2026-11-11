@@ -63,7 +63,7 @@ function Workouts() {
 
   if (!sessions.length)
     return (
-      <Empty icon="📒" title="No workouts yet">
+      <Empty title="No workouts yet">
         Your history, weekly chart and star count will show up here.
         <div style={{ marginTop: 14 }}><a className="btn sm tint" href="#/import"><Icon name="download" size={16} /> Import past workouts</a></div>
       </Empty>
@@ -112,7 +112,7 @@ function Workouts() {
       ))}
 
       <div className="group">
-        <Cell href="#/import" icon={<CellIcon name="download" color="#0a84ff" />} title="Import past workouts" sub="Add training you did before GymXP" />
+        <Cell href="#/import" icon={<CellIcon name="download" color="#0a84ff" />} title="Import past workouts" sub="Add training you did before Bro" />
       </div>
     </div>
   );
@@ -122,7 +122,7 @@ function Lifts() {
   const g = useGame();
   const exMap = useExerciseMap();
   const list = [...g.bests.entries()].sort((a, b) => b[1].lastDate.localeCompare(a[1].lastDate));
-  if (!list.length) return <Empty icon="📈" title="No lifts yet">Every exercise you log gets its own progress chart, records and medal.</Empty>;
+  if (!list.length) return <Empty title="No lifts yet">Every exercise you log gets its own progress chart, records and medal.</Empty>;
   return (
     <div className="stack">
       <p className="tiny dim" style={{ padding: '0 4px' }}>Machine medals: +1 point per workout, +3 when you beat your last time. {MEDALS.map((m) => `${m.icon} ${m.n}`).join(' · ')}</p>
@@ -323,7 +323,7 @@ function Body() {
           </div>
         </div>
       ) : (
-        <Empty icon="⚖️" title="No weigh-ins yet">Weigh in about once a week, same time of day. It also makes assisted machines count correctly.</Empty>
+        <Empty title="No weigh-ins yet">Weigh in about once a week, same time of day. It also makes assisted machines count correctly.</Empty>
       )}
     </div>
   );

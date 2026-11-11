@@ -21,7 +21,7 @@ const CSP = [
 
 function csp(): Plugin {
   return {
-    name: 'gymxp-csp',
+    name: 'bro-csp',
     apply: 'build',
     transformIndexHtml(html) {
       return html.replace(

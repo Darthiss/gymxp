@@ -12,7 +12,7 @@ import { activeRoutines, firstReps, fmtRest, fmtTarget, hitTarget, inOrder, last
 import { mergeData } from './merge';
 import { addDays, parseDuration, parseWatchText, parseWorkoutLine, weekKey } from './util';
 import { deriveKey, seal, unseal } from './crypto';
-import { upNext, weekMessage } from './today';
+import { broSays, upNext, weekMessage } from './today';
 
 let n = 0;
 const sess = (date: string, exercises: Session['exercises'], extra: Partial<Session> = {}): Session => ({
@@ -428,6 +428,30 @@ describe('streak, shields and Perfect Weeks', () => {
     expect(weekMessage(g, '2026-04-02').text).toContain('shield');
     const noWorkouts = game(emptyData());
     expect(weekMessage(noWorkouts, '2026-04-02').tone).toBe('calm');
+  });
+
+  it('Bro cheers you on without guilt, and never asks for more than the week needs', () => {
+    const idle = { trainedToday: false, draft: false };
+    expect(broSays(game(emptyData()), idle).text).toContain('first workout');
+
+    const d = emptyData();
+    d.profile.weeklyGoal = 1;
+    weekly(d, ['2026-03-09', '2026-03-16', '2026-03-23']);
+    const streak = game(d); // three weeks running, nothing yet this week
+    expect(broSays(streak, idle).text).toBe('3 weeks in a row. One visit this week keeps it rolling.');
+    expect(broSays(streak, { trainedToday: false, draft: true }).mood).toBe('focus');
+
+    weekly(d, ['2026-03-30']); // today: the goal of 1 is met
+    const done = game(d);
+    expect(broSays(done, { trainedToday: true, draft: false }).text).toContain('Enjoy the rest');
+
+    const every = [broSays(game(emptyData()), idle), broSays(streak, idle), broSays(streak, { trainedToday: false, draft: true }), broSays(done, { trainedToday: true, draft: false }), broSays(done, idle)];
+    for (const day of ['2026-03-30', '2026-03-31', '2026-04-01']) {
+      const one = emptyData();
+      weekly(one, ['2026-03-23']);
+      every.push(broSays(game(one), idle, day));
+    }
+    for (const line of every) expect(line.text).not.toMatch(/miss|skip|lazy|behind|should|only|still haven|more than/i);
   });
 });
 

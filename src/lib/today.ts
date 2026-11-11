@@ -125,6 +125,25 @@ export function sessionTitle(s: Session, exMap: Map<string, Exercise>): string {
   return `${groups.slice(0, -1).join(', ')} & ${groups[groups.length - 1]}`;
 }
 
+export interface BroLine { text: string; mood: 'happy' | 'hype' | 'wink' | 'focus' | 'sleep' }
+
+/** What Bro says at the top of Today. Calm and on your side: it never guilts, and it never asks for
+ *  more than the week needs (rest days cost nothing, so Bro is happy to see you take them). */
+export function broSays(g: GameState, o: { trainedToday: boolean; draft: boolean }, date = today()): BroLine {
+  const weeks = g.streak.weeks;
+  if (o.draft) return { text: 'Your workout is still open. Pick it up whenever you’re ready.', mood: 'focus' };
+  if (g.visits === 0) return { text: 'I’m Bro. Your first workout earns all 3 stars, and I’ll spot you.', mood: 'wink' };
+  if (o.trainedToday) return { text: g.perfectThisWeek ? 'Perfect Week, done. Enjoy the rest, you earned it.' : 'Good work today. Rest counts too.', mood: 'hype' };
+  if (g.perfectThisWeek) return { text: 'Perfect Week already. Take the rest, you earned it.', mood: 'happy' };
+  if (weeks >= 2) {
+    return g.thisWeekVisits > 0
+      ? { text: `${weeks} weeks in a row. Solid.`, mood: 'happy' }
+      : { text: `${weeks} weeks in a row. One visit this week keeps it rolling.`, mood: 'focus' };
+  }
+  const lines = ['Ready when you are.', 'Show up, do the work, beat last time. That’s the whole game.', 'One lift better than last time is a win.'];
+  return { text: lines[parseDate(date).getDate() % lines.length], mood: 'happy' };
+}
+
 export function greeting(): string {
   const h = new Date().getHours();
   return h < 5 ? 'Late night grind' : h < 12 ? 'Good morning' : h < 19 ? 'Good afternoon' : 'Good evening';

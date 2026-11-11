@@ -1,17 +1,15 @@
 import { useState } from 'react';
 import { checkRepo, type GhConfig } from '../lib/github';
-import { Ring } from '../components/ui';
-import { Icon } from '../components/Icon';
+import { Bro } from '../components/Bro';
 import { createVault, failedAttempts, MAX_FAILS, unlock, wipeDevice, WrongPinError, type Unlocked } from '../lib/vault';
 
-/** App mark: a dumbbell inside a level ring. */
+/** App mark: Bro and the wordmark. Bro naps while the app is locked. */
 function LogoMark({ locked }: { locked?: boolean }) {
   return (
-    <div style={{ alignSelf: 'center' }}>
-      <Ring pct={0.72} size={84} stroke={6} color="var(--accent)">
-        <Icon name={locked ? 'lock' : 'dumbbell'} size={34} stroke={2.2} style={{ color: 'var(--accent)' }} />
-      </Ring>
-    </div>
+    <>
+      <Bro mood={locked ? 'sleep' : 'happy'} size={132} arms alive style={{ alignSelf: 'center' }} />
+      <div className="logo">Bro</div>
+    </>
   );
 }
 
@@ -57,8 +55,7 @@ export function Setup({ onDone }: { onDone: (u: Unlocked) => void }) {
       <form className="auth-box stack-lg" onSubmit={submit}>
         <div className="center stack" style={{ gap: 6 }}>
           <LogoMark />
-          <div className="logo">Gym<span>XP</span></div>
-          <p className="dim">Level up at the gym. One-time setup for this device.</p>
+          <p className="dim">Your gym bro, in your pocket. One-time setup for this device.</p>
         </div>
 
         <div className="card stack">
@@ -142,8 +139,7 @@ export function Unlock({ onDone }: { onDone: (u: Unlocked) => void }) {
       <form className="auth-box stack-lg" onSubmit={submit}>
         <div className="center stack" style={{ gap: 6 }}>
           <LogoMark locked />
-          <div className="logo">Gym<span>XP</span></div>
-          <p className="small dim">Enter your PIN to continue</p>
+          <p className="small dim">Enter your PIN to wake Bro up</p>
         </div>
         <input
           className="input pin-input"

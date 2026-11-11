@@ -1,4 +1,4 @@
-// GymXP game engine. docs/GAME_DESIGN.md explains why the rules are what they are.
+// Bro game engine. docs/GAME_DESIGN.md explains why the rules are what they are.
 // Everything is derived from the raw log, so editing or deleting a past session
 // recomputes stars, levels, records, streaks and trophies consistently.
 import type { AppData, Exercise, MuscleGroup, Profile, Session, SetEntry } from './types';
@@ -239,7 +239,7 @@ function pickChallenge(week: string, c: QuestCtx): QuestStatus | null {
   let best = Infinity;
   for (const q of QUESTS) {
     if (!q.eligible(c)) continue;
-    const h = hashStr(`gymxp:${week}:${q.id}`);
+    const h = hashStr(`gymxp:${week}:${q.id}`); // the old app name stays in the seed, or every past week would re-roll its challenge
     if (h < best) [pick, best] = [q, h];
   }
   return pick && { id: pick.id, icon: pick.icon, title: pick.title(c), target: pick.target(c), value: 0, done: false, stars: RULES.challengeStars };

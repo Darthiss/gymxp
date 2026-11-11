@@ -1,12 +1,12 @@
 // Prints how the star rules score a real log, compared with the design's targets.
-// Usage: npm run calibrate -- path/to/gymxp-backup.json (the file from Settings → Export)
+// Usage: npm run calibrate -- path/to/bro-backup.json (the file from Settings → Export)
 // It only reads the file and prints to the terminal.
 import { readFile } from 'node:fs/promises';
 import { createServer } from 'vite';
 
 const file = process.argv[2];
 if (!file) {
-  console.error('Usage: npm run calibrate -- path/to/gymxp-backup.json');
+  console.error('Usage: npm run calibrate -- path/to/bro-backup.json');
   process.exit(1);
 }
 const server = await createServer({ server: { middlewareMode: true }, appType: 'custom', logLevel: 'error' });

@@ -437,7 +437,7 @@ export function Log({ route }: { route: Route }) {
               <label className="field">Avg ♥ bpm<input className="input center" inputMode="numeric" value={draft.avgHr} onChange={(e) => set((d) => ({ ...d, avgHr: e.target.value }))} /></label>
             </div>
             <button className="btn sm" onClick={pasteWatch}><Icon name="clipboard" size={16} /> Paste from Shortcut</button>
-            <p className="tiny muted">Type them from the Fitness app, or run the GymXP Shortcut and tap Paste (setup in Settings → Apple Watch).</p>
+            <p className="tiny muted">Type them from the Fitness app, or run the Bro Shortcut and tap Paste (setup in Settings → Apple Watch).</p>
           </div>
         )}
         <div className="cell static" style={{ alignItems: 'flex-start' }}>

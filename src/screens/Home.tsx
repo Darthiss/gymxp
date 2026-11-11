@@ -4,12 +4,13 @@ import { useExerciseMap, useGame } from '../lib/game';
 import { sortSessions } from '../lib/engine';
 import { ChallengeRow, GoalList, LevelCard, StreakCard } from '../components/Progression';
 import { WorkoutRow } from '../components/WorkoutRow';
-import { greeting, logHref, logMode, upNext } from '../lib/today';
+import { broSays, greeting, logHref, logMode, upNext } from '../lib/today';
 import { holidayOn } from '../lib/holidays';
 import { activeRoutines, lastDone, upNextRoutine } from '../lib/routines';
 import { fmtDate, plural, today } from '../lib/util';
 import { Icon } from '../components/Icon';
-import { LargeTitle, SectionHead, SyncBadge } from '../components/ui';
+import { SectionHead, SyncBadge } from '../components/ui';
+import { Bro } from '../components/Bro';
 
 interface DraftPeek { date: string; startTime: string; exercises: unknown[] }
 
@@ -41,19 +42,22 @@ export function Home() {
   const name = data.profile.name.split(' ')[0];
   const mode = logMode(); // how you last logged: live at the gym, or afterwards
   const after = mode === 'after' && !draft;
+  const say = broSays(g, { trainedToday, draft: !!draft });
 
   return (
     <div className="stack-lg fade-in">
-      <LargeTitle
-        eyebrow={`${fmtDate(today(), { weekday: 'long', day: 'numeric', month: 'short' })}${name ? ` · ${greeting()}` : ''}`}
-        title={name ? `Hey, ${name}` : greeting()}
-        actions={
-          <>
-            <SyncBadge label={false} />
-            <a className="icon-btn" href="#/settings" aria-label="Settings"><Icon name="gear" size={19} /></a>
-          </>
-        }
-      />
+      <div className="hello">
+        <Bro mood={say.mood} size={64} arms alive />
+        <div className="grow">
+          <div className="eyebrow">{fmtDate(today(), { weekday: 'long', day: 'numeric', month: 'short' })}</div>
+          <h1>{name ? `Hey, ${name}` : greeting()}</h1>
+        </div>
+        <div className="actions">
+          <SyncBadge label={false} />
+          <a className="icon-btn glass" href="#/settings" aria-label="Settings"><Icon name="gear" size={19} /></a>
+        </div>
+      </div>
+      <div className="bro-say">{say.text}</div>
 
       <StreakCard g={g} sessions={data.sessions} />
 

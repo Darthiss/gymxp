@@ -3,6 +3,8 @@ import type { CSSProperties } from 'react';
 
 const P: Record<string, string> = {
   home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
+  // Bro as a glyph: kettlebell handle, body, two eyes. The Today tab.
+  bro: 'M8.5 9.6V6.5A2.5 2.5 0 0 1 11 4h2a2.5 2.5 0 0 1 2.5 2.5v3.1 M10 9.5h4a6 6 0 0 1 6 6A5.5 5.5 0 0 1 14.5 21h-5A5.5 5.5 0 0 1 4 15.5a6 6 0 0 1 6-6z M9.6 15h.01 M14.4 15h.01',
   chart: 'M3 3v18h18 M7 15l4-4 3 3 6-7',
   book: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5',
   trophy: 'M8 21h8 M12 17v4 M7 4h10v5a5 5 0 0 1-10 0z M17 5h3v2a3 3 0 0 1-3 3 M7 5H4v2a3 3 0 0 0 3 3',

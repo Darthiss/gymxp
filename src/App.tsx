@@ -16,6 +16,7 @@ import { Backfill } from './screens/Backfill';
 import { Hero } from './screens/Hero';
 import { ToastHost } from './components/ui';
 import { Icon, type IconName } from './components/Icon';
+import { Bro } from './components/Bro';
 import { logHref } from './lib/today';
 import { FEATURES } from './lib/features';
 
@@ -75,7 +76,7 @@ export function App() {
     [phase, lock],
   );
 
-  if (phase.kind === 'boot') return <div className="auth-wrap"><span className="spinner" /></div>;
+  if (phase.kind === 'boot') return <div className="auth-wrap"><Bro size={84} alive /></div>;
   if (phase.kind === 'setup') return <Setup onDone={open} />;
   if (phase.kind === 'locked') return <Unlock onDone={open} />;
   return (
@@ -91,7 +92,7 @@ function Shell() {
   const [p0, p1] = route.path;
 
   let page: React.ReactNode;
-  if (!ready) page = <div className="center" style={{ padding: '30vh 0' }}><span className="spinner" /><p className="muted small" style={{ marginTop: 12 }}>Loading your data…</p></div>;
+  if (!ready) page = <div className="loading" style={{ padding: '28vh 0' }}><Bro size={84} alive /><p className="muted small">Loading your data…</p></div>;
   else if (p0 === 'log') page = <Log key={p1 ?? 'new'} route={route} />;
   else if (p0 === 'session' && p1) page = <SessionView id={p1} />;
   else if (p0 === 'progress') page = <Progress route={route} />;
@@ -111,7 +112,7 @@ function Shell() {
   const tab = p0 === 'progress' || p0 === 'lift' || p0 === 'session' ? 'progress' : p0 === 'guide' || p0 === 'guide-edit' ? 'guide' : p0 === 'routines' || p0 === 'routine-edit' ? 'routines' : p0 === 'awards' || p0 === 'hero' ? 'awards' : p0 === 'log' ? 'log' : 'home';
   const focus = p0 === 'log' || p0 === 'import' || (p0 === 'routines' && !!p1); // full-screen flows (and the gym guide) hide the tab bar
   const tabs: { id: string; href: string; ico: IconName; label: string }[] = [
-    { id: 'home', href: '#/', ico: 'home', label: 'Today' },
+    { id: 'home', href: '#/', ico: 'bro', label: 'Today' },
     { id: 'routines', href: '#/routines', ico: 'list', label: 'Routines' },
     { id: 'progress', href: '#/progress', ico: 'chart', label: 'Progress' },
     { id: 'guide', href: '#/guide', ico: 'book', label: 'Guide' },
@@ -122,7 +123,7 @@ function Shell() {
     <div className={`app${focus ? ' focus' : ''}`}>
       <main className="main">{page}</main>
       <nav className="tabbar" aria-label="Main">
-        <a className="brand logo" href="#/">Gym<span>XP</span></a>
+        <a className="brand logo" href="#/"><Bro size={40} /><span>Bro</span></a>
         <div className="pill">
           {tabs.map((t) => (
             <a key={t.id} href={t.href} className={tab === t.id ? 'active' : ''} aria-current={tab === t.id ? 'page' : undefined}>

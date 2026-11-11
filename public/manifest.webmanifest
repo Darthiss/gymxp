@@ -1,7 +1,7 @@
 {
-  "name": "GymXP",
-  "short_name": "GymXP",
-  "description": "Level up at the gym.",
+  "name": "Bro",
+  "short_name": "Bro",
+  "description": "Your gym bro. Level up every workout.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

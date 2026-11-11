@@ -524,7 +524,7 @@
    "Climb the steps, grab the top handles (palms forward, a bit wider than shoulders), and kneel/stand on the pad.",
    "Pull yourself up until your chin is above the handles, driving your elbows down toward your ribs.",
    "Lower yourself slowly until your arms are straight. Repeat.",
-   "As you get stronger, LOWER the assistance weight. GymXP counts your effective load as bodyweight minus assistance."
+   "As you get stronger, LOWER the assistance weight. Bro counts your effective load as bodyweight minus assistance."
   ],
   "images": [
    "ex/Assisted_Pull-Up_Machine/0.jpg",
@@ -1091,7 +1091,7 @@
    "Grip the parallel dip handles and kneel/stand on the assist pad with arms straight.",
    "Lower yourself by bending your elbows until your upper arms are about parallel to the floor.",
    "Push back up until your arms are straight. Keep your torso fairly upright for triceps.",
-   "As you get stronger, LOWER the assistance weight. GymXP counts your effective load as bodyweight minus assistance."
+   "As you get stronger, LOWER the assistance weight. Bro counts your effective load as bodyweight minus assistance."
   ],
   "images": [
    "ex/Assisted_Dip_Machine/0.jpg",
@@ -1660,7 +1660,7 @@
    "Triceps"
   ],
   "secondaryMuscles": [],
-  "look": "Bent forward (often a knee and hand on a bench), upper arm parallel to the floor. Straighten your elbow to push the dumbbell back. Log one dumbbell; GymXP assumes you do both arms.",
+  "look": "Bent forward (often a knee and hand on a bench), upper arm parallel to the floor. Straighten your elbow to push the dumbbell back. Log one dumbbell; Bro assumes you do both arms.",
   "instructions": [
    "Start with a dumbbell in each hand and your palms facing your torso. Keep your back straight with a slight bend in the knees and bend forward at the waist. Your torso should be almost parallel to the floor. Make sure to keep your head up. Your upper arms should be close to your torso and parallel to the floor. Your forearms should be pointed towards the floor as you hold the weights. There should be a 90-degree angle formed between your forearm and upper arm. This is your starting position.",
    "Now, while keeping your upper arms stationary, exhale and use your triceps to lift the weights until the arm is fully extended. Focus on moving the forearm.",
@@ -1949,7 +1949,7 @@
    "Lats",
    "Shoulders"
   ],
-  "look": "One knee and one hand on a flat bench, back flat. Pull a dumbbell from the floor up to your hip with the other arm. Log one dumbbell; GymXP assumes you do both sides.",
+  "look": "One knee and one hand on a flat bench, back flat. Pull a dumbbell from the floor up to your hip with the other arm. Log one dumbbell; Bro assumes you do both sides.",
   "instructions": [
    "Choose a flat bench and place a dumbbell on each side of it.",
    "Place the right leg on top of the end of the bench, bend your torso forward from the waist until your upper body is parallel to the floor, and place your right hand on the other end of the bench for support.",
@@ -2852,7 +2852,7 @@
    "Each rung n: n pull-ups, 2n dips, 3n push-ups, 4n sit-ups, 5n squats.",
    "Climb rungs 1 → 10, then come back down 9 → 1 (19 rungs total, 1,500 reps).",
    "Scale it: use the assisted pull-up/dip machine, knee push-ups, or stop at the rung you can reach. Log how many rungs you completed.",
-   "In GymXP log ONE set: \"Rungs\" = rungs completed (max 19), \"Minutes\" = how long it took."
+   "In Bro, log ONE set: \"Rungs\" = rungs completed (max 19), \"Minutes\" = how long it took."
   ],
   "images": [
    "ex/Hero_Ladder/0.jpg",
@@ -2882,7 +2882,7 @@
    "Set a 20-minute timer.",
    "Each round: 5 pull-ups, 10 push-ups, 15 air squats. Repeat as many times as you can.",
    "Scale pull-ups with the assisted machine or inverted rows if needed (note it).",
-   "In GymXP log ONE set: \"Rounds\" = full rounds completed, \"Vest kg\" = weighted vest (0 if none)."
+   "In Bro, log ONE set: \"Rounds\" = full rounds completed, \"Vest kg\" = weighted vest (0 if none)."
   ],
   "images": [
    "ex/Hero_Cindy/0.jpg",
@@ -3026,7 +3026,7 @@
    "Step your feet back so you are on your toes, body straight from head to heels.",
    "Squeeze your glutes and brace your abs like someone is about to poke your belly. Don't let your hips sag or pike up.",
    "Breathe and hold. Stop when your form breaks, not when you feel like quitting.",
-   "In GymXP log each hold in seconds. Too easy at 60 s? Hold longer, or have someone put a plate on your upper back and log its kg."
+   "In Bro, log each hold in seconds. Too easy at 60 s? Hold longer, or have someone put a plate on your upper back and log its kg."
   ],
   "images": [
    "ex/Plank/0.jpg",
@@ -3055,7 +3055,7 @@
    "Lie on your side with your elbow right under your shoulder and your legs straight, feet stacked.",
    "Lift your hips off the floor until your body is straight from head to feet.",
    "Hold without letting your hips drop. Keep your head in line with your spine.",
-   "Switch sides and hold the same time. In GymXP log one set per side (or the time of one side), in seconds.",
+   "Switch sides and hold the same time. In Bro, log one set per side (or the time of one side), in seconds.",
    "Too hard? Bend your knees and rest on them instead of your feet."
   ],
   "images": [
@@ -3095,7 +3095,7 @@
    "Stand up by driving through your heels, with your chest up and shoulders back.",
    "Walk with short, quick steps. Keep your core tight and don't let the weights swing or pull you sideways. Breathe normally.",
    "Stop before your grip gives out, then set the weights down the way you picked them up: knees bent, back straight.",
-   "In GymXP log the weight of one dumbbell and how many seconds you walked. To progress, walk longer or go heavier."
+   "In Bro, log the weight of one dumbbell and how many seconds you walked. To progress, walk longer or go heavier."
   ],
   "images": [
    "ex/Farmers_Walk/0.jpg",

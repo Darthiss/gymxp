@@ -1,4 +1,4 @@
-# GymXP
+# Bro
 
 A gym habit tracker that works like a game. Log the machines, weights and reps you did, and the app rewards you for showing up, staying consistent and getting stronger. It runs on desktop and phone, and you can install it to your home screen.
 

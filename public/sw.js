@@ -1,6 +1,6 @@
-// GymXP service worker: makes the app shell + exercise photos work offline at the gym.
+// Bro service worker: makes the app shell + exercise photos work offline at the gym.
 // It never touches api.github.com (your data), only this site's own static files.
-const CACHE = 'gymxp-v1';
+const CACHE = 'bro-v3';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './manifest.webmanifest'])).then(() => self.skipWaiting()));
