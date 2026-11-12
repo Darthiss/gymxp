@@ -5,6 +5,7 @@ import type { AppData, Exercise, MuscleGroup, Profile, Session, SetEntry } from 
 import { FEATURES } from './features';
 import { weekKey, addDays, today, parseDate } from './util';
 import { holidayOn } from './holidays';
+import { ageOn, goalReached, hardHeartRate } from './body';
 import { capacityFrom, emptyCapacity, HERO_IDS, HERO_TARGETS, HERO_VOLUME_WEEKS, HERO_STAGES, heroMuscle, ladderWork, scoreHero, type Capacity, type HeroMuscle, type HeroResult } from './hero';
 import { ACH_BY_ID, ACHIEVEMENTS, ALLSTAR_TIERS, BURN_TIERS, EXPLORER_TIERS, GAIN_TIERS, MEDAL_TIERS, PERFECT_TIERS, PR_TIERS, SET_TIERS, STREAK_TIERS, STRENGTH, TIME_TIERS, VISIT_TIERS, VOLUME_TIERS, type AchievementDef, type Tier, type UnlockedAchievement } from './trophies';
 
@@ -15,7 +16,7 @@ export const RULES = {
   perfectGoalCap: 5, // goals above this pay like it: nothing should reward skipping rest days
   importedStarCap: 960, // level 31, Gold Lifter: imported history is a head start, not a shortcut
   challengeStars: 2,
-  surpriseStars: 1, // comeback, rain, cold, heat or feriado, once per gym day
+  surpriseStars: 1, // comeback, rain, cold or feriado, once per gym day
   seasonMedalStars: 3,
   startShields: 1,
   maxShields: 2,
@@ -128,7 +129,8 @@ export interface Beat {
   reps: number; // change in total reps (seconds for holds, best rounds or rungs for benchmarks)
 }
 
-/** More weight, or the same weight and more reps, compared with the last time. */
+/** More weight, or the same weight and more reps, compared with the last time. More weight only
+ *  counts with at least half of last time's reps, so one heavy single doesn't "beat" 3 sets of 10. */
 export function compareToLast(ex: Exercise | undefined, exerciseId: string, sets: SetEntry[], last: SetEntry[] | undefined): Beat {
   if (!last?.length) return { exerciseId, beat: true, first: true, kg: 0, reps: 0 };
   const kgs = sets.map((s) => s.kg), lastKgs = last.map((s) => s.kg);
@@ -138,9 +140,13 @@ export function compareToLast(ex: Exercise | undefined, exerciseId: string, sets
     return { exerciseId, beat: best > lastBest || faster > 0, first: false, kg: faster, reps: best - lastBest };
   }
   const kg = ex?.assisted ? Math.min(...lastKgs) - Math.min(...kgs) : Math.max(...kgs) - Math.max(...lastKgs);
-  const reps = sets.reduce((n, s) => n + s.reps, 0) - last.reduce((n, s) => n + s.reps, 0);
-  return { exerciseId, beat: kg > 0 || (kg === 0 && reps > 0), first: false, kg, reps };
+  const now = sets.reduce((n, s) => n + s.reps, 0), before = last.reduce((n, s) => n + s.reps, 0);
+  const reps = now - before;
+  return { exerciseId, beat: (kg > 0 && now >= repsToCount(before)) || (kg === 0 && reps > 0), first: false, kg, reps };
 }
+
+/** The reps a heavier day needs for the extra weight to count: half of last time's, rounded up. */
+export const repsToCount = (lastReps: number) => Math.ceil(lastReps / 2);
 
 /** ★3 needs at least half the day's exercises beaten, rounded up. */
 export const beatsNeeded = (exercises: number) => Math.ceil(exercises / 2);
@@ -369,9 +375,14 @@ export interface GameState {
   season: SeasonState; // the current one
 }
 
+/** Reps beyond this don't raise an estimated 1RM: the formula stops being reliable for long sets. */
+export const E1RM_MAX_REPS = 12;
+
+/** Estimated 1-rep max (Epley). One rep is the lift itself, and a set over 12 reps counts as 12, so a
+ *  light, long set can't out-rank a heavy one. */
 export function e1rm(kg: number, reps: number): number {
   if (reps <= 0 || kg <= 0) return 0;
-  return kg * (1 + Math.min(reps, 30) / 30);
+  return reps === 1 ? kg : kg * (1 + Math.min(reps, E1RM_MAX_REPS) / 30);
 }
 
 export function sortSessions(sessions: Session[]): Session[] {
@@ -506,7 +517,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
   };
   let lastVisit: string | undefined;
   const firstVisit = sessions[0]?.date;
-  const firstWeight = weights[0]?.kg;
+  const weighed: number[] = []; // weigh-ins so far, oldest first
 
   const unlock = (id: string, date: string, sink: StarItem[] | null, sessionId?: string) => {
     if (unlockedIds.has(id)) return 0;
@@ -572,6 +583,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     if (ev.kind === 'w') {
       const w = ev.w;
       weighInCount++;
+      weighed.push(w.kg);
       let stars = 0;
       enterWeek(weekKey(w.date));
       week.weighIns++;
@@ -579,10 +591,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
       stars += unlock('body-first', w.date, null);
       if (weighInCount >= 10) stars += unlock('body-10', w.date, null);
       const goalKg = data.profile.goalWeightKg;
-      if (goalKg && firstWeight !== undefined && firstWeight !== goalKg) {
-        const reached = firstWeight > goalKg ? w.kg <= goalKg : w.kg >= goalKg;
-        if (reached) stars += unlock('body-goal', w.date, null);
-      }
+      if (goalKg && goalReached(weighed, goalKg, data.profile.heightCm)) stars += unlock('body-goal', w.date, null);
       totalStars += stars;
       pushTimeline(w.date);
       continue;
@@ -795,7 +804,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
       if (holiday) { holidayDays++; holidayNames.add(holiday.replace(' (trasladado)', '')); }
       if (rain) rainDays++;
       const surprise = missedAWeek ? '🔄 Welcome back' : holiday ? `🧉 Feriado: ${holiday}` : rain ? '🌧️ Trained in the rain'
-        : temp !== undefined && temp <= 0 ? `❄️ Freezing (${temp} °C)` : temp !== undefined && temp <= 5 ? `🥶 Cold day (${temp} °C)` : temp !== undefined && temp >= 33 ? `🥵 Heatwave (${temp} °C)` : '';
+        : temp !== undefined && temp <= 0 ? `❄️ Freezing (${temp} °C)` : temp !== undefined && temp <= 5 ? `🥶 Cold day (${temp} °C)` : ''; // heat pays nothing: nobody should be paid to train in it
       if (surprise) {
         items.push({ label: surprise, stars: RULES.surpriseStars, kind: 'surprise' });
         stars += RULES.surpriseStars;
@@ -894,7 +903,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     if ((['Chest', 'Back', 'Shoulders', 'Arms', 'Legs'] as MuscleGroup[]).every((g) => groups.has(g))) A('hab-fullbody');
     if (s.exercises.filter((e) => e.sets.some((x) => x.reps > 0)).length >= 8) A('hab-variety');
     if (reps >= 500) A('hab-reps');
-    if ((s.watch?.avgHr ?? 0) >= 140 && minutes >= 45) A('hab-heart');
+    if ((s.watch?.avgHr ?? 0) >= hardHeartRate(ageOn(data.profile.birthYear, s.date)) && minutes >= 45) A('hab-heart');
     if (firstVisit && s.date >= addDays(firstVisit, 365)) A('hab-anniversary');
     if (firstVisit && s.date >= addDays(firstVisit, 1826)) A('hab-anniversary-5');
     if (firstVisit && s.date >= addDays(firstVisit, 3652)) A('hab-anniversary-10');

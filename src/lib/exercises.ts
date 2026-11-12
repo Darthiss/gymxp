@@ -1,5 +1,5 @@
 import raw from '../data/exercises.json';
-import type { Beat, PR } from './engine';
+import { repsToCount, type Beat, type PR } from './engine';
 import { FEATURES } from './features';
 import type { AppData, Exercise, SetEntry } from './types';
 
@@ -81,6 +81,7 @@ const trim = (n: number) => +n.toFixed(2);
 /** How an exercise compared with last time: "+5 kg", "+2 reps", "New baseline", "Same". */
 export function fmtBeat(ex: Exercise | undefined, b: Beat): string {
   if (b.first) return 'New baseline';
+  if (!b.beat && b.kg > 0 && !ex?.benchmark) return ex?.assisted ? 'Less assist, too few reps' : 'Heavier, too few reps'; // under half of last time's
   if (!b.beat) return b.kg === 0 && b.reps === 0 ? 'Same' : 'Next time';
   if (b.kg > 0) return ex?.benchmark === 'ladder' ? `${trim(b.kg)} min faster` : ex?.assisted ? `−${trim(b.kg)} kg assist` : `+${trim(b.kg)} kg`;
   const unit = ex?.benchmark === 'ladder' ? 'rungs' : ex?.benchmark === 'cindy' ? 'rounds' : ex?.hold ? 's' : b.reps === 1 ? 'rep' : 'reps';
@@ -97,13 +98,15 @@ export function fmtPr(p: PR): string {
 /** What you need to do to beat your last time on an exercise. */
 export function toBeatText(ex: Exercise | undefined, last: SetEntry[]): string {
   const kgs = last.map((s) => s.kg);
-  const total = last.reduce((n, s) => n + s.reps, 0) + 1;
+  const before = last.reduce((n, s) => n + s.reps, 0);
+  const total = before + 1;
+  const half = repsToCount(before); // more weight counts with at least half of last time's reps
   if (ex?.benchmark) return `Beat ${Math.max(...last.map((s) => s.reps))} ${ex.benchmark === 'ladder' ? 'rungs' : 'rounds'}`;
-  if (ex?.assisted) return `To beat: ${Math.min(...kgs)} kg assist for ${total}+ reps, or less assist`;
+  if (ex?.assisted) return `To beat: ${Math.min(...kgs)} kg assist for ${total}+ reps, or less assist for ${half}+`;
   const top = Math.max(...kgs);
-  if (ex?.hold) return top ? `To beat: ${top} kg for ${total}+ s in total, or add weight` : `To beat: ${total}+ s in total, or add weight`;
-  if (ex?.bwFactor && !top) return `To beat: ${total}+ reps in total, or add weight`;
-  return `To beat: ${top} kg for ${total}+ reps, or go heavier`;
+  if (ex?.hold) return top ? `To beat: ${top} kg for ${total}+ s in total, or more weight for ${half}+ s` : `To beat: ${total}+ s in total, or add weight for ${half}+ s`;
+  if (ex?.bwFactor && !top) return `To beat: ${total}+ reps in total, or add weight for ${half}+`;
+  return `To beat: ${top} kg for ${total}+ reps, or go heavier for ${half}+`;
 }
 
 export function imgUrl(rel: string): string {

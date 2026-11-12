@@ -13,7 +13,7 @@
    "Chest"
   ],
   "secondaryMuscles": [
-   "Shoulders",
+   "Front Delts",
    "Triceps"
   ],
   "look": "You sit upright with your back on a pad and push two handles forward from chest height. The weight comes from a stack of plates you select with a pin.",
@@ -46,7 +46,7 @@
    "Chest"
   ],
   "secondaryMuscles": [
-   "Shoulders",
+   "Front Delts",
    "Triceps"
   ],
   "look": "Same motion as the chest press, but the machine has big lever arms with \"horns\" where you slide weight plates on, instead of a pin stack.",
@@ -75,7 +75,7 @@
    "Chest"
   ],
   "secondaryMuscles": [
-   "Shoulders",
+   "Front Delts",
    "Triceps"
   ],
   "look": "The seat is reclined and the handles travel up and forward at an angle, toward the ceiling in front of you. Targets the upper chest.",
@@ -104,7 +104,9 @@
   "primaryMuscles": [
    "Chest"
   ],
-  "secondaryMuscles": [],
+  "secondaryMuscles": [
+   "Front Delts"
+  ],
   "look": "Seated with your back on the pad, arms out to the sides holding handles (or forearms on pads). You bring them together in front of your chest like a hug. Usually the same machine as the Reverse Pec Deck.",
   "instructions": [
    "Sit on the machine with your back flat on the pad.",
@@ -134,7 +136,7 @@
    "Chest"
   ],
   "secondaryMuscles": [
-   "Shoulders"
+   "Front Delts"
   ],
   "look": "A big frame with two adjustable cable pulleys, one on each side (a \"cable crossover station\"). Pulleys set high; you stand in the middle and pull both handles down and together in front of you.",
   "instructions": [
@@ -163,7 +165,7 @@
    "Chest"
   ],
   "secondaryMuscles": [
-   "Shoulders"
+   "Front Delts"
   ],
   "look": "Same two-pulley cable station, but the pulleys are at the bottom. You sweep the handles up and together to chest height.",
   "instructions": [
@@ -191,7 +193,7 @@
    "Chest"
   ],
   "secondaryMuscles": [
-   "Shoulders",
+   "Front Delts",
    "Triceps"
   ],
   "look": "A barbell locked inside two vertical rails (the \"Smith machine\") so it only moves straight up and down. You lie on a flat bench under it and twist the bar to unhook it.",
@@ -221,7 +223,7 @@
    "Chest"
   ],
   "secondaryMuscles": [
-   "Shoulders",
+   "Front Delts",
    "Triceps"
   ],
   "look": "Smith machine (bar on rails) with an incline bench under it, so you press toward your upper chest.",
@@ -255,7 +257,7 @@
   "secondaryMuscles": [
    "Biceps",
    "Middle Back",
-   "Shoulders"
+   "Rear Delts"
   ],
   "look": "You sit with your thighs locked under padded rollers and pull a long bar from above your head down to your upper chest. The cable comes from a pulley high above you.",
   "instructions": [
@@ -286,7 +288,7 @@
   "secondaryMuscles": [
    "Biceps",
    "Middle Back",
-   "Shoulders"
+   "Rear Delts"
   ],
   "look": "Same lat pulldown machine, but your hands are close together on the bar (about shoulder-width or narrower).",
   "instructions": [
@@ -318,7 +320,7 @@
   "secondaryMuscles": [
    "Biceps",
    "Middle Back",
-   "Shoulders"
+   "Rear Delts"
   ],
   "look": "Lat pulldown machine with a small V-shaped double handle attached instead of the long bar. Palms face each other.",
   "instructions": [
@@ -351,7 +353,7 @@
   "secondaryMuscles": [
    "Biceps",
    "Middle Back",
-   "Shoulders"
+   "Rear Delts"
   ],
   "look": "Lat pulldown machine, holding the bar with palms facing you (underhand).",
   "instructions": [
@@ -383,9 +385,9 @@
    "Middle Back"
   ],
   "secondaryMuscles": [
-   "Biceps",
    "Lats",
-   "Shoulders"
+   "Biceps",
+   "Rear Delts"
   ],
   "look": "A long low bench with a footplate at the end. You sit, put your feet on the plate, and pull a handle (often a V-handle) from a low pulley toward your belly.",
   "instructions": [
@@ -413,11 +415,12 @@
   "group": "Back",
   "equipment": "Plate-loaded",
   "primaryMuscles": [
-   "Lats"
+   "Middle Back"
   ],
   "secondaryMuscles": [
+   "Lats",
    "Biceps",
-   "Middle Back"
+   "Rear Delts"
   ],
   "look": "You sit facing a chest pad and pull two handles toward you, elbows going back. Your chest stays on the pad the whole time. Can be plate-loaded (photos) or a pin stack.",
   "instructions": [
@@ -441,10 +444,12 @@
   "group": "Back",
   "equipment": "Plate-loaded",
   "primaryMuscles": [
-   "Middle Back"
+   "Lats"
   ],
   "secondaryMuscles": [
-   "Lats"
+   "Middle Back",
+   "Biceps",
+   "Rear Delts"
   ],
   "look": "Seated with thighs under a pad. Handles start high and in front of you and you pull them down and back toward your chest, a mix between a pulldown and a row.",
   "instructions": [
@@ -472,8 +477,9 @@
    "Middle Back"
   ],
   "secondaryMuscles": [
+   "Lats",
    "Biceps",
-   "Lats"
+   "Rear Delts"
   ],
   "look": "You stand on a foot platform and lean your chest on an angled pad, then lift a lever arm with handles up toward your chest.",
   "instructions": [
@@ -594,9 +600,10 @@
   "group": "Shoulders",
   "equipment": "Machine",
   "primaryMuscles": [
-   "Shoulders"
+   "Front Delts"
   ],
   "secondaryMuscles": [
+   "Side Delts",
    "Triceps"
   ],
   "look": "Seated upright with back support and handles at shoulder height that you press straight up overhead.",
@@ -623,9 +630,10 @@
   "group": "Shoulders",
   "equipment": "Plate-loaded",
   "primaryMuscles": [
-   "Shoulders"
+   "Front Delts"
   ],
   "secondaryMuscles": [
+   "Side Delts",
    "Triceps"
   ],
   "look": "Shoulder press with lever arms and horns for weight plates instead of a pin stack.",
@@ -652,9 +660,11 @@
   "group": "Shoulders",
   "equipment": "Machine",
   "primaryMuscles": [
-   "Shoulders"
+   "Rear Delts"
   ],
-  "secondaryMuscles": [],
+  "secondaryMuscles": [
+   "Middle Back"
+  ],
   "look": "Usually the same machine as the Pec Deck, but you sit FACING the pad (chest against it) and push the handles back and out to your sides.",
   "instructions": [
    "Adjust the handles so that they are fully to the rear. Make an appropriate weight selection and adjust the seat height so the handles are at shoulder level. Grasp the handles with your hands facing inwards. This will be your starting position.",
@@ -678,11 +688,9 @@
   "group": "Shoulders",
   "equipment": "Cable",
   "primaryMuscles": [
-   "Shoulders"
+   "Side Delts"
   ],
-  "secondaryMuscles": [
-   "Forearms"
-  ],
+  "secondaryMuscles": [],
   "look": "Standing sideways next to a low cable pulley, you raise one arm out to the side up to shoulder height.",
   "instructions": [
    "Start by standing to the right side of a low pulley row. Use your left hand to come across the body and grab a single handle attached to the low pulley with a pronated grip (palms facing down). Rest your arm in front of you. Your right hand should grab the machine for better support and balance.",
@@ -707,10 +715,11 @@
   "group": "Shoulders",
   "equipment": "Cable",
   "primaryMuscles": [
-   "Shoulders"
+   "Rear Delts"
   ],
   "secondaryMuscles": [
-   "Middle Back"
+   "Middle Back",
+   "Traps"
   ],
   "look": "A rope attached to a cable pulley at about face height. You pull the rope toward your forehead, hands splitting apart, elbows high.",
   "instructions": [
@@ -731,7 +740,7 @@
   "group": "Shoulders",
   "equipment": "Cable",
   "primaryMuscles": [
-   "Shoulders"
+   "Front Delts"
   ],
   "secondaryMuscles": [],
   "look": "Facing away from a low pulley, you raise the handle straight in front of you to shoulder height.",
@@ -756,15 +765,15 @@
   "group": "Shoulders",
   "equipment": "Cable",
   "primaryMuscles": [
-   "Traps"
+   "Side Delts"
   ],
   "secondaryMuscles": [
-   "Shoulders"
+   "Traps"
   ],
   "look": "Facing a low pulley with a short bar, you pull the bar straight up along your body to chest height, elbows leading.",
   "instructions": [
    "Grasp a straight bar cable attachment that is attached to a low pulley with a pronated (palms facing your thighs) grip that is slightly less than shoulder width. The bar should be resting on top of your thighs. Your arms should be extended with a slight bend at the elbows and your back should be straight. This will be your starting position.",
-   "Use your side shoulders to lift the cable bar as you exhale. The bar should be close to the body as you move it up. Continue to lift it until it nearly touches your chin. Tip: Your elbows should drive the motion. As you lift the bar, your elbows should always be higher than your forearms. Also, keep your torso stationary and pause for a second at the top of the movement.",
+   "Use your side shoulders to lift the cable bar as you exhale. The bar should be close to the body as you move it up. Stop when your upper arms are level with your shoulders: pulling higher can irritate the shoulder joint. Tip: Your elbows should drive the motion. As you lift the bar, your elbows should always be higher than your forearms. Also, keep your torso stationary and pause for a second at the top of the movement.",
    "Lower the bar back down slowly to the starting position. Inhale as you perform this portion of the movement.",
    "Repeat for the recommended amount of repetitions."
   ],
@@ -783,9 +792,10 @@
   "group": "Shoulders",
   "equipment": "Smith machine",
   "primaryMuscles": [
-   "Shoulders"
+   "Front Delts"
   ],
   "secondaryMuscles": [
+   "Side Delts",
    "Triceps"
   ],
   "look": "Smith machine (bar on rails) with an upright bench under it; you press the bar overhead.",
@@ -919,7 +929,9 @@
   "primaryMuscles": [
    "Biceps"
   ],
-  "secondaryMuscles": [],
+  "secondaryMuscles": [
+   "Forearms"
+  ],
   "look": "Low pulley with a rope attached; palms face each other while you curl the rope up.",
   "instructions": [
    "Attach a rope attachment to a low pulley and stand facing the machine about 12 inches away from it.",
@@ -1078,7 +1090,7 @@
   ],
   "secondaryMuscles": [
    "Chest",
-   "Shoulders"
+   "Front Delts"
   ],
   "look": "Seated, hands on handles beside your hips. You push the handles down until your arms are straight.",
   "instructions": [
@@ -1108,7 +1120,7 @@
   ],
   "secondaryMuscles": [
    "Chest",
-   "Shoulders"
+   "Front Delts"
   ],
   "look": "Same machine as the Assisted Pull-Up (Gravitron), using the lower parallel handles. The weight you select HELPS you, so more weight = easier. (Photos show a regular dip; same movement.)",
   "instructions": [
@@ -1139,13 +1151,12 @@
    "Quadriceps"
   ],
   "secondaryMuscles": [
-   "Calves",
    "Glutes",
-   "Hamstrings"
+   "Adductors"
   ],
   "look": "You sit reclined with your feet on a big platform and push it away with your legs. Safety handles at your sides lock/unlock the sled.",
   "instructions": [
-   "Using a leg press machine, sit down on the machine and place your legs on the platform directly in front of you at a medium (shoulder width) foot stance. (Note: For the purposes of this discussion we will use the medium stance described above which targets overall development; however you can choose any of the three stances described in the foot positioning section).",
+   "Using a leg press machine, sit down on the machine and place your legs on the platform directly in front of you at a medium (shoulder width) foot stance.",
    "Lower the safety bars holding the weighted platform in place and press the platform all the way up until your legs are fully extended in front of you. Tip: Make sure that you do not lock your knees. Your torso and the legs should make a perfect 90-degree angle. This will be your starting position.",
    "As you inhale, slowly lower the platform until your upper and lower legs make a 90-degree angle.",
    "Pushing mainly with the heels of your feet and using the quadriceps go back to the starting position as you exhale.",
@@ -1170,17 +1181,16 @@
    "Quadriceps"
   ],
   "secondaryMuscles": [
-   "Calves",
    "Glutes",
-   "Hamstrings"
+   "Adductors"
   ],
   "look": "You stand on an angled foot platform with your back against a pad and shoulders under pads, then squat down and up along rails.",
   "instructions": [
    "Place the back of your torso against the back pad of the machine and hook your shoulders under the shoulder pads provided.",
    "Position your legs in the platform using a shoulder width medium stance with the toes slightly pointed out. Tip: Keep your head up at all times and also maintain the back on the pad at all times.",
    "Place your arms on the side handles of the machine and disengage the safety bars (which on most designs is done by moving the side handles from a facing front position to a diagonal position).",
-   "Now straighten your legs without locking the knees. This will be your starting position. (Note: For the purposes of this discussion we will use the medium stance described above which targets overall development; however you can choose any of the three stances described in the foot positioning section).",
-   "Begin to slowly lower the unit by bending the knees as you maintain a straight posture with the head up (back on the pad at all times). Continue down until the angle between the upper leg and the calves becomes slightly less than 90-degrees (which is the point in which the upper legs are below parallel to the floor). Inhale as you perform this portion of the movement. Tip: If you performed the exercise correctly, the front of the knees should make an imaginary straight line with the toes that is perpendicular to the front. If your knees are past that imaginary line (if they are past your toes) then you are placing undue stress on the knee and the exercise has been performed incorrectly.",
+   "Now straighten your legs without locking the knees. This will be your starting position.",
+   "Begin to slowly lower the unit by bending the knees as you maintain a straight posture with the head up (back on the pad at all times). Continue down until the angle between the upper leg and the calves becomes slightly less than 90-degrees (which is the point in which the upper legs are below parallel to the floor). Inhale as you perform this portion of the movement. Tip: Your knees can travel forward past your toes; keep them in line with your feet and your heels down.",
    "Begin to raise the unit as you exhale by pushing the floor with mainly with the heel of your foot as you straighten the legs again and go back to the starting position.",
    "Repeat for the recommended amount of repetitions."
   ],
@@ -1258,7 +1268,7 @@
   "look": "Lying face down on a bench with your ankles under a padded roller. You curl your heels toward your butt.",
   "instructions": [
    "Adjust the machine lever to fit your height and lie face down on the leg curl machine with the pad of the lever on the back of your legs (just a few inches under the calves). Tip: Preferably use a leg curl machine that is angled as opposed to flat since an angled position is more favorable for hamstrings recruitment.",
-   "Keeping the torso flat on the bench, ensure your legs are fully stretched and grab the side handles of the machine. Position your toes straight (or you can also use any of the other two stances described on the foot positioning section). This will be your starting position.",
+   "Keeping the torso flat on the bench, ensure your legs are fully stretched and grab the side handles of the machine. Position your toes straight. This will be your starting position.",
    "As you exhale, curl your legs up as far as possible without lifting the upper legs from the pad. Once you hit the fully contracted position, hold it for a second.",
    "As you inhale, bring the legs back to the initial position. Repeat for the recommended amount of repetitions."
   ],
@@ -1333,10 +1343,7 @@
   "primaryMuscles": [
    "Adductors"
   ],
-  "secondaryMuscles": [
-   "Glutes",
-   "Hamstrings"
-  ],
+  "secondaryMuscles": [],
   "look": "Seated with pads on the INSIDE of your knees. You squeeze your legs together. Often the same machine as abduction with the pads flipped.",
   "instructions": [
    "To begin, sit down on the adductor machine and select a weight you are comfortable with. When your legs are positioned properly on the leg pads of the machine, grip the handles on each side. Your entire upper body (from the waist up) should be stationary. This is the starting position.",
@@ -1361,17 +1368,15 @@
    "Quadriceps"
   ],
   "secondaryMuscles": [
-   "Calves",
    "Glutes",
-   "Hamstrings",
-   "Lower Back"
+   "Adductors"
   ],
   "look": "Bar on rails (Smith machine) resting on your upper back; you squat down and stand back up.",
   "instructions": [
    "To begin, first set the bar on the height that best matches your height. Once the correct height is chosen and the bar is loaded, step under the bar and place the back of your shoulders (slightly below the neck) across it.",
    "Hold on to the bar using both arms at each side (palms facing forward), unlock it and lift it off the rack by first pushing with your legs and at the same time straightening your torso.",
-   "Position your legs using a shoulder width medium stance with the toes slightly pointed out. Keep your head up at all times and also maintain a straight back. This will be your starting position. (Note: For the purposes of this discussion we will use the medium stance which targets overall development; however you can choose any of the three stances discussed in the foot stances section).",
-   "Begin to slowly lower the bar by bending the knees as you maintain a straight posture with the head up. Continue down until the angle between the upper leg and the calves becomes slightly less than 90-degrees (which is the point in which the upper legs are below parallel to the floor). Inhale as you perform this portion of the movement. Tip: If you performed the exercise correctly, the front of the knees should make an imaginary straight line with the toes that is perpendicular to the front. If your knees are past that imaginary line (if they are past your toes) then you are placing undue stress on the knee and the exercise has been performed incorrectly.",
+   "Position your legs using a shoulder width medium stance with the toes slightly pointed out. Keep your head up at all times and also maintain a straight back. This will be your starting position.",
+   "Begin to slowly lower the bar by bending the knees as you maintain a straight posture with the head up. Continue down until the angle between the upper leg and the calves becomes slightly less than 90-degrees (which is the point in which the upper legs are below parallel to the floor). Inhale as you perform this portion of the movement. Tip: Your knees can travel forward past your toes; keep them in line with your feet and your heels down.",
    "Begin to raise the bar as you exhale by pushing the floor with the heel of your foot as you straighten the legs again and go back to the starting position.",
    "Repeat for the recommended amount of repetitions."
   ],
@@ -1555,7 +1560,9 @@
   "primaryMuscles": [
    "Biceps"
   ],
-  "secondaryMuscles": [],
+  "secondaryMuscles": [
+   "Forearms"
+  ],
   "look": "Like the dumbbell curl, but your palms face each other the whole time (holding the dumbbells like hammers).",
   "instructions": [
    "Stand up with your torso upright and a dumbbell on each hand being held at arms length. The elbows should be close to the torso.",
@@ -1660,10 +1667,7 @@
   "primaryMuscles": [
    "Triceps"
   ],
-  "secondaryMuscles": [
-   "Chest",
-   "Shoulders"
-  ],
+  "secondaryMuscles": [],
   "look": "Lying on a flat bench with a dumbbell in each hand, arms straight up. Bend only the elbows to lower the dumbbells beside your head, then straighten your arms.",
   "instructions": [
    "Lie on a flat bench while holding two dumbbells directly in front of you. Your arms should be fully extended at a 90-degree angle from your torso and the floor. The palms should be facing in and the elbows should be tucked in. This is the starting position.",
@@ -1715,7 +1719,7 @@
   "group": "Shoulders",
   "equipment": "Dumbbell",
   "primaryMuscles": [
-   "Shoulders"
+   "Side Delts"
   ],
   "secondaryMuscles": [],
   "look": "Standing with a dumbbell in each hand at your sides. Raise both arms out to the sides up to shoulder height (like wings), slight bend in the elbows, then lower slowly.",
@@ -1740,7 +1744,7 @@
   "group": "Shoulders",
   "equipment": "Dumbbell",
   "primaryMuscles": [
-   "Shoulders"
+   "Front Delts"
   ],
   "secondaryMuscles": [],
   "look": "Standing with dumbbells in front of your thighs. Raise them straight in front of you to shoulder height.",
@@ -1767,9 +1771,10 @@
   "group": "Shoulders",
   "equipment": "Dumbbell",
   "primaryMuscles": [
-   "Shoulders"
+   "Front Delts"
   ],
   "secondaryMuscles": [
+   "Side Delts",
    "Triceps"
   ],
   "look": "Sitting on an upright bench, dumbbells at shoulder height, palms forward. Press them up overhead until your arms are straight.",
@@ -1799,9 +1804,11 @@
   "group": "Shoulders",
   "equipment": "Dumbbell",
   "primaryMuscles": [
-   "Shoulders"
+   "Rear Delts"
   ],
-  "secondaryMuscles": [],
+  "secondaryMuscles": [
+   "Middle Back"
+  ],
   "look": "Bent forward at the hips with a dumbbell in each hand hanging down. Raise both arms out to the sides, squeezing your shoulder blades.",
   "instructions": [
    "To begin, lie down on an incline bench with the chest and stomach pressing against the incline. Have the dumbbells in each hand with the palms facing each other (neutral grip).",
@@ -1829,7 +1836,9 @@
   "primaryMuscles": [
    "Traps"
   ],
-  "secondaryMuscles": [],
+  "secondaryMuscles": [
+   "Forearms"
+  ],
   "look": "Standing with heavy dumbbells at your sides; lift your shoulders straight up toward your ears and lower.",
   "instructions": [
    "Stand erect with a dumbbell on each hand (palms facing your torso), arms extended on the sides.",
@@ -1857,7 +1866,7 @@
    "Chest"
   ],
   "secondaryMuscles": [
-   "Shoulders",
+   "Front Delts",
    "Triceps"
   ],
   "look": "Lying back on an INCLINED bench (~30-45°) with a dumbbell in each hand at chest level. Press them up until your arms are straight above your upper chest.",
@@ -1890,7 +1899,7 @@
    "Chest"
   ],
   "secondaryMuscles": [
-   "Shoulders"
+   "Front Delts"
   ],
   "look": "Lying on an incline bench, dumbbells above your chest, palms facing each other. Open your arms wide in an arc (slightly bent elbows), then bring them back together like a hug.",
   "instructions": [
@@ -1921,7 +1930,7 @@
    "Chest"
   ],
   "secondaryMuscles": [
-   "Shoulders",
+   "Front Delts",
    "Triceps"
   ],
   "look": "Lying on a FLAT bench with a dumbbell in each hand at chest level. Press them up until your arms are straight.",
@@ -1951,7 +1960,9 @@
   "primaryMuscles": [
    "Chest"
   ],
-  "secondaryMuscles": [],
+  "secondaryMuscles": [
+   "Front Delts"
+  ],
   "look": "Lying on a flat bench, dumbbells above your chest. Open your arms wide in an arc, then bring them back together.",
   "instructions": [
    "Lie down on a flat bench with a dumbbell on each hand resting on top of your thighs. The palms of your hand will be facing each other.",
@@ -1981,9 +1992,9 @@
    "Middle Back"
   ],
   "secondaryMuscles": [
-   "Biceps",
    "Lats",
-   "Shoulders"
+   "Biceps",
+   "Rear Delts"
   ],
   "look": "One knee and one hand on a flat bench, back flat. Pull a dumbbell from the floor up to your hip with the other arm. Log one dumbbell; Bro assumes you do both sides.",
   "instructions": [
@@ -2012,12 +2023,11 @@
   "group": "Legs",
   "equipment": "Dumbbell",
   "primaryMuscles": [
-   "Quadriceps"
+   "Quadriceps",
+   "Glutes"
   ],
   "secondaryMuscles": [
-   "Calves",
-   "Glutes",
-   "Hamstrings"
+   "Adductors"
   ],
   "look": "Standing with a dumbbell in each hand at your sides. Step forward and lower until both knees are bent ~90°, then push back up.",
   "instructions": [
@@ -2044,10 +2054,10 @@
   "group": "Legs",
   "equipment": "Dumbbell",
   "primaryMuscles": [
-   "Hamstrings"
+   "Hamstrings",
+   "Glutes"
   ],
   "secondaryMuscles": [
-   "Glutes",
    "Lower Back"
   ],
   "look": "Standing with dumbbells in front of your thighs. Push your hips back and lower the dumbbells along your legs with a flat back, then stand up squeezing your glutes.",
@@ -2080,7 +2090,7 @@
    "Chest"
   ],
   "secondaryMuscles": [
-   "Shoulders",
+   "Front Delts",
    "Triceps"
   ],
   "look": "A flat bench with a rack holding a long Olympic bar (20 kg) at the head end. You lie under the bar, unrack it, lower it to your mid-chest and press it back up. Like the Smith machine press but the bar is free, so you balance it yourself. Use a spotter or the safety arms when going heavy.",
@@ -2112,7 +2122,7 @@
    "Chest"
   ],
   "secondaryMuscles": [
-   "Shoulders",
+   "Front Delts",
    "Triceps"
   ],
   "look": "Same as the bench press but on a bench tilted up (~30-45°) with its own rack; you lower the bar to your upper chest.",
@@ -2143,7 +2153,7 @@
    "Chest"
   ],
   "secondaryMuscles": [
-   "Shoulders",
+   "Front Delts",
    "Triceps"
   ],
   "look": "Bench tilted head-down with your legs hooked under pads; you press the bar from your lower chest.",
@@ -2176,7 +2186,7 @@
   ],
   "secondaryMuscles": [
    "Chest",
-   "Shoulders"
+   "Front Delts"
   ],
   "look": "Bench press with your hands about shoulder-width apart (closer than normal), elbows tucked. Works the triceps more.",
   "instructions": [
@@ -2207,17 +2217,16 @@
    "Quadriceps"
   ],
   "secondaryMuscles": [
-   "Calves",
    "Glutes",
-   "Hamstrings",
+   "Adductors",
    "Lower Back"
   ],
   "look": "In a squat rack: the bar rests on your upper back. Unrack it, step back, squat down until your thighs are about parallel to the floor, then stand up. Set the safety bars just below your bottom position.",
   "instructions": [
    "This exercise is best performed inside a squat rack for safety purposes. To begin, first set the bar on a rack to just below shoulder level. Once the correct height is chosen and the bar is loaded, step under the bar and place the back of your shoulders (slightly below the neck) across it.",
    "Hold on to the bar using both arms at each side and lift it off the rack by first pushing with your legs and at the same time straightening your torso.",
-   "Step away from the rack and position your legs using a shoulder width medium stance with the toes slightly pointed out. Keep your head up at all times and also maintain a straight back. This will be your starting position. (Note: For the purposes of this discussion we will use the medium stance described above which targets overall development; however you can choose any of the three stances discussed in the foot stances section).",
-   "Begin to slowly lower the bar by bending the knees and hips as you maintain a straight posture with the head up. Continue down until the angle between the upper leg and the calves becomes slightly less than 90-degrees. Inhale as you perform this portion of the movement. Tip: If you performed the exercise correctly, the front of the knees should make an imaginary straight line with the toes that is perpendicular to the front. If your knees are past that imaginary line (if they are past your toes) then you are placing undue stress on the knee and the exercise has been performed incorrectly.",
+   "Step away from the rack and position your legs using a shoulder width medium stance with the toes slightly pointed out. Keep your head up at all times and also maintain a straight back. This will be your starting position.",
+   "Begin to slowly lower the bar by bending the knees and hips as you maintain a straight posture with the head up. Continue down until the angle between the upper leg and the calves becomes slightly less than 90-degrees. Inhale as you perform this portion of the movement. Tip: Your knees can travel forward past your toes; keep them in line with your feet and your heels down.",
    "Begin to raise the bar as you exhale by pushing the floor with the heel of your foot as you straighten the legs again and go back to the starting position.",
    "Repeat for the recommended amount of repetitions."
   ],
@@ -2238,17 +2247,14 @@
   "group": "Back",
   "equipment": "Barbell",
   "primaryMuscles": [
+   "Glutes",
+   "Hamstrings",
    "Lower Back"
   ],
   "secondaryMuscles": [
-   "Calves",
-   "Forearms",
-   "Glutes",
-   "Hamstrings",
-   "Lats",
-   "Middle Back",
    "Quadriceps",
-   "Traps"
+   "Traps",
+   "Forearms"
   ],
   "look": "The loaded bar sits on the floor. Feet under the bar, grip just outside your legs, flat back. Stand up by pushing through your legs until you are upright, then lower it back down under control.",
   "instructions": [
@@ -2276,19 +2282,18 @@
   "group": "Legs",
   "equipment": "Barbell",
   "primaryMuscles": [
-   "Hamstrings"
+   "Hamstrings",
+   "Glutes"
   ],
   "secondaryMuscles": [
-   "Calves",
-   "Glutes",
    "Lower Back"
   ],
   "look": "Start standing holding the bar. Push your hips back and slide the bar down your thighs to below the knees with a flat back and soft knees, then stand back up. Works the hamstrings and glutes.",
   "instructions": [
-   "Put a barbell in front of you on the ground and grab it using a pronated (palms facing down) grip that a little wider than shoulder width. Tip: Depending on the weight used, you may need wrist wraps to perform the exercise and also a raised platform in order to allow for better range of motion.",
+   "Put a barbell in front of you on the ground and grab it using a pronated (palms facing down) grip that a little wider than shoulder width. Tip: Depending on the weight used, you may want lifting straps for grip and also a raised platform in order to allow for better range of motion.",
    "Bend the knees slightly and keep the shins vertical, hips back and back straight. This will be your starting position.",
    "Keeping your back and arms completely straight at all times, use your hips to lift the bar as you exhale. Tip: The movement should not be fast but steady and under control.",
-   "Once you are standing completely straight up, lower the bar by pushing the hips back, only slightly bending the knees, unlike when squatting. Tip: Take a deep breath at the start of the movement and keep your chest up. Hold your breath as you lower and exhale as you complete the movement.",
+   "Once you are standing completely straight up, lower the bar by pushing the hips back, only slightly bending the knees, unlike when squatting. Tip: Take a breath and brace your core before each rep, keep your chest up, and breathe out as you stand back up.",
    "Repeat for the recommended amount of repetitions."
   ],
   "images": [
@@ -2307,12 +2312,11 @@
   "group": "Legs",
   "equipment": "Barbell",
   "primaryMuscles": [
-   "Quadriceps"
+   "Quadriceps",
+   "Glutes"
   ],
   "secondaryMuscles": [
-   "Calves",
-   "Glutes",
-   "Hamstrings"
+   "Adductors"
   ],
   "look": "Bar on your upper back like a squat; step forward and lower until both knees are bent ~90°, then push back.",
   "instructions": [
@@ -2342,7 +2346,6 @@
    "Glutes"
   ],
   "secondaryMuscles": [
-   "Calves",
    "Hamstrings"
   ],
   "look": "Upper back against the side of a flat bench, a padded bar across your hips. Drive your hips up until your body is flat from knees to shoulders, squeeze your glutes, lower.",
@@ -2370,7 +2373,6 @@
    "Glutes"
   ],
   "secondaryMuscles": [
-   "Calves",
    "Hamstrings"
   ],
   "look": "Like the hip thrust but lying flat on the floor with the bar across your hips; lift your hips up.",
@@ -2398,9 +2400,10 @@
   "group": "Shoulders",
   "equipment": "Barbell",
   "primaryMuscles": [
-   "Shoulders"
+   "Front Delts"
   ],
   "secondaryMuscles": [
+   "Side Delts",
    "Triceps"
   ],
   "look": "Standing, the bar at your upper chest/collarbones (taken from a rack). Press it straight up overhead until your arms lock, then lower it back.",
@@ -2428,7 +2431,7 @@
   "group": "Shoulders",
   "equipment": "Barbell",
   "primaryMuscles": [
-   "Shoulders"
+   "Side Delts"
   ],
   "secondaryMuscles": [
    "Traps"
@@ -2436,7 +2439,7 @@
   "look": "Standing, bar in front of your thighs with a narrow grip; pull it straight up to chest height, elbows leading.",
   "instructions": [
    "Grasp a barbell with an overhand grip that is slightly less than shoulder width. The bar should be resting on the top of your thighs with your arms extended and a slight bend in your elbows. Your back should also be straight. This will be your starting position.",
-   "Now exhale and use the sides of your shoulders to lift the bar, raising your elbows up and to the side. Keep the bar close to your body as you raise it. Continue to lift the bar until it nearly touches your chin. Tip: Your elbows should drive the motion, and should always be higher than your forearms. Remember to keep your torso stationary and pause for a second at the top of the movement.",
+   "Now exhale and use the sides of your shoulders to lift the bar, raising your elbows up and to the side. Keep the bar close to your body as you raise it. Stop when your upper arms are level with your shoulders: pulling higher can irritate the shoulder joint. Tip: Your elbows should drive the motion, and should always be higher than your forearms. Remember to keep your torso stationary and pause for a second at the top of the movement.",
    "Lower the bar back down slowly to the starting position. Inhale as you perform this portion of the movement.",
    "Repeat for the recommended amount of repetitions."
   ],
@@ -2460,7 +2463,7 @@
   "secondaryMuscles": [],
   "look": "Standing holding the bar in front of your thighs; lift your shoulders straight up to your ears and lower.",
   "instructions": [
-   "Stand up straight with your feet at shoulder width as you hold a barbell with both hands in front of you using a pronated grip (palms facing the thighs). Tip: Your hands should be a little wider than shoulder width apart. You can use wrist wraps for this exercise for a better grip. This will be your starting position.",
+   "Stand up straight with your feet at shoulder width as you hold a barbell with both hands in front of you using a pronated grip (palms facing the thighs). Tip: Your hands should be a little wider than shoulder width apart. Lifting straps can help your grip on heavy sets. This will be your starting position.",
    "Raise your shoulders up as far as you can go as you breathe out and hold the contraction for a second. Tip: Refrain from trying to lift the barbell by using your biceps.",
    "Slowly return to the starting position as you breathe in.",
    "Repeat for the recommended amount of repetitions."
@@ -2485,9 +2488,10 @@
    "Middle Back"
   ],
   "secondaryMuscles": [
-   "Biceps",
    "Lats",
-   "Shoulders"
+   "Biceps",
+   "Rear Delts",
+   "Lower Back"
   ],
   "look": "Bent forward at the hips (back flat, ~45°), the bar hanging at arm's length. Pull it up to your belly, squeezing your shoulder blades, then lower.",
   "instructions": [
@@ -2572,9 +2576,7 @@
   "primaryMuscles": [
    "Triceps"
   ],
-  "secondaryMuscles": [
-   "Forearms"
-  ],
+  "secondaryMuscles": [],
   "look": "Lying on a flat bench holding an EZ bar above your chest. Bend only your elbows to lower it toward your forehead, then straighten your arms.",
   "instructions": [
    "Using a close grip, lift the EZ bar and hold it with your elbows in as you lie on the bench. Your arms should be perpendicular to the floor. This will be your starting position.",
@@ -2697,7 +2699,7 @@
   ],
   "secondaryMuscles": [
    "Chest",
-   "Shoulders"
+   "Front Delts"
   ],
   "look": "Support yourself on two parallel bars with straight arms. Lower until your upper arms are about parallel to the floor, push back up. Log 0 kg for bodyweight.",
   "instructions": [
@@ -2728,7 +2730,7 @@
    "Chest"
   ],
   "secondaryMuscles": [
-   "Shoulders",
+   "Front Delts",
    "Triceps"
   ],
   "look": "Hands just wider than shoulders, body in a straight line from head to heels. Lower your chest to a fist above the floor, push back up.",
@@ -2759,7 +2761,9 @@
    "Middle Back"
   ],
   "secondaryMuscles": [
-   "Lats"
+   "Lats",
+   "Biceps",
+   "Rear Delts"
   ],
   "look": "Lie under a bar set at hip height (a Smith machine or squat rack works), heels on the floor, body straight. Pull your chest to the bar. A great step toward your first pull-up.",
   "instructions": [
@@ -2789,8 +2793,7 @@
    "Quadriceps"
   ],
   "secondaryMuscles": [
-   "Glutes",
-   "Hamstrings"
+   "Glutes"
   ],
   "look": "Feet shoulder-width, arms forward. Sit back and down until your thighs are at least parallel, stand up tall.",
   "instructions": [
@@ -2873,7 +2876,7 @@
    "Abdominals"
   ],
   "secondaryMuscles": [
-   "Shoulders"
+   "Lats"
   ],
   "look": "Kneeling with an ab wheel under your shoulders. Roll forward as far as you can keep your back flat, then pull back with your abs.",
   "instructions": [
@@ -2934,7 +2937,7 @@
    "Chest"
   ],
   "secondaryMuscles": [
-   "Shoulders",
+   "Front Delts",
    "Triceps"
   ],
   "look": "A classic CrossFit benchmark often used in superhero-style programs: as many rounds as possible in 20 minutes of 5 pull-ups, 10 push-ups and 15 air squats. ~10 rounds = solid start, 15+ = fit, 20+ = advanced.",
@@ -3018,11 +3021,7 @@
   "primaryMuscles": [
    "Abdominals"
   ],
-  "secondaryMuscles": [
-   "Chest",
-   "Shoulders",
-   "Triceps"
-  ],
+  "secondaryMuscles": [],
   "look": "Standing sideways to a cable at chest height, you press the handle straight out in front of you and resist being twisted.",
   "instructions": [
    "Connect a standard handle to a tower, and—if possible—position the cable to shoulder height. If not, a low pulley will suffice.",
@@ -3050,9 +3049,7 @@
   "primaryMuscles": [
    "Abdominals"
   ],
-  "secondaryMuscles": [
-   "Shoulders"
-  ],
+  "secondaryMuscles": [],
   "look": "Standing sideways to a high pulley, you pull the handle diagonally across your body down to the opposite hip, like chopping wood.",
   "instructions": [
    "Connect a standard handle to a tower, and move the cable to the highest pulley position.",
@@ -3113,7 +3110,7 @@
    "Abdominals"
   ],
   "secondaryMuscles": [
-   "Shoulders"
+   "Abductors"
   ],
   "look": "Lying on your side, propped up on one forearm with your feet stacked, hips lifted so your body is a straight line. Works the obliques (the sides of your waist). Log the seconds per side.",
   "instructions": [
@@ -3148,12 +3145,8 @@
    "Forearms"
   ],
   "secondaryMuscles": [
-   "Abdominals",
-   "Glutes",
-   "Hamstrings",
-   "Lower Back",
-   "Quadriceps",
-   "Traps"
+   "Traps",
+   "Abdominals"
   ],
   "look": "You pick up a heavy dumbbell in each hand (or farmer handles, if your gym has them) and simply walk, tall and steady, with your arms hanging at your sides. It works your grip, traps and core. Log the weight of ONE dumbbell and the seconds you walked.",
   "instructions": [
@@ -3270,9 +3263,7 @@
   "primaryMuscles": [
    "Abdominals"
   ],
-  "secondaryMuscles": [
-   "Lower Back"
-  ],
+  "secondaryMuscles": [],
   "look": "Sitting with knees bent, leaning back so your body makes a V, feet on the floor or lifted. You rotate your hands (often holding a plate or dumbbell) from one hip to the other. Log the weight you hold in + kg; count every side.",
   "instructions": [
    "Lie down on the floor placing your feet either under something that will not move or by having a partner hold them. Your legs should be bent at the knees.",

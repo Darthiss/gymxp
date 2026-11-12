@@ -12,10 +12,12 @@ import { withExercise, activeRoutines, firstReps, fmtRest, fmtTarget, hitTarget,
 import { mergeData } from './merge';
 import { addDays, parseDuration, parseWatchText, parseWorkoutLine, weekKey } from './util';
 import { deriveKey, seal, unseal } from './crypto';
-import { broSays, upNext, weekMessage } from './today';
-import { averageVolume, bandOf, fmtSets, MUSCLES, muscleShares, ranked, relativeBands, routineEntries, sessionEntries, volumeOf, weeklyBands, weekVolume } from './muscles';
+import { broSays, sessionTitle, upNext, weekMessage } from './today';
+import { hardSets, MAJOR_MUSCLES, MINOR_MUSCLES, averageVolume, bandOf, fmtSets, MUSCLES, muscleShares, ranked, relativeBands, routineEntries, sessionEntries, volumeOf, weeklyBands, weekVolume } from './muscles';
 import { MAPPED } from '../components/BodyMap';
 import { checkRotation, planVolume } from './routineCheck';
+import { bmiApplies, goalAllowed, goalReached, hardHeartRate, minGoalKg, trendKg, whtrLabel, whtrOf } from './body';
+import { e1rm } from './engine';
 
 let n = 0;
 const sess = (date: string, exercises: Session['exercises'], extra: Partial<Session> = {}): Session => ({
@@ -225,10 +227,10 @@ describe('beating your last time', () => {
   });
 
   it('says what it would take', () => {
-    expect(toBeatText(byId('Leg_Press'), sets(55, 12, 11, 8))).toBe('To beat: 55 kg for 32+ reps, or go heavier');
-    expect(toBeatText(byId('Assisted_Pull-Up_Machine'), sets(30, 8, 8))).toBe('To beat: 30 kg assist for 17+ reps, or less assist');
-    expect(toBeatText(byId('Plank'), sets(0, 60))).toBe('To beat: 61+ s in total, or add weight');
-    expect(toBeatText(byId('Pullups'), sets(0, 5, 5))).toBe('To beat: 11+ reps in total, or add weight');
+    expect(toBeatText(byId('Leg_Press'), sets(55, 12, 11, 8))).toBe('To beat: 55 kg for 32+ reps, or go heavier for 16+');
+    expect(toBeatText(byId('Assisted_Pull-Up_Machine'), sets(30, 8, 8))).toBe('To beat: 30 kg assist for 17+ reps, or less assist for 8+');
+    expect(toBeatText(byId('Plank'), sets(0, 60))).toBe('To beat: 61+ s in total, or add weight for 30+ s');
+    expect(toBeatText(byId('Pullups'), sets(0, 5, 5))).toBe('To beat: 11+ reps in total, or add weight for 5+');
     expect(fmtBeat(byId('Leg_Press'), { exerciseId: 'x', beat: false, first: false, kg: 0, reps: 0 })).toBe('Same');
     expect(fmtBeat(byId('Leg_Press'), { exerciseId: 'x', beat: false, first: false, kg: -5, reps: 2 })).toBe('Next time');
   });
@@ -623,8 +625,8 @@ describe('trophies', () => {
     d.sessions.push(sess('2026-01-03', [{ exerciseId: 'Barbell_Deadlift', sets: [{ kg: 100, reps: 1 }] }]));
     const p = compare(game(d), LEGENDS.find((l) => l.id === 'eddie')!);
     const dl = p.rows.find((r) => r.metric.key === 'deadlift')!;
-    expect(dl.mine).toBe(103.3); // Epley: 100 × (1 + 1/30)
-    expect(dl.pct).toBeCloseTo(103.3 / 500);
+    expect(dl.mine).toBe(100); // one rep is the lift itself, not an estimate above it
+    expect(dl.pct).toBeCloseTo(100 / 500);
   });
 });
 
@@ -1244,7 +1246,7 @@ describe("farmer's walk", () => {
     expect(r.beats[0]).toMatchObject({ beat: true, kg: 0, reps: 10 });
     expect(fmtBeat(walk, r.beats[0])).toBe('+10s');
     expect(fmtBeat(walk, compareToLast(walk, 'x', [{ kg: 32.5, reps: 40 }], [{ kg: 30, reps: 60 }]))).toBe('+2.5 kg');
-    expect(toBeatText(walk, [{ kg: 30, reps: 60 }])).toBe('To beat: 30 kg for 61+ s in total, or add weight');
+    expect(toBeatText(walk, [{ kg: 30, reps: 60 }])).toBe('To beat: 30 kg for 61+ s in total, or more weight for 30+ s');
     expect(fmtSet(walk, { kg: 30, reps: 60 })).toBe('30 kg · 60 s');
   });
 });
@@ -1287,7 +1289,7 @@ describe('timed holds (plank)', () => {
 describe('muscle volume', () => {
   const custom = (d: AppData, id: string, group: Exercise['group']) => d.customExercises.push({ id, updatedAt: 1, name: id, group, aliases: [], look: '' });
 
-  it('the catalog only uses the 16 known muscles, and trains every one of them', () => {
+  it('the catalog only uses the 18 known muscles, and trains every one of them', () => {
     const known = new Set<string>(MUSCLES);
     const primary = new Set<string>();
     for (const e of BUILTIN) {
@@ -1301,7 +1303,7 @@ describe('muscle volume', () => {
     const exMap = exerciseMap(emptyData());
     const v = volumeOf([{ exerciseId: 'Machine_Bench_Press', sets: 4 }], exMap);
     expect(v.sets.Chest).toBe(4);
-    expect(v.sets.Shoulders).toBe(2);
+    expect(v.sets['Front Delts']).toBe(2);
     expect(v.sets.Triceps).toBe(2);
     expect(v.sets.Quadriceps).toBe(0);
     expect(v.by.Chest).toEqual([{ exerciseId: 'Machine_Bench_Press', sets: 4, share: 1 }]);
@@ -1313,7 +1315,7 @@ describe('muscle volume', () => {
     const routine: Routine = { id: 'r', updatedAt: 1, name: 'Push', exerciseIds: ['Machine_Bench_Press', 'Leg_Press'], items: [{ exerciseId: 'Machine_Bench_Press', sets: 4, reps: '10' }, { exerciseId: 'Leg_Press', sets: 3, reps: '12' }] };
     const done = sess('2026-03-02', [ex('Machine_Bench_Press', 40, 10, 10, 10, 10), ex('Leg_Press', 80, 12, 12, 12)]);
     const exMap = exerciseMap(d);
-    expect(volumeOf(sessionEntries(done), exMap).sets).toEqual(volumeOf(routineEntries(routine), exMap).sets);
+    expect(volumeOf(sessionEntries(done, exMap), exMap).sets).toEqual(volumeOf(routineEntries(routine), exMap).sets);
     // A routine saved before targets existed counts 3 sets per exercise.
     const old: Routine = { id: 'o', updatedAt: 1, name: 'Old', exerciseIds: ['Machine_Bench_Press'] };
     expect(volumeOf(routineEntries(old), exMap).sets.Chest).toBe(3);
@@ -1322,9 +1324,9 @@ describe('muscle volume', () => {
   it('skips empty sets, benchmarks and exercises it cannot find', () => {
     const exMap = exerciseMap(emptyData());
     const s1 = sess('2026-03-02', [ex('Machine_Bench_Press', 40, 10, 0, 10), ex('Hero_Cindy', 0, 12), ex('Gone_Forever', 10, 10)]);
-    const v = volumeOf(sessionEntries(s1), exMap);
+    const v = volumeOf(sessionEntries(s1, exMap), exMap);
     expect(v.sets.Chest).toBe(2);
-    expect(Object.values(v.sets).reduce((a, b) => a + b, 0)).toBe(4); // 2 chest + 1 shoulders + 1 triceps
+    expect(Object.values(v.sets).reduce((a, b) => a + b, 0)).toBe(4); // 2 chest + 1 front delts + 1 triceps
     expect(muscleShares(exMap.get('Hero_Cindy'))).toEqual([]);
   });
 
@@ -1378,11 +1380,11 @@ describe('muscle volume', () => {
   });
 
   it('shades one workout relative to its most-trained muscle, and ranks muscles by sets', () => {
-    const v = volumeOf([{ exerciseId: 'Machine_Bench_Press', sets: 4 }], exerciseMap(emptyData())).sets; // chest 4, shoulders 2, triceps 2
+    const v = volumeOf([{ exerciseId: 'Machine_Bench_Press', sets: 4 }], exerciseMap(emptyData())).sets; // chest 4, front delts 2, triceps 2
     const b = relativeBands(v);
-    expect([b.Chest, b.Shoulders, b.Triceps, b.Lats]).toEqual(['target', 'building', 'building', 'none']);
+    expect([b.Chest, b['Front Delts'], b.Triceps, b.Lats]).toEqual(['target', 'building', 'building', 'none']);
     expect(Object.values(relativeBands(volumeOf([], new Map()).sets)).every((x) => x === 'none')).toBe(true);
-    expect(ranked(v).slice(0, 4)).toEqual(['Chest', 'Shoulders', 'Triceps', 'Traps']); // ties keep head-to-toe order
+    expect(ranked(v).slice(0, 4)).toEqual(['Chest', 'Front Delts', 'Triceps', 'Traps']); // ties keep head-to-toe order
   });
 
   it('the body map draws every muscle', () => {
@@ -1409,19 +1411,27 @@ describe('routine check', () => {
 
   it('flags missing muscles first, with an exercise for the routine it fits', () => {
     const f = check(emptyData(), [PUSH, PULL, LEGS]);
-    expect(f.map((x) => x.id)).toEqual(['missing:Glutes', 'missing:Hamstrings', 'low:Abdominals']);
-    expect(f[0]).toMatchObject({ title: 'No glute work', add: { exerciseId: 'Barbell_Hip_Thrust', routineId: 'legs' } });
-    expect(f[1].add).toEqual({ exerciseId: 'Seated_Leg_Curl', routineId: 'legs' });
-    expect(f[2].add).toEqual({ exerciseId: 'Plank', routineId: 'legs' }); // Cable Crunch is already in the plan
+    expect(f.map((x) => x.id)).toEqual(['missing:Hamstrings', 'missing:Glutes', 'low:Side Delts']);
+    expect(f[0]).toMatchObject({ title: 'No hamstring work', add: { exerciseId: 'Seated_Leg_Curl', routineId: 'legs' } });
+    expect(f[1].add).toEqual({ exerciseId: 'Barbell_Hip_Thrust', routineId: 'legs' });
+    // The overhead press only half-counts for side delts, and a raise belongs on the push day.
+    expect(f[2]).toMatchObject({ title: 'Light on side delts', add: { exerciseId: 'Side_Lateral_Raise', routineId: 'push' } });
+    // Abs are light too, and Cable Crunch is already in the plan, so the suggestion is the next one.
+    const all = check(emptyData(), [PUSH, PULL, LEGS], 3, { limit: 99 });
+    expect(all.find((x) => x.id === 'low:Abdominals')?.add).toEqual({ exerciseId: 'Plank', routineId: 'legs' });
+    // A missing hinge starts with the easiest one to learn.
+    expect(all.find((x) => x.id === 'pattern:hinge')?.add?.exerciseId).toBe('Hyperextensions_Back_Extensions');
   });
 
   it('adding the suggestions clears them, and keeps exercise ids in sync', () => {
     const d = emptyData();
     const exMap = exerciseMap(d);
     let legs = LEGS;
-    for (const f of check(d, [PUSH, PULL, LEGS])) legs = withExercise(legs, exMap.get(f.add!.exerciseId)!, 5);
+    for (const f of check(d, [PUSH, PULL, LEGS]).filter((x) => x.add?.routineId === 'legs')) legs = withExercise(legs, exMap.get(f.add!.exerciseId)!, 5);
     expect(legs.exerciseIds).toEqual(routineItems(legs).map((it) => it.exerciseId));
+    expect(legs.exerciseIds).toHaveLength(5);
     expect(legs.updatedAt).toBe(5);
+    legs = withExercise(legs, exMap.get('Plank')!, 6);
     expect(routineItems(legs).find((it) => it.exerciseId === 'Plank')).toMatchObject({ sets: 3, reps: '30' }); // a hold
     expect(withExercise(legs, exMap.get('Plank')!)).toBe(legs); // never twice
     const ids = check(d, [PUSH, PULL, legs], 3, { limit: 99 }).map((x) => x.id);
@@ -1441,7 +1451,7 @@ describe('routine check', () => {
     const f = check(d, [heavyPush, quads], 2, { limit: 99 });
     expect(f.find((x) => x.id === 'balance:push')).toMatchObject({ title: 'More pushing than pulling', add: { exerciseId: 'Seated_Cable_Rows', routineId: 'a' } });
     const legs = f.find((x) => x.id === 'balance:legs');
-    expect(legs?.reason).toBe('About 8 sets a week for quads against 3 for hamstrings.');
+    expect(legs?.reason).toBe('About 8 sets a week for quads against 1 for hamstrings.'); // the leg press no longer counts for hamstrings
     expect(legs?.add?.routineId).toBe('b');
   });
 
@@ -1467,7 +1477,7 @@ describe('routine check', () => {
     const d = emptyData();
     const full = routine('f', 'Full body', [
       ['Machine_Bench_Press', 4], ['Machine_Shoulder_Military_Press', 4], ['Wide-Grip_Lat_Pulldown', 4], ['Seated_Cable_Rows', 4], ['Leg_Press', 4], ['Romanian_Deadlift', 4],
-      ['Dumbbell_Lunges', 2], ['Machine_Bicep_Curl', 4], ['Triceps_Pushdown', 2], ['Standing_Calf_Raises', 4], ['Cable_Crunch', 4], ['Farmers_Walk', 2], ['Barbell_Hip_Thrust', 2],
+      ['Dumbbell_Lunges', 2], ['Machine_Bicep_Curl', 4], ['Triceps_Pushdown', 2], ['Side_Lateral_Raise', 4], ['Standing_Calf_Raises', 4], ['Cable_Crunch', 4], ['Farmers_Walk', 2], ['Barbell_Hip_Thrust', 2],
     ]);
     expect(check(d, [full], 1, { limit: 99 })).toEqual([]);
     expect(check(d, [], 3)).toEqual([]);
@@ -1477,5 +1487,192 @@ describe('routine check', () => {
     const added = f.map((x) => x.add?.exerciseId).filter(Boolean);
     expect(new Set(added).size).toBe(added.length);
     expect(added).not.toContain('Machine_Bicep_Curl');
+  });
+});
+
+describe('health review: muscle data', () => {
+  const byId = (id: string) => BUILTIN.find((e) => e.id === id)!;
+  const share = (id: string, m: string) => Object.fromEntries(muscleShares(byId(id)))[m] ?? 0;
+
+  it('splits shoulders: presses train the front, raises the side, rows and pulls the rear', () => {
+    expect(share('Machine_Bench_Press', 'Front Delts')).toBe(0.5);
+    expect(share('Machine_Shoulder_Military_Press', 'Front Delts')).toBe(1);
+    expect(share('Machine_Shoulder_Military_Press', 'Side Delts')).toBe(0.5);
+    expect(share('Side_Lateral_Raise', 'Side Delts')).toBe(1);
+    expect(share('Seated_Cable_Rows', 'Rear Delts')).toBe(0.5);
+    expect(share('Reverse_Machine_Flyes', 'Rear Delts')).toBe(1);
+    expect(share('Wide-Grip_Lat_Pulldown', 'Front Delts')).toBe(0);
+    // The two upright rows used to disagree with each other.
+    expect(muscleShares(byId('Upright_Cable_Row'))).toEqual(muscleShares(byId('Upright_Barbell_Row')));
+    // A custom shoulder exercise can't say which head it trains, so its sets are shared.
+    const d = emptyData();
+    d.customExercises.push({ id: 'my-shoulder-thing', updatedAt: 1, name: 'x', group: 'Shoulders', aliases: [], look: '' });
+    const v = volumeOf([{ exerciseId: 'my-shoulder-thing', sets: 6 }], exerciseMap(d)).sets;
+    expect([v['Front Delts'], v['Side Delts'], v['Rear Delts']]).toEqual([2, 2, 2]);
+  });
+
+  it('only credits muscles that do real work', () => {
+    for (const id of ['Leg_Press', 'Hack_Squat', 'Smith_Machine_Squat', 'Barbell_Squat', 'Bodyweight_Squat', 'Dumbbell_Lunges', 'Barbell_Lunge']) {
+      expect(share(id, 'Hamstrings'), id).toBe(0); // squats and leg presses barely train them
+      expect(share(id, 'Calves'), id).toBe(0);
+    }
+    expect(share('Leg_Press', 'Adductors')).toBe(0.5);
+    // Calves only count from calf work.
+    expect(BUILTIN.filter((e) => [...e.primaryMuscles, ...e.secondaryMuscles].includes('Calves')).every((e) => e.primaryMuscles[0] === 'Calves')).toBe(true);
+    // A deadlift is mainly glutes, hamstrings and lower back, not lower back with eight helpers.
+    expect(byId('Barbell_Deadlift').primaryMuscles).toEqual(['Glutes', 'Hamstrings', 'Lower Back']);
+    for (const e of BUILTIN) expect(e.secondaryMuscles.length, e.id).toBeLessThanOrEqual(4);
+    expect(share('Hammer_Curls', 'Forearms')).toBe(0.5);
+    expect(muscleShares(byId('Pallof_Press'))).toEqual([['Abdominals', 1]]);
+    expect(muscleShares(byId('Thigh_Adductor'))).toEqual([['Adductors', 1]]);
+  });
+
+  it('every muscle is either a main one or a smaller one', () => {
+    expect(MAJOR_MUSCLES).toHaveLength(13);
+    expect([...MAJOR_MUSCLES, ...MINOR_MUSCLES].sort()).toEqual([...MUSCLES].sort());
+    expect(MINOR_MUSCLES).toEqual(['Traps', 'Lower Back', 'Forearms', 'Abductors', 'Adductors']);
+  });
+
+  it('leaves warm-ups out of the hard sets', () => {
+    const set = (kg: number, reps: number) => ({ kg, reps });
+    const press = byId('Machine_Bench_Press');
+    expect(hardSets(press, [set(20, 12), set(30, 8), set(50, 10), set(50, 9), set(50, 8)])).toBe(4); // 20 kg is under 60% of 50; 30 kg is exactly 60%
+    expect(hardSets(press, [set(40, 12), set(45, 10), set(50, 8)])).toBe(3); // a pyramid is all work
+    expect(hardSets(press, [set(50, 10), set(0, 0)])).toBe(1);
+    // Where the weight column isn't a plain load, every set with reps counts.
+    expect(hardSets(byId('Assisted_Pull-Up_Machine'), [set(40, 8), set(10, 5)])).toBe(2);
+    expect(hardSets(byId('Pullups'), [set(0, 8), set(10, 5)])).toBe(2);
+    expect(hardSets(byId('Plank'), [set(0, 60), set(10, 30)])).toBe(2);
+    const d = emptyData();
+    const s1 = sess('2026-03-02', [ex('Machine_Bench_Press', 50, 10, 10, 10)]);
+    s1.exercises[0].sets.unshift({ kg: 20, reps: 15 });
+    expect(volumeOf(sessionEntries(s1, exerciseMap(d)), exerciseMap(d)).sets.Chest).toBe(3);
+  });
+
+  it('fixes the dated cues in the instructions', () => {
+    const text = (id: string) => byId(id).instructions.join(' ');
+    for (const id of ['Upright_Cable_Row', 'Upright_Barbell_Row']) {
+      expect(text(id)).not.toContain('chin');
+      expect(text(id)).toContain('level with your shoulders');
+    }
+    for (const id of ['Barbell_Squat', 'Smith_Machine_Squat', 'Hack_Squat']) expect(text(id)).not.toContain('undue stress on the knee');
+    for (const e of BUILTIN) {
+      expect(e.instructions.join(' '), e.id).not.toMatch(/wrist wraps|foot (stances|positioning) section/);
+      expect(e.instructions.every((t) => t.trim().length > 0), e.id).toBe(true);
+    }
+  });
+});
+
+describe('health review: how progress is measured', () => {
+  it('estimates a 1RM only from sets it can trust', () => {
+    expect(e1rm(100, 1)).toBe(100); // a single is the lift itself
+    expect(e1rm(50, 12)).toBe(70);
+    expect(e1rm(50, 20)).toBe(70); // long sets count as 12 reps
+    expect(e1rm(50, 30)).toBe(70);
+    expect(e1rm(60, 8)).toBeCloseTo(76);
+    // So a light, long set can no longer out-rank a heavy one as a record.
+    const d = emptyData();
+    add(d, '2026-01-05', [ex('Leg_Press', 60, 8)]);
+    const light = add(d, '2026-01-07', [ex('Leg_Press', 40, 28)]);
+    expect(result(game(d), light).prs).toEqual([]);
+  });
+
+  it('counts heavier as a beat only with at least half of last time’s reps', () => {
+    const press = exerciseMap(emptyData()).get('Machine_Bench_Press');
+    const last = [{ kg: 40, reps: 10 }, { kg: 40, reps: 10 }, { kg: 40, reps: 10 }];
+    const single = compareToLast(press, 'x', [{ kg: 60, reps: 1 }], last);
+    expect(single).toMatchObject({ beat: false, kg: 20 });
+    expect(fmtBeat(press, single)).toBe('Heavier, too few reps');
+    expect(compareToLast(press, 'x', [{ kg: 42.5, reps: 8 }, { kg: 42.5, reps: 7 }], last).beat).toBe(true); // 15 of 30
+    expect(compareToLast(press, 'x', [{ kg: 42.5, reps: 8 }, { kg: 42.5, reps: 6 }], last).beat).toBe(false); // 14 of 30
+    expect(compareToLast(press, 'x', [{ kg: 40, reps: 11 }, { kg: 40, reps: 10 }, { kg: 40, reps: 10 }], last).beat).toBe(true); // more reps, as before
+    expect(toBeatText(press, last)).toBe('To beat: 40 kg for 31+ reps, or go heavier for 15+');
+    // Less assistance follows the same rule.
+    const assisted = exerciseMap(emptyData()).get('Assisted_Pull-Up_Machine');
+    const less = compareToLast(assisted, 'x', [{ kg: 20, reps: 2 }], [{ kg: 30, reps: 8 }, { kg: 30, reps: 8 }]);
+    expect(less.beat).toBe(false);
+    expect(fmtBeat(assisted, less)).toBe('Less assist, too few reps');
+  });
+
+  it('names a workout by its split', () => {
+    const exMap = exerciseMap(emptyData());
+    const title = (...items: [string, number][]) => sessionTitle(sess('2026-03-02', items.map(([id, n]) => ex(id, 20, ...Array(n).fill(10)))), exMap);
+    expect(title(['Machine_Bench_Press', 4], ['Machine_Shoulder_Military_Press', 3], ['Side_Lateral_Raise', 3], ['Triceps_Pushdown', 3])).toBe('Push');
+    expect(title(['Wide-Grip_Lat_Pulldown', 4], ['Seated_Cable_Rows', 3], ['Face_Pull', 3], ['Machine_Bicep_Curl', 3])).toBe('Pull');
+    expect(title(['Leg_Press', 4], ['Seated_Leg_Curl', 3], ['Standing_Calf_Raises', 3])).toBe('Legs');
+    expect(title(['Leg_Press', 4], ['Seated_Leg_Curl', 3], ['Standing_Calf_Raises', 3], ['Cable_Crunch', 3])).toBe('Legs & Core');
+    expect(title(['Leg_Press', 4], ['Barbell_Deadlift', 3], ['Romanian_Deadlift', 3])).toBe('Legs'); // a deadlift doesn't make it a back day
+    expect(title(['Machine_Bench_Press', 4], ['Seated_Cable_Rows', 4], ['Machine_Bicep_Curl', 2])).toBe('Upper body');
+    expect(title(['Machine_Bench_Press', 4], ['Seated_Cable_Rows', 4], ['Leg_Press', 4])).toBe('Full body');
+    expect(title(['Machine_Bicep_Curl', 4], ['Triceps_Pushdown', 4], ['Hammer_Curls', 3])).toBe('Arms');
+    expect(title(['Side_Lateral_Raise', 4], ['Reverse_Machine_Flyes', 4], ['Machine_Shoulder_Military_Press', 4])).toBe('Shoulders');
+    expect(title(['Cable_Crunch', 3], ['Plank', 3])).toBe('Core');
+    expect(sessionTitle(sess('2026-03-02', [], { watch: { durationMin: 40 } }), exMap)).toBe('Cardio & conditioning');
+    expect(sessionTitle(sess('2026-03-02', []), exMap)).toBe('Gym visit');
+  });
+});
+
+describe('health review: body and safety', () => {
+  const weigh = (d: AppData, date: string, kg: number) => d.weights.push({ id: `w${date}`, updatedAt: 1, date, kg });
+
+  it('reads weight as a trend, and never tracks a goal below a healthy weight', () => {
+    expect(trendKg([80, 79])).toBeNull();
+    expect(trendKg([82, 80, 79, 78])).toBe(79);
+    expect(goalReached([80, 76, 74.5], 75, 175)).toBe(false); // one low reading isn't the goal
+    expect(goalReached([80, 76, 74.5, 74, 74], 75, 175)).toBe(true);
+    expect(goalReached([60, 64, 66, 66, 66], 65, 175)).toBe(true); // gaining works the same way
+    expect(minGoalKg(180)).toBe(60); // BMI 18.5 at 1.80 m is 59.94 kg
+    expect(minGoalKg(null)).toBeNull();
+    expect(goalAllowed(55, 180)).toBe(false);
+    expect(goalAllowed(55, null)).toBe(true); // without a height there's nothing to judge it by
+    expect(goalReached([60, 56, 54, 54, 54], 55, 180)).toBe(false);
+    expect(bmiApplies(17)).toBe(false);
+    expect(bmiApplies(null)).toBe(true);
+    expect(whtrOf(84, 175)).toBeCloseTo(0.48);
+    expect([0.38, 0.48, 0.52, 0.65].map(whtrLabel)).toEqual(['on the low side', 'in the healthy range', 'above the healthy range', 'well above the healthy range']);
+  });
+
+  it('awards Goal Weight on the trend, not on one weigh-in', () => {
+    const d = emptyData();
+    d.profile.goalWeightKg = 75;
+    d.profile.heightCm = 175;
+    weigh(d, '2026-01-01', 80);
+    weigh(d, '2026-01-08', 76);
+    weigh(d, '2026-01-15', 74.5);
+    expect(game(d).unlockedIds.has('body-goal')).toBe(false);
+    weigh(d, '2026-01-22', 74);
+    weigh(d, '2026-01-29', 74);
+    expect(game(d).unlockedIds.has('body-goal')).toBe(true);
+    const low = emptyData();
+    low.profile.goalWeightKg = 55;
+    low.profile.heightCm = 180;
+    [60, 56, 54, 54, 54].forEach((kg, i) => weigh(low, `2026-02-0${i + 1}`, kg));
+    expect(game(low).unlockedIds.has('body-goal')).toBe(false);
+  });
+
+  it('judges a hard heart rate by age', () => {
+    expect(hardHeartRate(30)).toBe(140);
+    expect(hardHeartRate(60)).toBe(125);
+    expect(hardHeartRate(null)).toBe(140); // until a birth year is set
+    const at = (birthYear: number | null) => {
+      const d = emptyData();
+      d.profile.birthYear = birthYear;
+      add(d, '2026-03-02', [ex('Leg_Press', 50, 10)], { watch: { durationMin: 50, avgHr: 130 } });
+      return game(d).unlockedIds.has('hab-heart');
+    };
+    expect(at(1966)).toBe(true); // 130 bpm is hard work at 60
+    expect(at(1996)).toBe(false); // and moderate at 30
+    expect(at(null)).toBe(false);
+  });
+
+  it('pays no star for training in the heat, though the trophy stays', () => {
+    const d = emptyData();
+    add(d, '2026-01-05', [ex('Leg_Press', 50, 10)]);
+    const hot = add(d, '2026-01-07', [ex('Leg_Press', 50, 10)], { weather: { tempC: 36 } });
+    const cold = add(d, '2026-01-09', [ex('Leg_Press', 50, 10)], { weather: { tempC: 2 } });
+    const g = game(d);
+    expect(result(g, hot).items.some((i) => i.kind === 'surprise')).toBe(false);
+    expect(result(g, cold).items.some((i) => i.kind === 'surprise')).toBe(true);
+    expect(g.unlockedIds.has('wx-heat')).toBe(true);
   });
 });

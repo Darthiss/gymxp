@@ -61,7 +61,7 @@ This is the most important rule in the system. Testing what earns the third star
 
 A system built on records stops rewarding you exactly when you plateau and need it most. Beating your last time stays reachable forever, because bad days make the next one easier to beat. It also works on any machine, in any gym, at any strength, so a beginner and an advanced lifter compete on equal terms.
 
-"More reps" counts as much as "more weight" because [research finds both progress muscle and strength similarly](https://peerj.com/articles/14142) (8 weeks, 43 trained people), and it stops the game from pushing ego lifting.
+"More reps" counts as much as "more weight" because [research finds both progress muscle and strength similarly](https://peerj.com/articles/14142) (8 weeks, 43 trained people), and it stops the game from pushing ego lifting. For the same reason, more weight only counts with at least half of last time's reps: one heavy single doesn't beat three sets of ten.
 
 ### 3. The streak is weekly, and its bar is one visit
 
@@ -207,7 +207,7 @@ These appear as surprises, so nobody has to learn them up front.
 | New record (all-time best weight, reps, time or best set on an exercise) | +1★ each, 3 per workout at most |
 | Trophy | Common +1, Rare +3, Epic +10, Legendary +25, Mythic +50 |
 | Weekly challenge (**1 a week,** replacing 3 quests) | +2★ |
-| Surprise: comeback, rain, cold, heat or feriado | +1★, once per gym day |
+| Surprise: comeback, rain, cold or feriado | +1★, once per gym day. Heat pays nothing: the Heatwave trophy stays, but no star should reward training in it |
 
 The weather and holiday bonuses keep their local charm but collapse from six XP lines into one star. Unpredictable bonuses are also what keep a routine from feeling mechanical.
 
@@ -302,11 +302,11 @@ This is where the game gets played, set by set. The header stays visible and upd
    ① 125 × 10 ✓   ② 125 × 9 ✓   ③ 125 × 8 ✓
 
  Lat Pulldown
-   To beat: 55 kg for 32+ reps, or go heavier
+   To beat: 55 kg for 32+ reps, or go heavier for 16+
    ① 55 × 12 ✓    ② 55 × 11 ✓   ③ 55 × __
 
  Face Pull
-   To beat: 20 kg for 31+ reps, or go heavier
+   To beat: 20 kg for 31+ reps, or go heavier for 15+
    (↑ Do next)
 ```
 
@@ -482,6 +482,34 @@ The middle of the ladder moved with it, and the first weeks barely changed:
 **What it can't stop:** a fake log. Someone logging one set every day would reach Olympian in about 11 years, as the app has no way to check. That matters for leagues, where scores would need checking, and not for a personal app.
 
 **Limits:** these are model lifters, and they plateau smoothly and never quit. Real people will drop out far more, so reaching these ranks at all will be rarer than the table suggests. To make Olympian harder still, raise its level: level 150 is 22,499★, about 13 years at flawless 5×.
+
+## Health review (November 2026)
+
+The app is for information and motivation, not medical advice, and it says so on the setup screen, in Settings and next to every health number. Within that limit it should be as accurate as it can, so the training and body content was reviewed as a coach and a doctor would read it. What changed, and why:
+
+**Muscle data.** The exercise dataset's muscle lists were corrected in `CURATED`, exercise by exercise.
+- Shoulders are three muscles: front, side and rear delts. Pressing trains the front, raises the side, and rows and rear-delt work the rear. One bucket made "shoulders" look well trained from half-credits alone.
+- Squats, leg presses and lunges no longer credit hamstrings or calves, which they barely train. They credit adductors, which they do.
+- A deadlift is mainly glutes, hamstrings and lower back, with three helpers, down from lower back with eight.
+- Only hard sets count toward muscle volume: a set under 60% of the day's heaviest weight on that exercise is a warm-up. The 10–20 sets a week guidance means sets taken close to failure.
+- Five smaller muscles (traps, lower back, forearms, abductors, adductors) are listed apart from the 13 main ones, because compound lifts cover them and a low number there isn't a gap.
+
+**Measuring progress.**
+- An estimated 1RM comes only from what the formula can be trusted with: one rep is the lift itself, and a set over 12 reps counts as 12. Before, a light 28-rep set could out-rank a heavy 8 and earn a record star.
+- More weight beats last time only with at least half of last time's reps (see decision 2).
+- Workouts are titled by split ("Push", "Pull", "Legs", "Upper body", "Full body"), judged by where the sets went.
+
+**Body.**
+- A goal weight below a BMI of 18.5 for your height is refused in Settings and never earns the trophy.
+- Goal Weight is judged on the average of the last 3 weigh-ins, because one reading moves a kilo or two with water and food.
+- BMI stays, with the caveat that it can't tell muscle from fat, and isn't shown under age 20. Waist ÷ height sits beside it once a waist is logged: under 0.5 is the commonly used healthy cut-off, and muscle doesn't distort it.
+
+**Rewards.**
+- Heat pays no surprise star, and the logger shows a hydration note from 30 °C.
+- Heart of Steel uses 75% of the estimated max heart rate for your age (208 − 0.7 × age), not a fixed 140 bpm, which is moderate at 25 and very hard at 60.
+- Today no longer says a second workout can earn a missing star.
+
+These changes re-score history slightly: fewer estimated-1RM records, a few third stars lost where the only "beat" was a heavy single, and no heat stars. The simulations below were not rerun for them, so check the third-star rate again at the next calibration.
 
 ## How we'll know it works
 

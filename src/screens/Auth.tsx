@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { checkRepo, type GhConfig } from '../lib/github';
 import { Bro } from '../components/Bro';
+import { DISCLAIMER } from '../lib/body';
 import { createVault, failedAttempts, MAX_FAILS, unlock, wipeDevice, WrongPinError, type Unlocked } from '../lib/vault';
 
 /** App mark: Bro and the wordmark. Bro naps while the app is locked. */
@@ -102,6 +103,7 @@ export function Setup({ onDone }: { onDone: (u: Unlocked) => void }) {
         <button className="btn primary big block" disabled={busy}>
           {busy ? <span className="spinner" /> : 'Connect & start'}
         </button>
+        <p className="tiny muted center" style={{ lineHeight: 1.5 }}>{DISCLAIMER}</p>
       </form>
     </div>
   );

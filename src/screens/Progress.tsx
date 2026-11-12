@@ -8,6 +8,7 @@ import { navigate, type Route } from '../lib/router';
 import { ColumnChart, LineChart } from '../components/charts';
 import { WorkoutRow } from '../components/WorkoutRow';
 import { Muscles } from './Muscles';
+import { ageOn, bmiApplies, bmiLabel, bmiOf, DISCLAIMER_SHORT, goalAllowed, trendKg, WHTR_MAX, WHTR_MIN, whtrLabel, whtrOf } from '../lib/body';
 import { Icon } from '../components/Icon';
 import { Cell, CellIcon, Empty, ExerciseThumb, LargeTitle, PageHead, Ring, Segmented, toast, ProgressBar } from '../components/ui';
 
@@ -205,7 +206,7 @@ export function LiftDetail({ id }: { id: string }) {
                 <button className={`chip${metric === 'volume' ? ' on' : ''}`} onClick={() => setMetric('volume')}>Volume</button>
               </div>
               <LineChart points={pts} unit={unit} label={`${ex?.name} ${metric}`} format={(v) => `${fmtNum(v, 1)} ${unit}`} />
-              {metric === 'e1rm' && <p className="tiny muted">Estimated 1-rep max (Epley) compares sets with different reps: 50 kg × 12 ≈ 70 kg × 1.</p>}
+              {metric === 'e1rm' && <p className="tiny muted">Estimated 1-rep max (Epley) compares sets with different reps: 50 kg × 12 ≈ 70 kg × 1. A set longer than 12 reps counts as 12, because estimates from long sets aren't reliable.</p>}
             </>
           )}
         </div>
@@ -247,23 +248,33 @@ function Body() {
   const p = data.profile;
   const entries = useMemo(() => data.weights.filter((w) => !w.deleted).sort((a, b) => a.date.localeCompare(b.date)), [data.weights]);
   const [kg, setKg] = useState('');
+  const [waist, setWaist] = useState('');
   const [date, setDate] = useState(today());
   const latest = entries[entries.length - 1];
-  const bmi = latest && p.heightCm ? latest.kg / (p.heightCm / 100) ** 2 : null;
-  const bmiLabel = bmi === null ? '' : bmi < 18.5 ? 'underweight' : bmi < 25 ? 'healthy range' : bmi < 30 ? 'overweight' : 'obese range';
   const first = entries[0];
-  const delta = first && latest && latest !== first ? latest.kg - first.kg : null;
-  const toward = delta !== null && p.goalWeightKg ? Math.sign(p.goalWeightKg - first.kg) === Math.sign(delta) : null;
+  // Progress is read from the trend where there is one: a single weigh-in swings with water and food.
+  const trend = trendKg(entries.map((e) => e.kg));
+  const now = trend ?? latest?.kg ?? 0;
+  const bmi = latest && p.heightCm && bmiApplies(ageOn(p.birthYear, today())) ? bmiOf(now, p.heightCm) : null;
+  const lastWaist = [...entries].reverse().find((e) => e.waistCm)?.waistCm;
+  // Rounded first, so the label always agrees with the two decimals on screen.
+  const whtr = lastWaist && p.heightCm ? Math.round(whtrOf(lastWaist, p.heightCm) * 100) / 100 : null;
+  const delta = first && latest && latest !== first ? now - first.kg : null;
+  const goal = p.goalWeightKg && goalAllowed(p.goalWeightKg, p.heightCm) ? p.goalWeightKg : null;
+  const toward = delta !== null && goal ? Math.sign(goal - first.kg) === Math.sign(delta) : null;
 
   const add = () => {
     const v = num(kg);
     if (v < 20 || v > 400) return toast('Enter your weight in kg');
+    const wc = waist.trim() ? num(waist) : 0;
+    if (waist.trim() && (wc < 40 || wc > 250)) return toast('Enter your waist in cm');
     getStore().update((d) => {
       const same = d.weights.find((w) => w.date === date && !w.deleted);
-      if (same) { same.kg = v; same.updatedAt = Date.now(); }
-      else d.weights.push({ id: uid(), date, kg: v, updatedAt: Date.now() });
+      if (same) { same.kg = v; if (wc) same.waistCm = wc; same.updatedAt = Date.now(); }
+      else d.weights.push({ id: uid(), date, kg: v, ...(wc ? { waistCm: wc } : {}), updatedAt: Date.now() });
     }, `Weigh-in ${date}`);
     setKg('');
+    setWaist('');
     toast('⚖️ Weigh-in saved');
   };
 
@@ -280,36 +291,57 @@ function Body() {
           <div className="row between" style={{ alignItems: 'flex-start' }}>
             <div>
               <div className="kicker">Bodyweight</div>
-              <div className="row" style={{ gap: 8, alignItems: 'baseline', marginTop: 2 }}>
+              <div className="row" style={{ gap: 8, alignItems: 'baseline', marginTop: 2, flexWrap: 'wrap' }}>
                 <span className="display" style={{ fontSize: '2.4rem' }}>{fmtNum(latest.kg, 1)}</span>
                 <span className="dim bold">kg</span>
                 {delta !== null && <span className={`tag ${toward ? 'accent' : ''}`}>{delta > 0 ? '+' : ''}{fmtNum(delta, 1)} since {fmtDate(first.date, { day: 'numeric', month: 'short' })}</span>}
               </div>
-              <div className="tiny dim">{fmtDate(latest.date, { weekday: 'long', day: 'numeric', month: 'short' })}</div>
+              <div className="tiny dim">{fmtDate(latest.date, { weekday: 'long', day: 'numeric', month: 'short' })}{trend !== null && ` · trend ${fmtNum(trend, 1)} kg`}</div>
             </div>
-            {bmi !== null && (
-              <Ring pct={Math.min(1, Math.max(0, (bmi - 15) / 20))} size={58} stroke={5} color={bmi >= 18.5 && bmi < 25 ? 'var(--accent)' : 'var(--fire)'}>
-                <div style={{ lineHeight: 1 }}><div className="display" style={{ fontSize: '0.95rem' }}>{fmtNum(bmi, 1)}</div><div style={{ fontSize: '0.55rem', color: 'var(--text-2)', fontWeight: 700 }}>BMI</div></div>
-              </Ring>
-            )}
+            <div className="row" style={{ gap: 8 }}>
+              {whtr !== null && (
+                <Ring pct={Math.min(1, Math.max(0, (whtr - 0.3) / 0.4))} size={58} stroke={5} color={whtr >= WHTR_MIN && whtr < WHTR_MAX ? 'var(--accent)' : 'var(--fire)'}>
+                  <div style={{ lineHeight: 1 }}><div className="display" style={{ fontSize: '0.95rem' }}>{whtr.toFixed(2)}</div><div style={{ fontSize: '0.5rem', color: 'var(--text-2)', fontWeight: 700 }}>WAIST÷HT</div></div>
+                </Ring>
+              )}
+              {bmi !== null && (
+                <Ring pct={Math.min(1, Math.max(0, (bmi - 15) / 20))} size={58} stroke={5} color={bmi >= 18.5 && bmi < 25 ? 'var(--accent)' : 'var(--fire)'}>
+                  <div style={{ lineHeight: 1 }}><div className="display" style={{ fontSize: '0.95rem' }}>{fmtNum(bmi, 1)}</div><div style={{ fontSize: '0.55rem', color: 'var(--text-2)', fontWeight: 700 }}>BMI</div></div>
+                </Ring>
+              )}
+            </div>
           </div>
           {entries.length > 1 && (
-            <LineChart points={entries.map((e) => ({ date: e.date, y: e.kg }))} unit="kg" color="var(--info)" label="Bodyweight" refLine={p.goalWeightKg ? { y: p.goalWeightKg, label: `goal ${p.goalWeightKg} kg` } : undefined} />
+            <LineChart points={entries.map((e) => ({ date: e.date, y: e.kg }))} unit="kg" color="var(--info)" label="Bodyweight" refLine={goal ? { y: goal, label: `goal ${goal} kg` } : undefined} />
           )}
-          {bmi !== null && <p className="tiny muted">BMI {bmiLabel}. It doesn't distinguish muscle from fat, so read it next to your lifts.</p>}
+          <div className="stack tiny muted" style={{ gap: 6, lineHeight: 1.45 }}>
+            {trend !== null && <p>The trend is the average of your last 3 weigh-ins. Goals are judged on it, because one reading moves a kilo or two with water and food.</p>}
+            {whtr !== null && <p>Waist ÷ height {whtr.toFixed(2)}: {whtrLabel(whtr)}. Under 0.5 is the commonly used healthy cut-off, and muscle doesn't distort it.</p>}
+            {bmi !== null && <p>BMI {fmtNum(bmi, 1)}: {bmiLabel(bmi)}. BMI can't tell muscle from fat, so people who lift often read high{whtr === null ? '. Add your waist below for a better guide' : ''}.</p>}
+            {!p.heightCm && <p>Add your height in Settings to see BMI and waist ÷ height.</p>}
+            {p.goalWeightKg && !goal && <p>Your goal weight is under a healthy weight for your height, so it isn't tracked. You can change it in Settings.</p>}
+            <p>{DISCLAIMER_SHORT}</p>
+          </div>
         </div>
       )}
 
       <div className="stack">
         <div className="section-title">Log a weigh-in</div>
-        <div className="row">
-          <div className="unit-input grow">
+        <div className="grid-2">
+          <div className="unit-input">
             <input className="input" inputMode="decimal" placeholder={latest ? String(latest.kg) : '75.0'} value={kg} onChange={(e) => setKg(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} aria-label="Bodyweight in kg" />
             <span>kg</span>
           </div>
-          <input className="input" type="date" style={{ width: 'auto' }} value={date} max={today()} onChange={(e) => setDate(e.target.value)} aria-label="Date" />
-          <button className="btn primary" onClick={add} aria-label="Save weigh-in"><Icon name="check" size={20} stroke={2.8} /></button>
+          <div className="unit-input">
+            <input className="input" inputMode="decimal" placeholder="Waist" value={waist} onChange={(e) => setWaist(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} aria-label="Waist in cm, optional" />
+            <span>cm</span>
+          </div>
         </div>
+        <div className="row">
+          <input className="input grow" type="date" value={date} max={today()} onChange={(e) => setDate(e.target.value)} aria-label="Date" />
+          <button className="btn primary" onClick={add}><Icon name="check" size={18} stroke={2.8} /> Save</button>
+        </div>
+        <p className="tiny muted" style={{ lineHeight: 1.45 }}>Waist is optional. Measure halfway between your lowest rib and the top of your hip bone, after breathing out.</p>
       </div>
 
       {entries.length > 0 ? (
@@ -318,7 +350,7 @@ function Body() {
           <div className="group">
             {[...entries].reverse().map((w) => (
               <Cell key={w.id} title={fmtDate(w.date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}>
-                <b className="num">{w.kg} kg</b>
+                <b className="num">{w.kg} kg{w.waistCm ? <span className="dim" style={{ fontWeight: 500 }}> · {w.waistCm} cm</span> : null}</b>
                 <button className="icon-btn plain" aria-label="Delete entry" onClick={() => del(w.id)}><Icon name="trash" size={16} /></button>
               </Cell>
             ))}

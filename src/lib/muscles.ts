@@ -1,17 +1,23 @@
-// Training volume per muscle, in weighted sets: a set counts 1 for each primary muscle of its
-// exercise and 0.5 for each secondary one. Pure and shared by the body map and the routine check,
+// Training volume per muscle, in weighted hard sets: a set counts 1 for each primary muscle of its
+// exercise and 0.5 for each secondary one, and warm-up sets are left out. Pure and shared by the body map and the routine check,
 // so it takes plain { exerciseId, sets } entries, which both a logged session and a planned
 // routine can supply. (The engine's weekMuscle is a different thing: 5 coarse groups, for Hero.)
 import { routineItems } from './routines';
 import { addDays, parseDate, today, weekKey } from './util';
-import type { Exercise, MuscleGroup, Routine, Session } from './types';
+import type { Exercise, MuscleGroup, Pattern, Routine, Session, SetEntry } from './types';
 
-/** The 16 muscles the exercise catalog uses, ordered head to toe. */
+/** The 18 muscles the exercise catalog uses, ordered head to toe. Shoulders are three: pressing trains
+ *  the front, raises the side and rows the rear, and one bucket would hide which of them is missing. */
 export const MUSCLES = [
-  'Traps', 'Shoulders', 'Chest', 'Lats', 'Middle Back', 'Lower Back', 'Biceps', 'Triceps', 'Forearms',
+  'Traps', 'Front Delts', 'Side Delts', 'Rear Delts', 'Chest', 'Lats', 'Middle Back', 'Lower Back', 'Biceps', 'Triceps', 'Forearms',
   'Abdominals', 'Glutes', 'Abductors', 'Adductors', 'Quadriceps', 'Hamstrings', 'Calves',
 ] as const;
 export type Muscle = typeof MUSCLES[number];
+
+/** The muscles a rounded plan trains directly, biggest first. The rest (traps, lower back, forearms and
+ *  the hip ab- and adductors) get their work from compound lifts, so low numbers there aren't a gap. */
+export const MAJOR_MUSCLES: Muscle[] = ['Quadriceps', 'Hamstrings', 'Glutes', 'Chest', 'Lats', 'Middle Back', 'Front Delts', 'Side Delts', 'Rear Delts', 'Biceps', 'Triceps', 'Abdominals', 'Calves'];
+export const MINOR_MUSCLES: Muscle[] = MUSCLES.filter((m) => !MAJOR_MUSCLES.includes(m));
 
 const KNOWN = new Set<string>(MUSCLES);
 export const isMuscle = (m: string): m is Muscle => KNOWN.has(m);
@@ -23,7 +29,7 @@ export const SECONDARY_SHARE = 0.5;
 const GROUP_MUSCLES: Record<MuscleGroup, Muscle[]> = {
   Chest: ['Chest'],
   Back: ['Lats', 'Middle Back'],
-  Shoulders: ['Shoulders'],
+  Shoulders: ['Front Delts', 'Side Delts', 'Rear Delts'],
   Arms: ['Biceps', 'Triceps'],
   Legs: ['Quadriceps', 'Hamstrings'],
   Glutes: ['Glutes'],
@@ -72,9 +78,22 @@ export function volumeOf(entries: VolumeEntry[], exMap: Map<string, Exercise>): 
   return { sets, by, weeks: 1 };
 }
 
-/** A logged workout as entries. A set counts once it has reps (or seconds, on a timed exercise). */
-export const sessionEntries = (s: Session): VolumeEntry[] =>
-  s.exercises.map((e) => ({ exerciseId: e.exerciseId, sets: e.sets.filter((x) => x.reps > 0).length }));
+/** Sets lighter than this share of the day's heaviest set on an exercise are warm-ups. */
+export const WARMUP_SHARE = 0.6;
+
+/** How many of an exercise's logged sets were hard ones. The 10–20 sets a week guidance means sets
+ *  taken close to failure, so warm-ups are left out. Where the weight column isn't a plain load
+ *  (assisted, bodyweight, timed and benchmark exercises), every set with reps counts. */
+export function hardSets(ex: Exercise | undefined, sets: SetEntry[]): number {
+  const done = sets.filter((x) => x.reps > 0);
+  if (!ex || ex.assisted || ex.bwFactor || ex.hold || ex.benchmark) return done.length;
+  const top = Math.max(0, ...done.map((x) => x.kg));
+  return top > 0 ? done.filter((x) => x.kg >= top * WARMUP_SHARE).length : done.length;
+}
+
+/** A logged workout as entries: its hard sets. */
+export const sessionEntries = (s: Session, exMap: Map<string, Exercise>): VolumeEntry[] =>
+  s.exercises.map((e) => ({ exerciseId: e.exerciseId, sets: hardSets(exMap.get(e.exerciseId), e.sets) }));
 
 /** A planned routine as entries: its target sets. */
 export const routineEntries = (r: Routine): VolumeEntry[] =>
@@ -85,7 +104,7 @@ const live = (sessions: Session[], from: string, to: string) => sessions.filter(
 /** Everything logged in the Monday–Sunday week that contains `date`. */
 export function weekVolume(sessions: Session[], exMap: Map<string, Exercise>, date = today()): MuscleVolume {
   const mon = weekKey(date);
-  return volumeOf(live(sessions, mon, addDays(mon, 6)).flatMap(sessionEntries), exMap);
+  return volumeOf(live(sessions, mon, addDays(mon, 6)).flatMap((s) => sessionEntries(s, exMap)), exMap);
 }
 
 /** Sets per week, averaged over the last `weeks` × 7 days up to `date`. With less history than
@@ -96,11 +115,11 @@ export function averageVolume(sessions: Session[], exMap: Map<string, Exercise>,
   const first = sessions.filter((s) => !s.deleted && s.date <= date).reduce<string | null>((a, s) => (a === null || s.date < a ? s.date : a), null);
   const days = first ? Math.round((parseDate(date).getTime() - parseDate(first).getTime()) / 86_400_000) + 1 : 0;
   const span = Math.max(1, Math.min(weeks, Math.ceil(days / 7)));
-  const total = volumeOf(live(sessions, from, date).flatMap(sessionEntries), exMap);
+  const total = volumeOf(live(sessions, from, date).flatMap((s) => sessionEntries(s, exMap)), exMap);
   return { sets: Object.fromEntries(MUSCLES.map((m) => [m, total.sets[m] / span])) as Record<Muscle, number>, by: total.by, weeks: span };
 }
 
-/** Where a muscle's weekly sets land. 10–20 is the usual target for growth (Schoenfeld 2017). */
+/** Where a muscle's weekly hard sets land. 10–20 is the usual target for growth (Schoenfeld 2017). */
 export type Band = 'none' | 'low' | 'building' | 'target' | 'high';
 export const BANDS: { id: Band; label: string; range: string }[] = [
   { id: 'none', label: 'Not trained', range: '0' },
@@ -130,8 +149,32 @@ export function relativeBands(sets: Record<Muscle, number>): Record<Muscle, Band
   })) as Record<Muscle, Band>;
 }
 
-/** Muscles with any work, most first. */
-export const ranked = (sets: Record<Muscle, number>) => [...MUSCLES].sort((a, b) => sets[b] - sets[a] || MUSCLES.indexOf(a) - MUSCLES.indexOf(b));
+/** Muscles by sets, most first. Ties keep head-to-toe order. */
+export const ranked = (sets: Record<Muscle, number>, of: readonly Muscle[] = MUSCLES) =>
+  [...of].sort((a, b) => sets[b] - sets[a] || MUSCLES.indexOf(a) - MUSCLES.indexOf(b));
+
+// ---------- What kind of work an exercise is ----------
+
+/** Custom exercises have no pattern, except that core work is core work. */
+export const patternOf = (ex: Exercise | undefined): Pattern | undefined =>
+  ex?.pattern ?? (ex && !ex.benchmark && !ex.primaryMuscles.length && ex.group === 'Core' ? 'core' : undefined);
+
+export type Family = 'push' | 'pull' | 'legs' | 'core';
+const MUSCLE_FAMILY: Record<Muscle, Family> = {
+  Chest: 'push', 'Front Delts': 'push', 'Side Delts': 'push', Triceps: 'push',
+  Lats: 'pull', 'Middle Back': 'pull', 'Rear Delts': 'pull', Biceps: 'pull', Traps: 'pull', Forearms: 'pull', 'Lower Back': 'pull',
+  Quadriceps: 'legs', Hamstrings: 'legs', Glutes: 'legs', Calves: 'legs', Abductors: 'legs', Adductors: 'legs', Abdominals: 'core',
+};
+const GROUP_FAMILY: Record<MuscleGroup, Family> = { Chest: 'push', Shoulders: 'push', Arms: 'push', Back: 'pull', Legs: 'legs', Glutes: 'legs', Core: 'core' };
+
+/** Push, pull, legs or core: by movement pattern, else by the main muscle, else by a custom exercise's group. */
+export function familyOf(ex: Exercise | undefined): Family | undefined {
+  if (!ex || ex.benchmark) return undefined;
+  const p = patternOf(ex);
+  if (p) return p.endsWith('push') ? 'push' : p.endsWith('pull') ? 'pull' : p === 'core' || p === 'carry' ? 'core' : 'legs';
+  const m = ex.primaryMuscles.find(isMuscle);
+  return m ? MUSCLE_FAMILY[m] : GROUP_FAMILY[ex.group];
+}
 
 /** Sets shown to a person: halves are real (secondary muscles), finer than that is noise. */
 export const fmtSets = (n: number) => String(Math.round(n * 2) / 2);

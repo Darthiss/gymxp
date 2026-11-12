@@ -17,7 +17,7 @@ export function SessionView({ id }: { id: string }) {
   const r = g.sessions.get(id);
   if (!s || !r) return <PageHead title="Workout not found" backTo="" />;
   const w = s.watch;
-  const vol = volumeOf(sessionEntries(s), exMap).sets;
+  const vol = volumeOf(sessionEntries(s, exMap), exMap).sets;
   const hit = ranked(vol).filter((m) => vol[m] > 0);
   const shade = relativeBands(vol);
   const conditions = [

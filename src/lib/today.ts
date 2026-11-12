@@ -4,6 +4,7 @@ import { nextVisitMilestone, perfectWeekStars, RULES, SEASON_TIERS, seasonTarget
 import { ACHIEVEMENTS, type AchievementCategory } from './trophies';
 import { addDays, fmtDate, fmtNum, parseDate, plural, today, weekKey } from './util';
 import type { Exercise, Session } from './types';
+import { familyOf } from './muscles';
 
 export interface Goal {
   id: string;
@@ -110,19 +111,32 @@ export function weekDays(sessions: Session[]): WeekDay[] {
   });
 }
 
-/** "Chest & Arms", "Legs", "Full body"… from the muscle groups with the most sets. */
+/** What kind of workout it was, the way lifters name them: "Push", "Pull", "Legs", "Upper body",
+ *  "Full body", "Arms"… judged by where the sets went, with "& Core" when core is a real share. */
 export function sessionTitle(s: Session, exMap: Map<string, Exercise>): string {
-  const sets = new Map<string, number>();
+  const n = { push: 0, pull: 0, legs: 0, core: 0 };
+  let arms = 0, shoulders = 0, benchmark = 0;
   for (const e of s.exercises) {
     const ex = exMap.get(e.exerciseId);
-    const g = ex?.benchmark ? 'Hero benchmark' : ex?.group ?? 'Other';
-    sets.set(g, (sets.get(g) ?? 0) + e.sets.length);
+    const sets = e.sets.filter((x) => x.reps > 0).length || e.sets.length;
+    if (ex?.benchmark) { benchmark += sets; continue; }
+    const fam = familyOf(ex);
+    if (!ex || !fam) continue;
+    n[fam] += sets;
+    if (ex.group === 'Arms' && !ex.pattern) arms += sets; // curls and triceps work, not dips or presses
+    if (ex.group === 'Shoulders') shoulders += sets;
   }
-  const groups = [...sets.entries()].sort((a, b) => b[1] - a[1]).map(([g]) => g);
-  if (!groups.length) return s.watch ? 'Cardio & conditioning' : 'Gym visit';
-  if (groups.length >= 4) return 'Full body';
-  if (groups.length === 1) return groups[0];
-  return `${groups.slice(0, -1).join(', ')} & ${groups[groups.length - 1]}`;
+  const lifting = n.push + n.pull + n.legs;
+  if (!lifting) return n.core ? 'Core' : benchmark ? 'Hero benchmark' : s.watch ? 'Cardio & conditioning' : 'Gym visit';
+  const upper = n.push + n.pull;
+  const title = n.legs >= 0.7 * lifting ? 'Legs'
+    : n.legs > 0.15 * lifting ? 'Full body'
+    : arms >= 0.6 * lifting ? 'Arms'
+    : shoulders >= 0.6 * lifting ? 'Shoulders'
+    : n.push >= 0.7 * upper ? 'Push'
+    : n.pull >= 0.7 * upper ? 'Pull'
+    : 'Upper body';
+  return title !== 'Full body' && n.core >= 0.2 * (lifting + n.core) ? `${title} & Core` : title;
 }
 
 export interface BroLine { text: string; mood: 'happy' | 'hype' | 'wink' | 'focus' | 'sleep' }

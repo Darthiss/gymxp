@@ -3,7 +3,8 @@
 import { useMemo, useState } from 'react';
 import { useData } from '../lib/store';
 import { useExerciseMap } from '../lib/game';
-import { averageVolume, bandLabel, BANDS, fmtSets, MUSCLES, ranked, weeklyBands, weekVolume, type Band, type Muscle, type MuscleVolume } from '../lib/muscles';
+import { averageVolume, bandLabel, BANDS, fmtSets, MAJOR_MUSCLES, MINOR_MUSCLES, MUSCLES, ranked, WARMUP_SHARE, weeklyBands, weekVolume, type Band, type Muscle, type MuscleVolume } from '../lib/muscles';
+import { DISCLAIMER_SHORT } from '../lib/body';
 import { navigate, type Route } from '../lib/router';
 import { BodyMap } from '../components/BodyMap';
 import { Cell, Empty, ExerciseThumb, Segmented, SectionHead, Sheet } from '../components/ui';
@@ -20,12 +21,13 @@ export function Muscles({ route }: { route: Route }) {
   const [pick, setPick] = useState<Muscle | null>(null);
   const vol = useMemo(() => (span === 'week' ? weekVolume(data.sessions, exMap) : averageVolume(data.sessions, exMap)), [data.sessions, exMap, span]);
   const bands = useMemo(() => weeklyBands(vol.sets), [vol]);
-  const order = useMemo(() => ranked(vol.sets), [vol]);
+  const order = useMemo(() => ranked(vol.sets, MAJOR_MUSCLES), [vol]); // the lists and the summary are about the main muscles
+  const minor = useMemo(() => ranked(vol.sets, MINOR_MUSCLES), [vol]);
 
   if (!data.sessions.some((s) => !s.deleted)) return <Empty title="No workouts yet">Log a workout and this shows which muscles it trained, set by set.</Empty>;
 
-  const n = (...b: Band[]) => MUSCLES.filter((m) => b.includes(bands[m])).length;
-  const summary = [`${n('target', 'high')} at 10+ sets`, `${n('building')} building`, `${n('low', 'none')} under 4`].join(' · ');
+  const n = (...b: Band[]) => MAJOR_MUSCLES.filter((m) => b.includes(bands[m])).length;
+  const summary = `Of ${MAJOR_MUSCLES.length} main muscles: ${[`${n('target', 'high')} at 10+ sets`, `${n('building')} building`, `${n('low', 'none')} under 4`].join(' · ')}`;
   const half = Math.ceil(order.length / 2);
   const row = (m: Muscle) => {
     const top = vol.by[m][0];
@@ -44,11 +46,11 @@ export function Muscles({ route }: { route: Route }) {
 
       <div className="card stack" style={{ gap: 16 }}>
         <div>
-          <h3>Sets per muscle</h3>
-          <div className="tiny dim">{span === 'avg' ? 'An average week, over the last 4 weeks' : 'This week so far'} · {summary}</div>
+          <h3>Hard sets per muscle</h3>
+          <div className="tiny dim">{span === 'avg' ? 'An average week, over the last 4 weeks' : 'This week so far'}. {summary}</div>
         </div>
         <BodyMap bands={bands} selected={pick} onPick={setPick} width={150}
-          label={`Sets per muscle, ${span === 'avg' ? 'average week' : 'this week'}: ${order.map((m) => `${m} ${fmtSets(vol.sets[m])}`).join(', ')}`} />
+          label={`Hard sets per muscle, ${span === 'avg' ? 'average week' : 'this week'}: ${ranked(vol.sets, MUSCLES).map((m) => `${m} ${fmtSets(vol.sets[m])}`).join(', ')}`} />
         <div className="bm-legend" aria-hidden="true">
           {BANDS.map((b) => <span key={b.id}><i className={`bm-swatch band-${b.id}`} />{b.label} <small>{b.range}</small></span>)}
         </div>
@@ -63,8 +65,14 @@ export function Muscles({ route }: { route: Route }) {
         <div className="group">{order.slice(half).reverse().map(row)}</div>
       </div>
 
+      <div className="stack">
+        <SectionHead title="Smaller muscles" />
+        <p className="small dim" style={{ padding: '0 4px', marginTop: -6 }}>Big lifts usually cover these, so a low number here isn't a gap.</p>
+        <div className="group">{minor.map(row)}</div>
+      </div>
+
       <p className="tiny muted" style={{ padding: '0 4px', lineHeight: 1.5 }}>
-        A set counts in full for the muscle an exercise mainly trains, and half for the muscles that help. 10–20 sets a week is the range commonly recommended for muscle growth.
+        Only hard sets count: a warm-up, meaning a set under {Math.round(WARMUP_SHARE * 100)}% of your heaviest weight on that exercise that day, is left out. A set counts in full for the muscle an exercise mainly trains, and half for the muscles that help. 10–20 hard sets a week is the range commonly recommended for muscle growth; fewer still builds, more slowly. {DISCLAIMER_SHORT}
       </p>
 
       {pick && <MuscleSheet muscle={pick} vol={vol} band={bands[pick]} span={span} exMap={exMap} onClose={() => setPick(null)} />}
@@ -76,7 +84,7 @@ const NOTE: Record<Band, string> = {
   none: 'No sets in this period.',
   low: 'Under 4 sets a week.',
   building: 'Between 4 and 9 sets a week.',
-  target: 'In the 10–20 sets a week commonly recommended for muscle growth.',
+  target: 'In the 10–20 hard sets a week commonly recommended for muscle growth.',
   high: 'Over 20 sets a week. That’s plenty.',
 };
 const SCALE_MAX = 25;
@@ -99,7 +107,7 @@ function MuscleSheet({ muscle, vol, band, span, exMap, onClose }: {
         <div className="stack" style={{ gap: 10 }}>
           <div className="row" style={{ gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
             <span className="display" style={{ fontSize: '2.6rem' }}>{fmtSets(sets)}</span>
-            <span className="dim">{span === 'avg' ? 'sets in an average week' : 'sets this week'}</span>
+            <span className="dim">{span === 'avg' ? 'hard sets in an average week' : 'hard sets this week'}</span>
             <span className="tag"><i className={`bm-swatch band-${band}`} style={{ width: 8, height: 8 }} />{bandLabel(band)}</span>
           </div>
           <div aria-hidden="true">

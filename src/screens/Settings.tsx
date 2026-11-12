@@ -7,6 +7,7 @@ import { mergeData, normalizeData } from '../lib/merge';
 import { RULES, withWeeklyGoal } from '../lib/engine';
 import { fmtDate, num, toISODate, today } from '../lib/util';
 import type { Profile, Sex } from '../lib/types';
+import { BMI_MAX, DISCLAIMER, goalAllowed, kgAtBmi, minGoalKg } from '../lib/body';
 import { CellIcon, PageHead, SyncBadge, toast } from '../components/ui';
 import { Icon } from '../components/Icon';
 
@@ -18,6 +19,7 @@ export function Settings() {
       <WatchCard />
       <SecurityCard />
       <DataCard />
+      <p className="tiny muted center" style={{ lineHeight: 1.5 }}>{DISCLAIMER}</p>
       <p className="tiny muted center">Bro · exercise photos & instructions from free-exercise-db (public domain)</p>
     </div>
   );
@@ -30,7 +32,10 @@ function ProfileCard() {
     name: p.name, sex: p.sex, heightCm: p.heightCm ? String(p.heightCm) : '', birthYear: p.birthYear ? String(p.birthYear) : '',
     weeklyGoal: String(p.weeklyGoal || 3), goalWeightKg: p.goalWeightKg ? String(p.goalWeightKg) : '',
   });
+  const height = num(f.heightCm) || null;
   const save = () => {
+    const goalKg = num(f.goalWeightKg) || null;
+    if (goalKg && !goalAllowed(goalKg, height)) return toast(`That goal is under a healthy weight for your height. The lowest Bro tracks is ${minGoalKg(height)} kg.`);
     const next: Profile = {
       ...p,
       updatedAt: Date.now(),
@@ -61,6 +66,9 @@ function ProfileCard() {
         <label className="field">Height (cm)<input className="input" inputMode="decimal" value={f.heightCm} onChange={(e) => setF({ ...f, heightCm: e.target.value })} /></label>
         <label className="field">Goal weight (kg)<input className="input" inputMode="decimal" value={f.goalWeightKg} onChange={(e) => setF({ ...f, goalWeightKg: e.target.value })} placeholder="optional" /></label>
       </div>
+      {height && height > 100 && height < 250 && (
+        <p className="tiny muted">For your height, {minGoalKg(height)}–{Math.floor(kgAtBmi(BMI_MAX, height))} kg is the range usually called healthy (BMI 18.5–25). Muscle can put you above it.</p>
+      )}
       <label className="field">
         Weekly goal: gym days per week{data.sessions.some((s) => !s.deleted) ? ' (a change starts next Monday)' : ''}
         <div className="chips">

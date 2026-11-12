@@ -73,7 +73,7 @@ export function Home() {
               {draft
                 ? `${plural(draft.exercises.length, 'exercise')}${draft.startTime ? ` · started ${draft.startTime}` : ''}`
                 : after ? 'Fill it in after the gym, no phone needed there'
-                : trainedToday ? 'A second workout can still earn a missing star' : 'Beat your last time for all 3 stars'}
+                : trainedToday ? 'For a second session today, like cardio later on' : 'Beat your last time for all 3 stars'}
             </div>
           </span>
           <Icon name="chevR" size={20} stroke={2.6} />

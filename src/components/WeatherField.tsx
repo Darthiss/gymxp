@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { getStore, useData } from '../lib/store';
 import { fetchWeather, hourOf, locate, savedLocation, type Weather } from '../lib/weather';
+import { num } from '../lib/util';
 import { toast } from './ui';
 import { Icon } from './Icon';
 
@@ -51,7 +52,7 @@ export function WeatherField({ date, startTime, tempC, rain, onChange }: {
       <span className="cell-icon" style={{ background: '#0a84ff' }}><Icon name={rain ? 'rain' : 'sun'} size={17} stroke={2.2} /></span>
       <div className="grow">
         <div className="cell-title">Weather</div>
-        <div className="cell-sub">Rain, cold or heat can earn a bonus star</div>
+        {num(tempC) >= 30 && tempC.trim() ? <div className="cell-sub fire">Hot day: drink water and rest longer between sets</div> : <div className="cell-sub">Rain or cold can earn a bonus star</div>}
       </div>
       <div className="unit-input" style={{ width: 82 }}>
         <input className="input" inputMode="decimal" placeholder="—" value={tempC} aria-label="Temperature in °C" style={{ minHeight: 36, paddingLeft: 8, paddingRight: 28 }}

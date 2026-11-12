@@ -1,4 +1,4 @@
-// Bro, the mascot: a cast-iron kettlebell in a lime sweatband. Drawn on a 120×120 grid from a few
+// Bro, the mascot: a cast-iron kettlebell with a game face and a tied lime headband. Drawn on a 120×120 grid from a few
 // plain shapes, so it stays crisp from a 28px avatar to a full-screen moment. scripts/make-icons.mjs
 // draws the same geometry for the app icon; keep the two in step when changing the body, handle or face.
 import { useId, type CSSProperties } from 'react';
@@ -11,20 +11,22 @@ const BAND = '#c3f73a', LIGHT = '#f2f4f6', DARK = '#101216';
 // Rounder on top than underneath: the flatter base is what makes it a weight on the floor, not a ball.
 const BODY = 'M19 80A34 34 0 0 1 53 46H67A34 34 0 0 1 101 80V92A22 22 0 0 1 79 114H41A22 22 0 0 1 19 92Z';
 
-const eye = (cx: number, cy = 84, ry = 7) => (
+const KNOT = '#a9dc2a'; // the band's knot and loose ends, a shade deeper than the band
+// The game face: a half-lidded eye under an angled brow. `s` is 1 for the left eye, -1 for the right.
+const eye = (cx: number, s: 1 | -1) => (
   <>
-    <ellipse cx={cx} cy={cy} rx={5.8} ry={ry} fill="#fff" />
-    <circle cx={cx + 0.8} cy={cy + 0.8} r={3.3} fill={DARK} />
-    <circle cx={cx + 2} cy={cy - 0.8} r={1.1} fill="#fff" />
+    <path d={`M${cx - 6 * s} 80L${cx + 6 * s} 83.5V86a6 6 0 0 ${s > 0 ? 1 : 0} ${-12 * s} 0Z`} fill="#fff" />
+    <circle cx={cx + s} cy={86.8} r={2.7} fill={DARK} />
+    <path d={`M${cx - 7.5 * s} 76.8L${cx + 7.5 * s} 81.2`} fill="none" stroke="#16181c" strokeWidth="3.4" strokeLinecap="round" />
   </>
 );
 const line = { fill: 'none', stroke: LIGHT, strokeWidth: 3.5, strokeLinecap: 'round' } as const;
 
 const EYES: Record<BroMood, React.ReactNode> = {
-  happy: <>{eye(46)}{eye(74)}</>,
+  happy: <>{eye(46, 1)}{eye(74, -1)}</>,
   hype: <path d="M40 86q6-8 12 0M68 86q6-8 12 0" {...line} />,
-  wink: <>{eye(46)}<path d="M68 85q6-6 12 0" {...line} /></>,
-  focus: <>{eye(46, 85.5, 6)}{eye(74, 85.5, 6)}<path d="M38.5 74.5l12 3M81.5 74.5l-12 3" {...line} /></>,
+  wink: <>{eye(46, 1)}<path d="M68 85q6-6 12 0" {...line} /></>,
+  focus: <>{eye(46, 1)}{eye(74, -1)}</>,
   sleep: <path d="M40 84q6 5 12 0M68 84q6 5 12 0" {...line} />,
 };
 
@@ -71,6 +73,8 @@ export function Bro({ mood = 'happy', size = 64, arms = false, alive = false, cl
         </linearGradient>
         <clipPath id={`${id}c`}><path d={BODY} /></clipPath>
       </defs>
+      {/* The headband's loose ends hang behind the body; its knot sits on top. */}
+      <g fill="none" stroke={KNOT} strokeWidth="5.5" strokeLinecap="round"><path d="M24 62q-9-2-12-11" /><path d="M25 60q-4-7-2-14" /></g>
       {arms && (
         <>
           <g fill="none" stroke={IRON} strokeWidth="9" strokeLinecap="round"><path d={l[0]} /><path d={r[0]} /></g>
@@ -82,11 +86,12 @@ export function Bro({ mood = 'happy', size = 64, arms = false, alive = false, cl
       {/* The hairline rim keeps dark iron from melting into dark sheets and cards. */}
       <path d={BODY} fill={`url(#${id}b)`} stroke="#fff" strokeOpacity="0.16" strokeWidth="1" />
       <g clipPath={`url(#${id}c)`}>
-        <rect x="10" y="57" width="100" height="11" fill={BAND} />
-        <rect x="10" y="65.5" width="100" height="2.5" fill="#000" opacity="0.14" />
+        <rect x="4" y="57" width="112" height="11" fill={BAND} />
+        <rect x="4" y="65.5" width="112" height="2.5" fill="#000" opacity="0.14" />
         <ellipse cx="60" cy="121" rx="46" ry="12" fill="#000" opacity="0.12" />
       </g>
-      <path d="M28 87q-1.5-8 2.5-14" fill="none" stroke="#fff" strokeOpacity="0.4" strokeWidth="4.5" strokeLinecap="round" />
+      <circle cx="24.5" cy="62.5" r="4.6" fill={KNOT} />
+      <path d="M28 89q-1.5-8 2.5-14" fill="none" stroke="#fff" strokeOpacity="0.4" strokeWidth="4.5" strokeLinecap="round" />
       <g className="bro-eyes">{EYES[mood]}</g>
       {MOUTH[mood]}
       {mood === 'sleep' && (

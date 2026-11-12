@@ -1,4 +1,4 @@
-// Renders the app icon to PNGs, no dependencies: Bro, the cast-iron kettlebell in a lime sweatband, on a dark tile.
+// Renders the app icon to PNGs, no dependencies: Bro, the cast-iron kettlebell with a game face and a tied lime headband, on a dark tile.
 // The shapes repeat the 120×120 drawing in src/components/Bro.tsx; keep the two in step.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -44,7 +44,6 @@ const sdRoundRect = (x, y, cx, cy, hw, hh, r) => {
   const qx = Math.abs(x - cx) - hw + r, qy = Math.abs(y - cy) - hh + r;
   return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r;
 };
-const sdEllipse = (x, y, cx, cy, rx, ry) => (Math.hypot((x - cx) / rx, (y - cy) / ry) - 1) * Math.min(rx, ry);
 const sdSegment = (x, y, [ax, ay], [bx, by]) => {
   const dx = bx - ax, dy = by - ay;
   const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1)));
@@ -73,7 +72,16 @@ const quad = ([ax, ay], [bx, by], [cx, cy], n = 12) => Array.from({ length: n + 
   return [u * u * ax + 2 * u * t * bx + t * t * cx, u * u * ay + 2 * u * t * by + t * t * cy];
 });
 const SMILE = quad([53, 95], [60, 101.5], [67, 95]); // "M53 95 q7 6.5 14 0"
-const SHINE = quad([28, 87], [26.5, 79], [30.5, 73]); // "M28 87 q-1.5 -8 2.5 -14"
+const SHINE = quad([28, 89], [26.5, 81], [30.5, 75]); // "M28 89 q-1.5 -8 2.5 -14"
+// The headband's loose ends: "M24 62 q-9 -2 -12 -11" and "M25 60 q-4 -7 -2 -14".
+const TAILS = [quad([24, 62], [15, 60], [12, 51]), quad([25, 60], [21, 53], [23, 46])];
+const KNOT = hex('#a9dc2a'), BROW = hex('#16181c');
+// The game face: a half-lidded eye (flat, slanted lid over a round bottom) for the eye at cx. s is 1 left, -1 right.
+const sdGameEye = (x, y, cx, s) => {
+  const lid = 80 + ((x - (cx - 6 * s)) / (12 * s)) * 3.5; // the lid runs from 80 on the outside to 83.5 by the nose
+  const bowl = y > 86 ? Math.hypot(x - cx, y - 86) - 6 : Math.abs(x - cx) - 6;
+  return Math.max(bowl, lid - y);
+};
 
 function render(size, { rounded }) {
   const px = Buffer.alloc(size * size * 4);
@@ -91,6 +99,7 @@ function render(size, { rounded }) {
       blend(GLOW, 0.34 * Math.max(0, 1 - Math.hypot(x, y - 0.05) / 1.05) ** 2); // soft lime light behind Bro
 
       const mx = CX + x * K, my = CY + y * K;
+      blend(KNOT, Math.max(...TAILS.map((t) => cov(sdPolyline(mx, my, t) - 2.75)))); // behind the body
       blend(HANDLE_COL, cov(sdPolyline(mx, my, HANDLE) - 5.5));
       // Rounder on top (radius 34) than underneath (22): the flat base of the SVG body.
       const body = cov(sdRoundRect(mx, my, 60, 80, 41, 34, my < 80 ? 34 : 22));
@@ -100,11 +109,12 @@ function render(size, { rounded }) {
         blend(BAND, body * cov(Math.abs(my - 62.5) - 5.5)); // sweatband
         blend(BLACK, 0.14 * body * cov(Math.abs(my - 66.75) - 1.25)); // its shadow edge
         blend(WHITE, 0.4 * cov(sdPolyline(mx, my, SHINE) - 2.25)); // highlight on the iron
-        blend(WHITE, Math.max(cov(sdEllipse(mx, my, 46, 84, 5.8, 7)), cov(sdEllipse(mx, my, 74, 84, 5.8, 7)))); // eyes
-        blend(DARK, Math.max(cov(Math.hypot(mx - 46.8, my - 84.8) - 3.3), cov(Math.hypot(mx - 74.8, my - 84.8) - 3.3)));
-        blend(WHITE, Math.max(cov(Math.hypot(mx - 48, my - 83.2) - 1.1), cov(Math.hypot(mx - 76, my - 83.2) - 1.1)));
+        blend(WHITE, Math.max(cov(sdGameEye(mx, my, 46, 1)), cov(sdGameEye(mx, my, 74, -1)))); // eyes
+        blend(DARK, Math.max(cov(Math.hypot(mx - 47, my - 86.8) - 2.7), cov(Math.hypot(mx - 73, my - 86.8) - 2.7)));
+        blend(BROW, Math.max(cov(sdSegment(mx, my, [38.5, 76.8], [53.5, 81.2]) - 1.7), cov(sdSegment(mx, my, [81.5, 76.8], [66.5, 81.2]) - 1.7)));
         blend(LIGHT, cov(sdPolyline(mx, my, SMILE) - 1.75));
       }
+      blend(KNOT, cov(Math.hypot(mx - 24.5, my - 62.5) - 4.6)); // the knot, on top of the band's edge
       const o = (j * size + i) * 4;
       px[o] = Math.round(c[0]); px[o + 1] = Math.round(c[1]); px[o + 2] = Math.round(c[2]); px[o + 3] = Math.round(a * 255);
     }

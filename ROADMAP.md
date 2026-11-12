@@ -125,6 +125,8 @@ Shipped before Phase 4, at the owner's request.
 
 ### Also shipped
 
+- **Health review.** Every piece of training and body content was checked for accuracy: [what changed and why](docs/GAME_DESIGN.md#health-review-november-2026). In short: corrected muscle data with shoulders split in three, warm-ups left out of set counts, estimated 1RM capped at 12 reps, heavier lifts needing half the reps to count as a beat, session titles by split, a goal-weight floor and trend, waist ÷ height beside BMI, no star for heat, an age-based heart-rate trophy, fixed instruction cues and a "not medical advice" line. It re-scores history slightly, so recheck the third star at the next calibration.
+
 - **Farmer's Walk,** logged as weight per hand and seconds walked. Adding it made time records work on any timed exercise, and exercise pages show the longest time in place of an estimated 1RM.
 
 ---
@@ -149,7 +151,7 @@ Nothing visible changes yet.
 
 ### 4.2 Translate the app and add the setting · L
 
-Move all text into the dictionaries: 11 screens, 11 components, engine text in `engine.ts`, `trophies.ts`, `today.ts`, `career.ts` and `legends.ts` (136 trophies, 18 ranks, the challenges, flames, season names, legend facts), errors in `vault.ts` and `github.ts`, and Phase 5's text: muscle names and bands in `muscles.ts`, every finding in `routineCheck.ts`, `screens/Muscles.tsx` and `components/RoutineCheck.tsx`. Muscle names are also catalog data, so translate them through a display map and keep the English names as the keys. Type the Spanish dictionary from the English one, so a missing key fails the build.
+Move all text into the dictionaries: 11 screens, 11 components, engine text in `engine.ts`, `trophies.ts`, `today.ts`, `career.ts` and `legends.ts` (136 trophies, 18 ranks, the challenges, flames, season names, legend facts), errors in `vault.ts` and `github.ts`, and Phase 5's text and the health review's: `body.ts`, muscle names and bands in `muscles.ts`, every finding in `routineCheck.ts`, `screens/Muscles.tsx` and `components/RoutineCheck.tsx`. Muscle names are also catalog data, so translate them through a display map and keep the English names as the keys. Type the Spanish dictionary from the English one, so a missing key fails the build.
 
 **Leave in English:** Hero Physique while it's shelved, the calibration tool, and quotes such as Ronnie's "Yeah buddy! Light weight!". Feriado names are already in Spanish.
 

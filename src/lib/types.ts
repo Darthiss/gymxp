@@ -56,6 +56,7 @@ export interface Session extends Rec {
 export interface WeightEntry extends Rec {
   date: string;
   kg: number;
+  waistCm?: number; // optional: measured halfway between the lowest rib and the hip bone
 }
 
 export interface CustomExercise extends Rec {

@@ -1,7 +1,7 @@
 // The routine check: plain rules over your plan, at most 3 findings, each with its reason and,
 // where it helps, one exercise to add and the routine it fits best. Rule-based on purpose: an LLM
 // would need a new CSP host, an API key in a client-only app and your training data sent away.
-import { averageVolume, fmtSets, MUSCLES, routineEntries, volumeOf, type Muscle } from './muscles';
+import { averageVolume, familyOf, fmtSets, MAJOR_MUSCLES, patternOf, routineEntries, volumeOf, type Muscle } from './muscles';
 import { lastDone, routineItems, totalSets } from './routines';
 import { addDays, parseDate, plural, today } from './util';
 import type { AppData, Exercise, Pattern, Routine } from './types';
@@ -16,11 +16,10 @@ export interface Finding {
 
 export const MAX_FINDINGS = 3;
 
-// The muscles a rounded plan trains directly. Forearms, traps, lower back and the hip ab- and
-// adductors get work from compound lifts, so a plan without them isn't flagged.
-const MAJOR: Muscle[] = ['Chest', 'Lats', 'Middle Back', 'Shoulders', 'Biceps', 'Triceps', 'Abdominals', 'Glutes', 'Quadriceps', 'Hamstrings', 'Calves'];
+// Only MAJOR_MUSCLES are checked: forearms, traps, lower back and the hip ab- and adductors get
+// work from compound lifts, so a plan without direct work for them isn't flagged.
 const NAME: Partial<Record<Muscle, string>> = { Quadriceps: 'quads', Abdominals: 'abs' };
-const ADJ: Partial<Record<Muscle, string>> = { Lats: 'lat', 'Middle Back': 'mid-back', Shoulders: 'shoulder', Abdominals: 'ab', Glutes: 'glute', Quadriceps: 'quad', Hamstrings: 'hamstring', Calves: 'calf' };
+const ADJ: Partial<Record<Muscle, string>> = { Lats: 'lat', 'Middle Back': 'mid-back', 'Front Delts': 'front-delt', 'Side Delts': 'side-delt', 'Rear Delts': 'rear-delt', Abdominals: 'ab', Glutes: 'glute', Quadriceps: 'quad', Hamstrings: 'hamstring', Calves: 'calf' };
 const name = (m: Muscle) => NAME[m] ?? m.toLowerCase();
 const adj = (m: Muscle) => ADJ[m] ?? m.toLowerCase();
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
@@ -41,7 +40,8 @@ const IDEA_PATTERNS: Pattern[] = ['lunge', 'carry'];
 
 // Machine-gym defaults, used when you haven't logged anything that fits.
 const FOR_MUSCLE: Record<Muscle, string[]> = {
-  Traps: ['Leverage_Shrug'], Shoulders: ['Machine_Shoulder_Military_Press', 'Side_Lateral_Raise'], Chest: ['Machine_Bench_Press', 'Butterfly'],
+  Traps: ['Leverage_Shrug'], Chest: ['Machine_Bench_Press', 'Butterfly'],
+  'Front Delts': ['Machine_Shoulder_Military_Press', 'Dumbbell_Shoulder_Press'], 'Side Delts': ['Side_Lateral_Raise', 'Standing_Low-Pulley_Deltoid_Raise'], 'Rear Delts': ['Reverse_Machine_Flyes', 'Face_Pull'],
   Lats: ['Wide-Grip_Lat_Pulldown', 'Assisted_Pull-Up_Machine'], 'Middle Back': ['Seated_Cable_Rows', 'Leverage_Iso_Row'], 'Lower Back': ['Hyperextensions_Back_Extensions'],
   Biceps: ['Machine_Bicep_Curl', 'Dumbbell_Bicep_Curl'], Triceps: ['Triceps_Pushdown_-_Rope_Attachment', 'Triceps_Pushdown'], Forearms: ['Farmers_Walk'],
   Abdominals: ['Cable_Crunch', 'Plank'], Glutes: ['Barbell_Hip_Thrust', 'One-Legged_Cable_Kickback'], Abductors: ['Thigh_Abductor'], Adductors: ['Thigh_Adductor'],
@@ -50,25 +50,9 @@ const FOR_MUSCLE: Record<Muscle, string[]> = {
 const FOR_PATTERN: Record<Pattern, string[]> = {
   'h-push': ['Machine_Bench_Press', 'Dumbbell_Bench_Press'], 'v-push': ['Machine_Shoulder_Military_Press', 'Dumbbell_Shoulder_Press'],
   'h-pull': ['Seated_Cable_Rows', 'Leverage_Iso_Row'], 'v-pull': ['Wide-Grip_Lat_Pulldown', 'Assisted_Pull-Up_Machine'],
-  squat: ['Leg_Press', 'Hack_Squat'], hinge: ['Romanian_Deadlift', 'Hyperextensions_Back_Extensions'], lunge: ['Dumbbell_Lunges'],
+  squat: ['Leg_Press', 'Hack_Squat'], hinge: ['Hyperextensions_Back_Extensions', 'Pull_Through', 'Romanian_Deadlift'], lunge: ['Dumbbell_Lunges'], // the easiest hinge to learn first
   core: ['Cable_Crunch', 'Plank'], carry: ['Farmers_Walk'],
 };
-
-/** Custom exercises have no pattern, except that core work is core work. */
-export const patternOf = (ex: Exercise | undefined): Pattern | undefined => ex?.pattern ?? (ex && !ex.benchmark && ex.equipment === 'My machine' && ex.group === 'Core' ? 'core' : undefined);
-
-type Family = 'push' | 'pull' | 'legs' | 'core';
-const MUSCLE_FAMILY: Record<Muscle, Family> = {
-  Chest: 'push', Shoulders: 'push', Triceps: 'push', Lats: 'pull', 'Middle Back': 'pull', Biceps: 'pull', Traps: 'pull', Forearms: 'pull', 'Lower Back': 'pull',
-  Quadriceps: 'legs', Hamstrings: 'legs', Glutes: 'legs', Calves: 'legs', Abductors: 'legs', Adductors: 'legs', Abdominals: 'core',
-};
-function familyOf(ex: Exercise | undefined): Family | undefined {
-  const p = patternOf(ex);
-  if (p) return p.endsWith('push') ? 'push' : p.endsWith('pull') ? 'pull' : p === 'core' || p === 'carry' ? 'core' : 'legs';
-  const m = ex?.primaryMuscles.find((x): x is Muscle => (MUSCLES as readonly string[]).includes(x));
-  if (m) return MUSCLE_FAMILY[m];
-  return ex ? ({ Chest: 'push', Shoulders: 'push', Arms: 'push', Back: 'pull', Legs: 'legs', Glutes: 'legs', Core: 'core' } as const)[ex.group] : undefined;
-}
 
 export interface CheckInput {
   data: AppData;
@@ -122,7 +106,7 @@ export function checkRotation({ data, routines, weekGoal, exMap, pickable, date 
   const out: Finding[] = [];
 
   // 1. A major muscle with no work at all.
-  for (const m of MAJOR) {
+  for (const m of MAJOR_MUSCLES) {
     if (plan[m] > 0) continue;
     out.push(withAdd({ id: `missing:${m}`, kind: 'missing', title: `No ${adj(m)} work`, reason: `None of your routines train your ${name(m)}.` }, suggest(FOR_MUSCLE[m], primaryIs(m))));
   }
@@ -160,9 +144,9 @@ export function checkRotation({ data, routines, weekGoal, exMap, pickable, date 
   }
 
   // 4. A major muscle with very little: under 4 sets a week.
-  for (const m of MAJOR) {
+  for (const m of MAJOR_MUSCLES) {
     if (plan[m] <= 0 || plan[m] >= 4) continue;
-    out.push(withAdd({ id: `low:${m}`, kind: 'low', title: `Light on ${name(m)}`, reason: `About ${weekly(plan[m])} at ${plural(weekGoal, 'workout')} a week. 10 or more is the usual target for growth.` }, suggest(FOR_MUSCLE[m], primaryIs(m))));
+    out.push(withAdd({ id: `low:${m}`, kind: 'low', title: `Light on ${name(m)}`, reason: `About ${weekly(plan[m])} at ${plural(weekGoal, 'workout')} a week. 10 or more hard sets is the usual target for growth.` }, suggest(FOR_MUSCLE[m], primaryIs(m))));
   }
 
   // 5. A main movement pattern missing, then ideas worth trying.
