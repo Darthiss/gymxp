@@ -7,22 +7,24 @@ import { addDays, fmtDate, fmtNum, num, plural, today, uid, weekKey } from '../l
 import { navigate, type Route } from '../lib/router';
 import { ColumnChart, LineChart } from '../components/charts';
 import { WorkoutRow } from '../components/WorkoutRow';
+import { Muscles } from './Muscles';
 import { Icon } from '../components/Icon';
 import { Cell, CellIcon, Empty, ExerciseThumb, LargeTitle, PageHead, Ring, Segmented, toast, ProgressBar } from '../components/ui';
 
-type Tab = 'workouts' | 'body' | 'lifts';
+type Tab = 'workouts' | 'body' | 'lifts' | 'muscles';
 
 export function Progress({ route }: { route: Route }) {
   const data = useData();
   const q = route.query.get('tab');
-  const tab: Tab = q === 'lifts' || q === 'body' ? q : 'workouts';
+  const tab: Tab = q === 'lifts' || q === 'body' || q === 'muscles' ? q : 'workouts';
   const count = data.sessions.filter((s) => !s.deleted).length;
   return (
     <div className="stack-lg fade-in">
       <LargeTitle eyebrow={plural(count, 'workout')} title="Progress" />
-      <Segmented<Tab> value={tab} options={[['workouts', 'Activity'], ['lifts', 'Strength'], ['body', 'Body']]} onChange={(t) => navigate(`progress?tab=${t}`, true)} />
+      <Segmented<Tab> value={tab} options={[['workouts', 'Activity'], ['lifts', 'Strength'], ['muscles', 'Muscles'], ['body', 'Body']]} onChange={(t) => navigate(`progress?tab=${t}`, true)} />
       {tab === 'workouts' && <Workouts />}
       {tab === 'lifts' && <Lifts />}
+      {tab === 'muscles' && <Muscles route={route} />}
       {tab === 'body' && <Body />}
     </div>
   );

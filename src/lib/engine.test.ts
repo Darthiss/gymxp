@@ -8,11 +8,14 @@ import { careerClock, compare, LEGENDS, timesMoved } from './legends';
 import { bigMoments, careerStory } from './career';
 import { gameFor } from './game';
 import { emptyData, type AppData, type Exercise, type Routine, type Session } from './types';
-import { activeRoutines, firstReps, fmtRest, fmtTarget, hitTarget, inOrder, lastDone, moveTo, nextPosition, repsForSet, routineItems, upNextRoutine } from './routines';
+import { withExercise, activeRoutines, firstReps, fmtRest, fmtTarget, hitTarget, inOrder, lastDone, moveTo, nextPosition, repsForSet, routineItems, upNextRoutine } from './routines';
 import { mergeData } from './merge';
 import { addDays, parseDuration, parseWatchText, parseWorkoutLine, weekKey } from './util';
 import { deriveKey, seal, unseal } from './crypto';
 import { broSays, upNext, weekMessage } from './today';
+import { averageVolume, bandOf, fmtSets, MUSCLES, muscleShares, ranked, relativeBands, routineEntries, sessionEntries, volumeOf, weeklyBands, weekVolume } from './muscles';
+import { MAPPED } from '../components/BodyMap';
+import { checkRotation, planVolume } from './routineCheck';
 
 let n = 0;
 const sess = (date: string, exercises: Session['exercises'], extra: Partial<Session> = {}): Session => ({
@@ -1279,4 +1282,200 @@ describe('timed holds (plank)', () => {
     expect(game(d).unlocked.some((a) => a.id === 'hab-reps')).toBe(false); // 600 s would be 600 "reps"
   });
 
+});
+
+describe('muscle volume', () => {
+  const custom = (d: AppData, id: string, group: Exercise['group']) => d.customExercises.push({ id, updatedAt: 1, name: id, group, aliases: [], look: '' });
+
+  it('the catalog only uses the 16 known muscles, and trains every one of them', () => {
+    const known = new Set<string>(MUSCLES);
+    const primary = new Set<string>();
+    for (const e of BUILTIN) {
+      for (const m of [...e.primaryMuscles, ...e.secondaryMuscles]) expect(known.has(m), `${e.id}: ${m}`).toBe(true);
+      e.primaryMuscles.forEach((m) => primary.add(m));
+    }
+    expect(MUSCLES.filter((m) => !primary.has(m))).toEqual([]);
+  });
+
+  it('a set counts 1 for a primary muscle and half for a secondary one', () => {
+    const exMap = exerciseMap(emptyData());
+    const v = volumeOf([{ exerciseId: 'Machine_Bench_Press', sets: 4 }], exMap);
+    expect(v.sets.Chest).toBe(4);
+    expect(v.sets.Shoulders).toBe(2);
+    expect(v.sets.Triceps).toBe(2);
+    expect(v.sets.Quadriceps).toBe(0);
+    expect(v.by.Chest).toEqual([{ exerciseId: 'Machine_Bench_Press', sets: 4, share: 1 }]);
+    expect(v.by.Triceps[0].share).toBe(0.5);
+  });
+
+  it('a planned routine and the workout that follows it measure the same', () => {
+    const d = emptyData();
+    const routine: Routine = { id: 'r', updatedAt: 1, name: 'Push', exerciseIds: ['Machine_Bench_Press', 'Leg_Press'], items: [{ exerciseId: 'Machine_Bench_Press', sets: 4, reps: '10' }, { exerciseId: 'Leg_Press', sets: 3, reps: '12' }] };
+    const done = sess('2026-03-02', [ex('Machine_Bench_Press', 40, 10, 10, 10, 10), ex('Leg_Press', 80, 12, 12, 12)]);
+    const exMap = exerciseMap(d);
+    expect(volumeOf(sessionEntries(done), exMap).sets).toEqual(volumeOf(routineEntries(routine), exMap).sets);
+    // A routine saved before targets existed counts 3 sets per exercise.
+    const old: Routine = { id: 'o', updatedAt: 1, name: 'Old', exerciseIds: ['Machine_Bench_Press'] };
+    expect(volumeOf(routineEntries(old), exMap).sets.Chest).toBe(3);
+  });
+
+  it('skips empty sets, benchmarks and exercises it cannot find', () => {
+    const exMap = exerciseMap(emptyData());
+    const s1 = sess('2026-03-02', [ex('Machine_Bench_Press', 40, 10, 0, 10), ex('Hero_Cindy', 0, 12), ex('Gone_Forever', 10, 10)]);
+    const v = volumeOf(sessionEntries(s1), exMap);
+    expect(v.sets.Chest).toBe(2);
+    expect(Object.values(v.sets).reduce((a, b) => a + b, 0)).toBe(4); // 2 chest + 1 shoulders + 1 triceps
+    expect(muscleShares(exMap.get('Hero_Cindy'))).toEqual([]);
+  });
+
+  it("a custom exercise shares each set across its group's muscles", () => {
+    const d = emptyData();
+    custom(d, 'my-curl-thing', 'Arms');
+    custom(d, 'my-ab-wheel', 'Core');
+    const v = volumeOf([{ exerciseId: 'my-curl-thing', sets: 4 }, { exerciseId: 'my-ab-wheel', sets: 3 }], exerciseMap(d));
+    expect(v.sets.Biceps).toBe(2);
+    expect(v.sets.Triceps).toBe(2);
+    expect(v.sets.Abdominals).toBe(3);
+  });
+
+  it('counts one Monday-to-Sunday week, ignoring deleted workouts', () => {
+    const d = emptyData();
+    add(d, '2026-03-01', [ex('Machine_Bench_Press', 40, 10, 10)]); // Sunday of the week before
+    add(d, '2026-03-02', [ex('Machine_Bench_Press', 40, 10, 10, 10)]); // Monday
+    add(d, '2026-03-08', [ex('Machine_Bench_Press', 40, 10)]); // Sunday
+    add(d, '2026-03-04', [ex('Machine_Bench_Press', 40, 10, 10)], { deleted: true });
+    add(d, '2026-03-09', [ex('Machine_Bench_Press', 40, 10)]); // next Monday
+    expect(weekVolume(d.sessions, exerciseMap(d), '2026-03-05').sets.Chest).toBe(4);
+  });
+
+  it('averages the last 4 weeks, without diluting a log that is younger than that', () => {
+    const d = emptyData();
+    for (const date of ['2026-03-02', '2026-03-09', '2026-03-16', '2026-03-23']) add(d, date, [ex('Machine_Bench_Press', 40, 10, 10, 10, 10, 10, 10, 10, 10)]);
+    const exMap = exerciseMap(d);
+    const avg = averageVolume(d.sessions, exMap, 4, '2026-03-29');
+    expect(avg.sets.Chest).toBe(8); // 32 sets over 4 weeks
+    expect(avg.weeks).toBe(4);
+    expect(avg.by.Chest[0].sets).toBe(32); // sources are real totals, so they add up
+    // Workouts older than the window drop out.
+    expect(averageVolume(d.sessions, exMap, 4, '2026-04-12').sets.Chest).toBe(4); // only Mar 16 and 23 are inside
+    // Ten days into a new log, the average is over 2 weeks, not 4.
+    const fresh = emptyData();
+    add(fresh, '2026-03-02', [ex('Machine_Bench_Press', 40, 10, 10, 10, 10)]);
+    add(fresh, '2026-03-09', [ex('Machine_Bench_Press', 40, 10, 10, 10, 10)]);
+    const young = averageVolume(fresh.sessions, exerciseMap(fresh), 4, '2026-03-11');
+    expect(young.sets.Chest).toBe(4);
+    expect(young.weeks).toBe(2);
+    expect(averageVolume([], exMap, 4, '2026-03-11').sets.Chest).toBe(0);
+  });
+
+  it('bands weekly sets: under 4 low, 4–9 building, 10–20 on target, over 20 high', () => {
+    expect([0, 0.5, 3.5, 4, 9.5, 10, 20, 20.5].map(bandOf)).toEqual(['none', 'low', 'low', 'building', 'building', 'target', 'target', 'high']);
+    expect([7, 7.5, 7.25, 0.5].map(fmtSets)).toEqual(['7', '7.5', '7.5', '0.5']);
+    const v = volumeOf([{ exerciseId: 'Machine_Bench_Press', sets: 12 }], exerciseMap(emptyData())).sets;
+    expect(weeklyBands(v).Chest).toBe('target');
+    expect(weeklyBands(v).Triceps).toBe('building');
+    expect(weeklyBands(v).Calves).toBe('none');
+  });
+
+  it('shades one workout relative to its most-trained muscle, and ranks muscles by sets', () => {
+    const v = volumeOf([{ exerciseId: 'Machine_Bench_Press', sets: 4 }], exerciseMap(emptyData())).sets; // chest 4, shoulders 2, triceps 2
+    const b = relativeBands(v);
+    expect([b.Chest, b.Shoulders, b.Triceps, b.Lats]).toEqual(['target', 'building', 'building', 'none']);
+    expect(Object.values(relativeBands(volumeOf([], new Map()).sets)).every((x) => x === 'none')).toBe(true);
+    expect(ranked(v).slice(0, 4)).toEqual(['Chest', 'Shoulders', 'Triceps', 'Traps']); // ties keep head-to-toe order
+  });
+
+  it('the body map draws every muscle', () => {
+    expect(MUSCLES.filter((m) => !MAPPED.has(m))).toEqual([]);
+  });
+});
+
+describe('routine check', () => {
+  const routine = (id: string, name: string, items: [string, number][]): Routine => ({
+    id, name, updatedAt: 1, exerciseIds: items.map(([e]) => e), items: items.map(([exerciseId, sets]) => ({ exerciseId, sets, reps: '10' })),
+  });
+  const PUSH = routine('push', 'Push', [['Machine_Bench_Press', 4], ['Machine_Shoulder_Military_Press', 3], ['Triceps_Pushdown', 3]]);
+  const PULL = routine('pull', 'Pull', [['Wide-Grip_Lat_Pulldown', 4], ['Seated_Cable_Rows', 3], ['Machine_Bicep_Curl', 3]]);
+  const LEGS = routine('legs', 'Legs', [['Leg_Extensions', 4], ['Standing_Calf_Raises', 3], ['Cable_Crunch', 3]]);
+  const check = (d: AppData, routines: Routine[], weekGoal = 3, extra: { date?: string; limit?: number } = {}) =>
+    checkRotation({ data: d, routines, weekGoal, exMap: exerciseMap(d), pickable: allExercises(d), ...extra });
+
+  it('plans weekly sets by cycling through the routines at your weekly goal', () => {
+    const d = emptyData();
+    expect(planVolume([PUSH, PULL, LEGS], 3, exerciseMap(d)).sets.Chest).toBe(4); // each routine once a week
+    expect(planVolume([PUSH, PULL, LEGS], 6, exerciseMap(d)).sets.Chest).toBe(8); // each twice
+    expect(planVolume([PUSH, PULL], 3, exerciseMap(d)).sets.Chest).toBe(6);
+  });
+
+  it('flags missing muscles first, with an exercise for the routine it fits', () => {
+    const f = check(emptyData(), [PUSH, PULL, LEGS]);
+    expect(f.map((x) => x.id)).toEqual(['missing:Glutes', 'missing:Hamstrings', 'low:Abdominals']);
+    expect(f[0]).toMatchObject({ title: 'No glute work', add: { exerciseId: 'Barbell_Hip_Thrust', routineId: 'legs' } });
+    expect(f[1].add).toEqual({ exerciseId: 'Seated_Leg_Curl', routineId: 'legs' });
+    expect(f[2].add).toEqual({ exerciseId: 'Plank', routineId: 'legs' }); // Cable Crunch is already in the plan
+  });
+
+  it('adding the suggestions clears them, and keeps exercise ids in sync', () => {
+    const d = emptyData();
+    const exMap = exerciseMap(d);
+    let legs = LEGS;
+    for (const f of check(d, [PUSH, PULL, LEGS])) legs = withExercise(legs, exMap.get(f.add!.exerciseId)!, 5);
+    expect(legs.exerciseIds).toEqual(routineItems(legs).map((it) => it.exerciseId));
+    expect(legs.updatedAt).toBe(5);
+    expect(routineItems(legs).find((it) => it.exerciseId === 'Plank')).toMatchObject({ sets: 3, reps: '30' }); // a hold
+    expect(withExercise(legs, exMap.get('Plank')!)).toBe(legs); // never twice
+    const ids = check(d, [PUSH, PULL, legs], 3, { limit: 99 }).map((x) => x.id);
+    expect(ids.filter((id) => id.startsWith('missing:'))).toEqual([]);
+  });
+
+  it('prefers an exercise you already know', () => {
+    const d = emptyData();
+    for (const date of ['2026-01-05', '2026-01-12', '2026-01-19']) add(d, date, [ex('Lying_Leg_Curls', 30, 10)]);
+    expect(check(d, [PUSH, PULL, LEGS]).find((x) => x.id === 'missing:Hamstrings')?.add?.exerciseId).toBe('Lying_Leg_Curls');
+  });
+
+  it('weighs pushing against pulling and quads against hamstrings', () => {
+    const d = emptyData();
+    const heavyPush = routine('a', 'Upper', [['Machine_Bench_Press', 4], ['Butterfly', 4], ['Machine_Shoulder_Military_Press', 4], ['Wide-Grip_Lat_Pulldown', 3]]);
+    const quads = routine('b', 'Lower', [['Leg_Press', 4], ['Leg_Extensions', 4], ['Seated_Leg_Curl', 1]]);
+    const f = check(d, [heavyPush, quads], 2, { limit: 99 });
+    expect(f.find((x) => x.id === 'balance:push')).toMatchObject({ title: 'More pushing than pulling', add: { exerciseId: 'Seated_Cable_Rows', routineId: 'a' } });
+    const legs = f.find((x) => x.id === 'balance:legs');
+    expect(legs?.reason).toBe('About 8 sets a week for quads against 3 for hamstrings.');
+    expect(legs?.add?.routineId).toBe('b');
+  });
+
+  it('notices an exercise in a routine you do that has not been logged in 4 weeks', () => {
+    const d = emptyData();
+    add(d, '2026-03-02', [ex('Machine_Bench_Press', 40, 10, 10, 10, 10), ex('Machine_Shoulder_Military_Press', 30, 10, 10, 10)]);
+    add(d, '2026-03-09', [ex('Machine_Bench_Press', 40, 10, 10, 10, 10), ex('Machine_Shoulder_Military_Press', 30, 10, 10, 10)]);
+    const f = check(d, [PUSH, PULL, LEGS], 3, { date: '2026-03-11', limit: 99 });
+    const stale = f.filter((x) => x.kind === 'stale');
+    expect(stale.map((x) => x.id)).toEqual(['stale:push:Triceps_Pushdown']); // Pull and Legs weren't done, so nothing to say
+    expect(stale[0].reason).toContain('part of Push');
+    expect(stale[0].add).toBeUndefined();
+    // A week of history isn't enough to call it.
+    expect(check(d, [PUSH, PULL, LEGS], 3, { date: '2026-03-03', limit: 99 }).some((x) => x.kind === 'stale')).toBe(false);
+    // Nor is a routine edited since its last workout: whatever was just added hasn't had a chance.
+    const edited = { ...PUSH, updatedAt: new Date('2026-03-10T09:00:00').getTime() };
+    expect(check(d, [edited, PULL, LEGS], 3, { date: '2026-03-11', limit: 99 }).some((x) => x.kind === 'stale')).toBe(false);
+    const editedSameDay = { ...PUSH, updatedAt: new Date('2026-03-09T08:00:00').getTime() }; // before that day's workout ended
+    expect(check(d, [editedSameDay, PULL, LEGS], 3, { date: '2026-03-11', limit: 99 }).some((x) => x.kind === 'stale')).toBe(true);
+  });
+
+  it('a well-rounded plan has nothing to say, and every finding is unique and at most 3', () => {
+    const d = emptyData();
+    const full = routine('f', 'Full body', [
+      ['Machine_Bench_Press', 4], ['Machine_Shoulder_Military_Press', 4], ['Wide-Grip_Lat_Pulldown', 4], ['Seated_Cable_Rows', 4], ['Leg_Press', 4], ['Romanian_Deadlift', 4],
+      ['Dumbbell_Lunges', 2], ['Machine_Bicep_Curl', 4], ['Triceps_Pushdown', 2], ['Standing_Calf_Raises', 4], ['Cable_Crunch', 4], ['Farmers_Walk', 2], ['Barbell_Hip_Thrust', 2],
+    ]);
+    expect(check(d, [full], 1, { limit: 99 })).toEqual([]);
+    expect(check(d, [], 3)).toEqual([]);
+    const thin = routine('t', 'Just arms', [['Machine_Bicep_Curl', 3]]);
+    const f = check(d, [thin], 3);
+    expect(f).toHaveLength(3);
+    const added = f.map((x) => x.add?.exerciseId).filter(Boolean);
+    expect(new Set(added).size).toBe(added.length);
+    expect(added).not.toContain('Machine_Bicep_Curl');
+  });
 });

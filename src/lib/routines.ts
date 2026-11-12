@@ -1,7 +1,7 @@
 // Routines: the coach's plan (exercises with target sets × reps), the gym-guide checklist
 // and which routine is up next in your rotation.
 import { sortSessions } from './engine';
-import type { AppData, Routine, RoutineItem, SetEntry } from './types';
+import type { AppData, Exercise, Routine, RoutineItem, SetEntry } from './types';
 
 /** Live routines, sorted by name so "Day A, Day B, Day C" read in order everywhere. */
 export function activeRoutines(data: AppData): Routine[] {
@@ -75,6 +75,13 @@ export function upNextRoutine(routines: Routine[], done: Map<string, string>): R
     if (!pick || d < (done.get(pick.id) ?? '')) pick = r;
   }
   return pick;
+}
+
+/** A routine with one more exercise at the end (3 sets of the usual target), `exerciseIds` kept in sync. */
+export function withExercise(r: Routine, ex: Pick<Exercise, 'id' | 'hold'>, now = Date.now()): Routine {
+  if (routineItems(r).some((it) => it.exerciseId === ex.id)) return r;
+  const items = [...routineItems(r), { exerciseId: ex.id, sets: 3, reps: ex.hold ? '30' : '10' }];
+  return { ...r, items, exerciseIds: items.map((it) => it.exerciseId), updatedAt: now };
 }
 
 /** Move one item to a new position in a list. */

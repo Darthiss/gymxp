@@ -6,6 +6,8 @@ import { fmtDate, fmtKg, fmtNum } from '../lib/util';
 import { RewardLines } from '../components/Celebration';
 import { Icon } from '../components/Icon';
 import { ExerciseThumb, PageHead, StarRating } from '../components/ui';
+import { BodyMap } from '../components/BodyMap';
+import { fmtSets, ranked, relativeBands, sessionEntries, volumeOf } from '../lib/muscles';
 
 export function SessionView({ id }: { id: string }) {
   const data = useData();
@@ -15,6 +17,9 @@ export function SessionView({ id }: { id: string }) {
   const r = g.sessions.get(id);
   if (!s || !r) return <PageHead title="Workout not found" backTo="" />;
   const w = s.watch;
+  const vol = volumeOf(sessionEntries(s), exMap).sets;
+  const hit = ranked(vol).filter((m) => vol[m] > 0);
+  const shade = relativeBands(vol);
   const conditions = [
     s.startTime && `🕒 ${s.startTime}`,
     s.weather?.tempC !== undefined && `🌡️ ${s.weather.tempC} °C`,
@@ -52,6 +57,25 @@ export function SessionView({ id }: { id: string }) {
           </>
         )}
       </div>
+
+      {hit.length > 0 && (
+        <div className="stack">
+          <div className="section-title">Muscles worked</div>
+          <a className="card card-link row" href="#/progress?tab=muscles" style={{ gap: 14 }}>
+            <BodyMap bands={shade} width={80} style={{ flex: 'none', width: 170 }} label={`Muscles worked: ${hit.map((m) => `${m} ${fmtSets(vol[m])} sets`).join(', ')}`} />
+            <div className="grow stack" style={{ gap: 7, minWidth: 0 }} aria-hidden="true">
+              {hit.slice(0, 6).map((m) => (
+                <div key={m} className="row between small" style={{ gap: 8 }}>
+                  <span className="row ellipsis" style={{ gap: 8 }}><i className={`bm-swatch band-${shade[m]}`} />{m}</span>
+                  <span className="num dim" style={{ flex: 'none' }}>{fmtSets(vol[m])}</span>
+                </div>
+              ))}
+              {hit.length > 6 && <div className="tiny muted">+{hit.length - 6} more</div>}
+              <div className="tiny accent bold" style={{ marginTop: 2 }}>Your week by muscle</div>
+            </div>
+          </a>
+        </div>
+      )}
 
       <div className="stack">
         <div className="section-title">Exercises</div>

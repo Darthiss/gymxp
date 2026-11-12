@@ -99,6 +99,9 @@ export interface AppData {
 }
 
 export type MuscleGroup = 'Chest' | 'Back' | 'Shoulders' | 'Arms' | 'Legs' | 'Glutes' | 'Core';
+
+/** The movement an exercise trains, for the routine check. Isolation work has none. */
+export type Pattern = 'h-push' | 'v-push' | 'h-pull' | 'v-pull' | 'squat' | 'hinge' | 'lunge' | 'core' | 'carry';
 export const MUSCLE_GROUPS: MuscleGroup[] = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Glutes', 'Core'];
 
 export interface Exercise {
@@ -119,6 +122,7 @@ export interface Exercise {
   benchmark?: 'ladder' | 'cindy'; // Hero benchmark workouts with special logging
   vestMult?: number; // reps per logged unit that carry the vest weight (Cindy: 30 per round)
   hold?: boolean; // timed (plank, farmer's walk): the reps column is seconds
+  pattern?: Pattern;
   custom?: boolean;
   photo?: string;
 }

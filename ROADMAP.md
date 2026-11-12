@@ -6,7 +6,7 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 
 ## Where things stand
 
-*As of 3 November 2026.* Phases 1, 2 and 3 are live: the star system, the new end screen, trophies, legends and a full balance review. **Next:** the checks below, then Phase 4.
+*As of 11 November 2026.* Phases 1, 2, 3 and 5 are live: the star system, the new end screen, trophies, legends, a full balance review and training insights. The app is now called Bro, with a new look and mascot. Phase 5 went before Phase 4 at the owner's request. **Next:** the checks below, then Phase 4.
 
 **Open checks, all for the owner:**
 - [ ] **On an iPhone,** log a workout afterwards and confirm "Add time" shows and opens the picker (step 1.1).
@@ -41,9 +41,9 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 - [ ] **4.3** Translate the exercise catalog · L
 
 **Phase 5: Training insights**
-- [ ] **5.1** Muscle volume library · S
-- [ ] **5.2** Body map · M
-- [ ] **5.3** Routine check: what's missing · M
+- [x] **5.1** Muscle volume library · S
+- [x] **5.2** Body map · M
+- [x] **5.3** Routine check: what's missing · M
 
 **Phase 6: Public launch** (last)
 - [ ] **6.1** Choose the backend and settle what can't change later · M
@@ -73,7 +73,7 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 1. **Friction first.** Small, independent fixes you feel at every workout.
 2. **The new system before anything built on it.** The end screen, trophies and legends all display progression, so rebuilding them first would have meant doing them twice.
 3. **Rewards next,** on top of the new system. These shipped before the playtest finished, at the owner's request.
-4. **Spanish after the rewrites,** so we didn't translate text about to be deleted, and before insights so those are written in both languages once. Phases 4 and 5 can swap at little cost if the body map matters more.
+4. **Spanish after the rewrites,** so we didn't translate text about to be deleted. It was planned before insights, but the owner wanted the body map sooner, so Phase 5 shipped first and its text joins the 4.2 translation.
 5. **Insights** share one library (5.1), so it comes first.
 6. **Public launch last.** It's the biggest change here, and the people it serves will expect Spanish and stable rules from day one.
 
@@ -115,6 +115,14 @@ Built before the playtest finished, so expect to tune it.
 - **3.3 Legends.** [Career clock, equivalents, 3 challenges each](docs/GAME_DESIGN.md#legends), and lift bars only for lifts you've logged. The percentage score that barely moved is gone. The card only needs a name, a short story and a list of challenges, so a friend can use the same layout in 6.4.
 - **3.4 Balance review.** 40-year simulated careers showed Olympian was too close and the ladder too front-loaded. [The review](docs/GAME_DESIGN.md#balance-review-november-2026) has the numbers. Olympian moved from about 6 to about 9 years for a flawless 5× lifter, with a new Demigod rank and re-spaced ranks. Rarity now follows real unlock time, with a new Mythic tier and bigger pay, for 136 trophies in total. Goals above 5 pay like 5, and imported workouts stop paying stars at Gold Lifter. The level formula didn't change, so levels only shift slightly through trophy stars, but ranks now sit at different levels.
 
+### Phase 5: Training insights
+
+Shipped before Phase 4, at the owner's request.
+
+- **5.1 Muscle volume.** `lib/muscles.ts` turns logged workouts or a planned routine into weighted sets per muscle: 1 for a primary muscle, 0.5 for a secondary one. Custom exercises split their sets across their group's main muscles, and benchmarks don't count. The 4-week average divides by the weeks you've actually been training, so a new log isn't diluted, and keeps each exercise's real total so the parts add up on screen.
+- **5.2 Body map.** A Muscles tab in Progress with hand-drawn front and back figures (`components/BodyMap.tsx`), shaded in one lime ramp by weekly band: under 4, 4–9, 10–20, over 20. The ramp passed an ordinal palette check. It switches between a 4-week average (the default, since a partial week reads as "low" everywhere) and this week. The same numbers appear as most- and least-trained lists, and tapping a muscle opens a sheet with where its sets come from. Each workout page has a small "Muscles worked" map, shaded relative to that workout's busiest muscle, because weekly bands don't fit one session. The end screen was left alone; it still only just fits a phone.
+- **5.3 Routine check.** `lib/routineCheck.ts` runs plain rules over the rotation, at your weekly goal: missing major muscles, planned exercises not logged in 4 weeks, push against pull, quads against hamstrings, muscles under 4 sets a week, and missing movement patterns, with lunges and carries offered as ideas. It shows at most 3 findings. Each suggests one exercise, preferring ones you've logged, and the routine it fits best, and a tap adds it (`withExercise()` keeps `exerciseIds` in sync). The Routines list checks the whole rotation, and the editor shows the ideas for the routine being edited. The catalog gained a `pattern` field in `CURATED`, regenerated from the unchanged upstream dataset. **To tune:** whether the 4-set "light" threshold and the 1.5× and 2× balance ratios feel right on a real plan.
+
 ### Also shipped
 
 - **Farmer's Walk,** logged as weight per hand and seconds walked. Adding it made time records work on any timed exercise, and exercise pages show the longest time in place of an estimated 1RM.
@@ -141,7 +149,7 @@ Nothing visible changes yet.
 
 ### 4.2 Translate the app and add the setting · L
 
-Move all text into the dictionaries: 11 screens, 11 components, engine text in `engine.ts`, `trophies.ts`, `today.ts`, `career.ts` and `legends.ts` (136 trophies, 18 ranks, the challenges, flames, season names, legend facts), and errors in `vault.ts` and `github.ts`. Type the Spanish dictionary from the English one, so a missing key fails the build.
+Move all text into the dictionaries: 11 screens, 11 components, engine text in `engine.ts`, `trophies.ts`, `today.ts`, `career.ts` and `legends.ts` (136 trophies, 18 ranks, the challenges, flames, season names, legend facts), errors in `vault.ts` and `github.ts`, and Phase 5's text: muscle names and bands in `muscles.ts`, every finding in `routineCheck.ts`, `screens/Muscles.tsx` and `components/RoutineCheck.tsx`. Muscle names are also catalog data, so translate them through a display map and keep the English names as the keys. Type the Spanish dictionary from the English one, so a missing key fails the build.
 
 **Leave in English:** Hero Physique while it's shelved, the calibration tool, and quotes such as Ronnie's "Yeah buddy! Light weight!". Feriado names are already in Spanish.
 

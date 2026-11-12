@@ -29,7 +29,8 @@
   "images": [
    "ex/Machine_Bench_Press/0.jpg",
    "ex/Machine_Bench_Press/1.jpg"
-  ]
+  ],
+  "pattern": "h-push"
  },
  {
   "id": "Leverage_Chest_Press",
@@ -58,7 +59,8 @@
   "images": [
    "ex/Leverage_Chest_Press/0.jpg",
    "ex/Leverage_Chest_Press/1.jpg"
-  ]
+  ],
+  "pattern": "h-push"
  },
  {
   "id": "Leverage_Incline_Chest_Press",
@@ -85,7 +87,8 @@
   "images": [
    "ex/Leverage_Incline_Chest_Press/0.jpg",
    "ex/Leverage_Incline_Chest_Press/1.jpg"
-  ]
+  ],
+  "pattern": "h-push"
  },
  {
   "id": "Butterfly",
@@ -113,7 +116,8 @@
   "images": [
    "ex/Butterfly/0.jpg",
    "ex/Butterfly/1.jpg"
-  ]
+  ],
+  "pattern": "h-push"
  },
  {
   "id": "Cable_Crossover",
@@ -143,7 +147,8 @@
   "images": [
    "ex/Cable_Crossover/0.jpg",
    "ex/Cable_Crossover/1.jpg"
-  ]
+  ],
+  "pattern": "h-push"
  },
  {
   "id": "Low_Cable_Crossover",
@@ -170,7 +175,8 @@
   "images": [
    "ex/Low_Cable_Crossover/0.jpg",
    "ex/Low_Cable_Crossover/1.jpg"
-  ]
+  ],
+  "pattern": "h-push"
  },
  {
   "id": "Smith_Machine_Bench_Press",
@@ -199,7 +205,8 @@
   "images": [
    "ex/Smith_Machine_Bench_Press/0.jpg",
    "ex/Smith_Machine_Bench_Press/1.jpg"
-  ]
+  ],
+  "pattern": "h-push"
  },
  {
   "id": "Smith_Machine_Incline_Bench_Press",
@@ -228,7 +235,8 @@
   "images": [
    "ex/Smith_Machine_Incline_Bench_Press/0.jpg",
    "ex/Smith_Machine_Incline_Bench_Press/1.jpg"
-  ]
+  ],
+  "pattern": "h-push"
  },
  {
   "id": "Wide-Grip_Lat_Pulldown",
@@ -261,7 +269,8 @@
   "images": [
    "ex/Wide-Grip_Lat_Pulldown/0.jpg",
    "ex/Wide-Grip_Lat_Pulldown/1.jpg"
-  ]
+  ],
+  "pattern": "v-pull"
  },
  {
   "id": "Close-Grip_Front_Lat_Pulldown",
@@ -291,7 +300,8 @@
   "images": [
    "ex/Close-Grip_Front_Lat_Pulldown/0.jpg",
    "ex/Close-Grip_Front_Lat_Pulldown/1.jpg"
-  ]
+  ],
+  "pattern": "v-pull"
  },
  {
   "id": "V-Bar_Pulldown",
@@ -322,7 +332,8 @@
   "images": [
    "ex/V-Bar_Pulldown/0.jpg",
    "ex/V-Bar_Pulldown/1.jpg"
-  ]
+  ],
+  "pattern": "v-pull"
  },
  {
   "id": "Underhand_Cable_Pulldowns",
@@ -354,7 +365,8 @@
   "images": [
    "ex/Underhand_Cable_Pulldowns/0.jpg",
    "ex/Underhand_Cable_Pulldowns/1.jpg"
-  ]
+  ],
+  "pattern": "v-pull"
  },
  {
   "id": "Seated_Cable_Rows",
@@ -386,7 +398,8 @@
   "images": [
    "ex/Seated_Cable_Rows/0.jpg",
    "ex/Seated_Cable_Rows/1.jpg"
-  ]
+  ],
+  "pattern": "h-pull"
  },
  {
   "id": "Leverage_Iso_Row",
@@ -415,7 +428,8 @@
   "images": [
    "ex/Leverage_Iso_Row/0.jpg",
    "ex/Leverage_Iso_Row/1.jpg"
-  ]
+  ],
+  "pattern": "h-pull"
  },
  {
   "id": "Leverage_High_Row",
@@ -442,7 +456,8 @@
   "images": [
    "ex/Leverage_High_Row/0.jpg",
    "ex/Leverage_High_Row/1.jpg"
-  ]
+  ],
+  "pattern": "v-pull"
  },
  {
   "id": "Lying_T-Bar_Row",
@@ -472,7 +487,8 @@
   "images": [
    "ex/Lying_T-Bar_Row/0.jpg",
    "ex/Lying_T-Bar_Row/1.jpg"
-  ]
+  ],
+  "pattern": "h-pull"
  },
  {
   "id": "Straight-Arm_Pulldown",
@@ -499,7 +515,8 @@
   "images": [
    "ex/Straight-Arm_Pulldown/0.jpg",
    "ex/Straight-Arm_Pulldown/1.jpg"
-  ]
+  ],
+  "pattern": "v-pull"
  },
  {
   "id": "Assisted_Pull-Up_Machine",
@@ -530,7 +547,8 @@
    "ex/Assisted_Pull-Up_Machine/0.jpg",
    "ex/Assisted_Pull-Up_Machine/1.jpg"
   ],
-  "assisted": true
+  "assisted": true,
+  "pattern": "v-pull"
  },
  {
   "id": "Hyperextensions_Back_Extensions",
@@ -562,7 +580,8 @@
    "ex/Hyperextensions_Back_Extensions/0.jpg",
    "ex/Hyperextensions_Back_Extensions/1.jpg"
   ],
-  "bwFactor": 0.5
+  "bwFactor": 0.5,
+  "pattern": "hinge"
  },
  {
   "id": "Machine_Shoulder_Military_Press",
@@ -591,7 +610,8 @@
   "images": [
    "ex/Machine_Shoulder_Military_Press/0.jpg",
    "ex/Machine_Shoulder_Military_Press/1.jpg"
-  ]
+  ],
+  "pattern": "v-push"
  },
  {
   "id": "Leverage_Shoulder_Press",
@@ -617,7 +637,8 @@
   "images": [
    "ex/Leverage_Shoulder_Press/0.jpg",
    "ex/Leverage_Shoulder_Press/1.jpg"
-  ]
+  ],
+  "pattern": "v-push"
  },
  {
   "id": "Reverse_Machine_Flyes",
@@ -644,7 +665,8 @@
   "images": [
    "ex/Reverse_Machine_Flyes/0.jpg",
    "ex/Reverse_Machine_Flyes/1.jpg"
-  ]
+  ],
+  "pattern": "h-pull"
  },
  {
   "id": "Standing_Low-Pulley_Deltoid_Raise",
@@ -697,7 +719,8 @@
   "images": [
    "ex/Face_Pull/0.jpg",
    "ex/Face_Pull/1.jpg"
-  ]
+  ],
+  "pattern": "h-pull"
  },
  {
   "id": "Front_Cable_Raise",
@@ -776,7 +799,8 @@
   "images": [
    "ex/Smith_Machine_Overhead_Shoulder_Press/0.jpg",
    "ex/Smith_Machine_Overhead_Shoulder_Press/1.jpg"
-  ]
+  ],
+  "pattern": "v-push"
  },
  {
   "id": "Leverage_Shrug",
@@ -1067,7 +1091,8 @@
   "images": [
    "ex/Dip_Machine/0.jpg",
    "ex/Dip_Machine/1.jpg"
-  ]
+  ],
+  "pattern": "v-push"
  },
  {
   "id": "Assisted_Dip_Machine",
@@ -1097,7 +1122,8 @@
    "ex/Assisted_Dip_Machine/0.jpg",
    "ex/Assisted_Dip_Machine/1.jpg"
   ],
-  "assisted": true
+  "assisted": true,
+  "pattern": "v-push"
  },
  {
   "id": "Leg_Press",
@@ -1128,7 +1154,8 @@
   "images": [
    "ex/Leg_Press/0.jpg",
    "ex/Leg_Press/1.jpg"
-  ]
+  ],
+  "pattern": "squat"
  },
  {
   "id": "Hack_Squat",
@@ -1160,7 +1187,8 @@
   "images": [
    "ex/Hack_Squat/0.jpg",
    "ex/Hack_Squat/1.jpg"
-  ]
+  ],
+  "pattern": "squat"
  },
  {
   "id": "Leg_Extensions",
@@ -1350,7 +1378,8 @@
   "images": [
    "ex/Smith_Machine_Squat/0.jpg",
    "ex/Smith_Machine_Squat/1.jpg"
-  ]
+  ],
+  "pattern": "squat"
  },
  {
   "id": "Standing_Calf_Raises",
@@ -1482,7 +1511,8 @@
   "images": [
    "ex/Pull_Through/0.jpg",
    "ex/Pull_Through/1.jpg"
-  ]
+  ],
+  "pattern": "hinge"
  },
  {
   "id": "Dumbbell_Bicep_Curl",
@@ -1755,7 +1785,8 @@
    "ex/Dumbbell_Shoulder_Press/0.jpg",
    "ex/Dumbbell_Shoulder_Press/1.jpg"
   ],
-  "loadFactor": 2
+  "loadFactor": 2,
+  "pattern": "v-push"
  },
  {
   "id": "Reverse_Flyes",
@@ -1784,7 +1815,8 @@
    "ex/Reverse_Flyes/0.jpg",
    "ex/Reverse_Flyes/1.jpg"
   ],
-  "loadFactor": 2
+  "loadFactor": 2,
+  "pattern": "h-pull"
  },
  {
   "id": "Dumbbell_Shrug",
@@ -1842,7 +1874,8 @@
    "ex/Incline_Dumbbell_Press/0.jpg",
    "ex/Incline_Dumbbell_Press/1.jpg"
   ],
-  "loadFactor": 2
+  "loadFactor": 2,
+  "pattern": "h-push"
  },
  {
   "id": "Incline_Dumbbell_Flyes",
@@ -1872,7 +1905,8 @@
    "ex/Incline_Dumbbell_Flyes/0.jpg",
    "ex/Incline_Dumbbell_Flyes/1.jpg"
   ],
-  "loadFactor": 2
+  "loadFactor": 2,
+  "pattern": "h-push"
  },
  {
   "id": "Dumbbell_Bench_Press",
@@ -1902,7 +1936,8 @@
    "ex/Dumbbell_Bench_Press/0.jpg",
    "ex/Dumbbell_Bench_Press/1.jpg"
   ],
-  "loadFactor": 2
+  "loadFactor": 2,
+  "pattern": "h-push"
  },
  {
   "id": "Dumbbell_Flyes",
@@ -1929,7 +1964,8 @@
    "ex/Dumbbell_Flyes/0.jpg",
    "ex/Dumbbell_Flyes/1.jpg"
   ],
-  "loadFactor": 2
+  "loadFactor": 2,
+  "pattern": "h-push"
  },
  {
   "id": "One-Arm_Dumbbell_Row",
@@ -1963,7 +1999,8 @@
    "ex/One-Arm_Dumbbell_Row/0.jpg",
    "ex/One-Arm_Dumbbell_Row/1.jpg"
   ],
-  "loadFactor": 2
+  "loadFactor": 2,
+  "pattern": "h-pull"
  },
  {
   "id": "Dumbbell_Lunges",
@@ -1993,7 +2030,8 @@
    "ex/Dumbbell_Lunges/0.jpg",
    "ex/Dumbbell_Lunges/1.jpg"
   ],
-  "loadFactor": 2
+  "loadFactor": 2,
+  "pattern": "lunge"
  },
  {
   "id": "Stiff-Legged_Dumbbell_Deadlift",
@@ -2024,7 +2062,8 @@
    "ex/Stiff-Legged_Dumbbell_Deadlift/0.jpg",
    "ex/Stiff-Legged_Dumbbell_Deadlift/1.jpg"
   ],
-  "loadFactor": 2
+  "loadFactor": 2,
+  "pattern": "hinge"
  },
  {
   "id": "Barbell_Bench_Press_-_Medium_Grip",
@@ -2056,7 +2095,8 @@
    "ex/Barbell_Bench_Press_-_Medium_Grip/0.jpg",
    "ex/Barbell_Bench_Press_-_Medium_Grip/1.jpg"
   ],
-  "barKg": 20
+  "barKg": 20,
+  "pattern": "h-push"
  },
  {
   "id": "Barbell_Incline_Bench_Press_-_Medium_Grip",
@@ -2087,7 +2127,8 @@
    "ex/Barbell_Incline_Bench_Press_-_Medium_Grip/0.jpg",
    "ex/Barbell_Incline_Bench_Press_-_Medium_Grip/1.jpg"
   ],
-  "barKg": 20
+  "barKg": 20,
+  "pattern": "h-push"
  },
  {
   "id": "Decline_Barbell_Bench_Press",
@@ -2118,7 +2159,8 @@
    "ex/Decline_Barbell_Bench_Press/0.jpg",
    "ex/Decline_Barbell_Bench_Press/1.jpg"
   ],
-  "barKg": 20
+  "barKg": 20,
+  "pattern": "h-push"
  },
  {
   "id": "Close-Grip_Barbell_Bench_Press",
@@ -2148,7 +2190,8 @@
    "ex/Close-Grip_Barbell_Bench_Press/0.jpg",
    "ex/Close-Grip_Barbell_Bench_Press/1.jpg"
   ],
-  "barKg": 20
+  "barKg": 20,
+  "pattern": "h-push"
  },
  {
   "id": "Barbell_Squat",
@@ -2182,7 +2225,8 @@
    "ex/Barbell_Squat/0.jpg",
    "ex/Barbell_Squat/1.jpg"
   ],
-  "barKg": 20
+  "barKg": 20,
+  "pattern": "squat"
  },
  {
   "id": "Barbell_Deadlift",
@@ -2218,7 +2262,8 @@
    "ex/Barbell_Deadlift/0.jpg",
    "ex/Barbell_Deadlift/1.jpg"
   ],
-  "barKg": 20
+  "barKg": 20,
+  "pattern": "hinge"
  },
  {
   "id": "Romanian_Deadlift",
@@ -2250,7 +2295,8 @@
    "ex/Romanian_Deadlift/0.jpg",
    "ex/Romanian_Deadlift/1.jpg"
   ],
-  "barKg": 20
+  "barKg": 20,
+  "pattern": "hinge"
  },
  {
   "id": "Barbell_Lunge",
@@ -2280,7 +2326,8 @@
    "ex/Barbell_Lunge/0.jpg",
    "ex/Barbell_Lunge/1.jpg"
   ],
-  "barKg": 20
+  "barKg": 20,
+  "pattern": "lunge"
  },
  {
   "id": "Barbell_Hip_Thrust",
@@ -2308,7 +2355,8 @@
    "ex/Barbell_Hip_Thrust/0.jpg",
    "ex/Barbell_Hip_Thrust/1.jpg"
   ],
-  "barKg": 20
+  "barKg": 20,
+  "pattern": "hinge"
  },
  {
   "id": "Barbell_Glute_Bridge",
@@ -2335,7 +2383,8 @@
    "ex/Barbell_Glute_Bridge/0.jpg",
    "ex/Barbell_Glute_Bridge/1.jpg"
   ],
-  "barKg": 20
+  "barKg": 20,
+  "pattern": "hinge"
  },
  {
   "id": "Standing_Military_Press",
@@ -2367,7 +2416,8 @@
    "ex/Standing_Military_Press/0.jpg",
    "ex/Standing_Military_Press/1.jpg"
   ],
-  "barKg": 20
+  "barKg": 20,
+  "pattern": "v-push"
  },
  {
   "id": "Upright_Barbell_Row",
@@ -2450,7 +2500,8 @@
    "ex/Bent_Over_Barbell_Row/0.jpg",
    "ex/Bent_Over_Barbell_Row/1.jpg"
   ],
-  "barKg": 20
+  "barKg": 20,
+  "pattern": "h-pull"
  },
  {
   "id": "Barbell_Curl",
@@ -2594,7 +2645,8 @@
    "ex/Pullups/0.jpg",
    "ex/Pullups/1.jpg"
   ],
-  "bwFactor": 1
+  "bwFactor": 1,
+  "pattern": "v-pull"
  },
  {
   "id": "Chin-Up",
@@ -2626,7 +2678,8 @@
    "ex/Chin-Up/0.jpg",
    "ex/Chin-Up/1.jpg"
   ],
-  "bwFactor": 1
+  "bwFactor": 1,
+  "pattern": "v-pull"
  },
  {
   "id": "Parallel_Bar_Dip",
@@ -2657,7 +2710,8 @@
    "ex/Parallel_Bar_Dip/0.jpg",
    "ex/Parallel_Bar_Dip/1.jpg"
   ],
-  "bwFactor": 0.9
+  "bwFactor": 0.9,
+  "pattern": "v-push"
  },
  {
   "id": "Pushups",
@@ -2688,7 +2742,8 @@
    "ex/Pushups/0.jpg",
    "ex/Pushups/1.jpg"
   ],
-  "bwFactor": 0.64
+  "bwFactor": 0.64,
+  "pattern": "h-push"
  },
  {
   "id": "Inverted_Row",
@@ -2718,7 +2773,8 @@
    "ex/Inverted_Row/0.jpg",
    "ex/Inverted_Row/1.jpg"
   ],
-  "bwFactor": 0.6
+  "bwFactor": 0.6,
+  "pattern": "h-pull"
  },
  {
   "id": "Bodyweight_Squat",
@@ -2746,7 +2802,8 @@
    "ex/Bodyweight_Squat/0.jpg",
    "ex/Bodyweight_Squat/1.jpg"
   ],
-  "bwFactor": 0.35
+  "bwFactor": 0.35,
+  "pattern": "squat"
  },
  {
   "id": "Sit-Up",
@@ -2773,7 +2830,8 @@
    "ex/Sit-Up/0.jpg",
    "ex/Sit-Up/1.jpg"
   ],
-  "bwFactor": 0.25
+  "bwFactor": 0.25,
+  "pattern": "core"
  },
  {
   "id": "Hanging_Leg_Raise",
@@ -2799,7 +2857,8 @@
    "ex/Hanging_Leg_Raise/0.jpg",
    "ex/Hanging_Leg_Raise/1.jpg"
   ],
-  "bwFactor": 0.35
+  "bwFactor": 0.35,
+  "pattern": "core"
  },
  {
   "id": "Ab_Roller",
@@ -2827,7 +2886,8 @@
    "ex/Ab_Roller/0.jpg",
    "ex/Ab_Roller/1.jpg"
   ],
-  "bwFactor": 0.4
+  "bwFactor": 0.4,
+  "pattern": "core"
  },
  {
   "id": "Hero_Ladder",
@@ -2916,7 +2976,8 @@
   "images": [
    "ex/Ab_Crunch_Machine/0.jpg",
    "ex/Ab_Crunch_Machine/1.jpg"
-  ]
+  ],
+  "pattern": "core"
  },
  {
   "id": "Cable_Crunch",
@@ -2943,7 +3004,8 @@
   "images": [
    "ex/Cable_Crunch/0.jpg",
    "ex/Cable_Crunch/1.jpg"
-  ]
+  ],
+  "pattern": "core"
  },
  {
   "id": "Pallof_Press",
@@ -2973,7 +3035,8 @@
   "images": [
    "ex/Pallof_Press/0.jpg",
    "ex/Pallof_Press/1.jpg"
-  ]
+  ],
+  "pattern": "core"
  },
  {
   "id": "Standing_Cable_Wood_Chop",
@@ -3004,7 +3067,8 @@
   "images": [
    "ex/Standing_Cable_Wood_Chop/0.jpg",
    "ex/Standing_Cable_Wood_Chop/1.jpg"
-  ]
+  ],
+  "pattern": "core"
  },
  {
   "id": "Plank",
@@ -3033,7 +3097,8 @@
    "ex/Plank/1.jpg"
   ],
   "bwFactor": 0.5,
-  "hold": true
+  "hold": true,
+  "pattern": "core"
  },
  {
   "id": "Side_Bridge",
@@ -3063,7 +3128,8 @@
    "ex/Side_Bridge/1.jpg"
   ],
   "bwFactor": 0.35,
-  "hold": true
+  "hold": true,
+  "pattern": "core"
  },
  {
   "id": "Farmers_Walk",
@@ -3102,7 +3168,8 @@
    "ex/Farmers_Walk/1.jpg"
   ],
   "loadFactor": 2,
-  "hold": true
+  "hold": true,
+  "pattern": "carry"
  },
  {
   "id": "Crunches",
@@ -3131,7 +3198,8 @@
    "ex/Crunches/0.jpg",
    "ex/Crunches/1.jpg"
   ],
-  "bwFactor": 0.2
+  "bwFactor": 0.2,
+  "pattern": "core"
  },
  {
   "id": "Reverse_Crunch",
@@ -3157,7 +3225,8 @@
    "ex/Reverse_Crunch/0.jpg",
    "ex/Reverse_Crunch/1.jpg"
   ],
-  "bwFactor": 0.25
+  "bwFactor": 0.25,
+  "pattern": "core"
  },
  {
   "id": "Air_Bike",
@@ -3186,7 +3255,8 @@
    "ex/Air_Bike/0.jpg",
    "ex/Air_Bike/1.jpg"
   ],
-  "bwFactor": 0.2
+  "bwFactor": 0.2,
+  "pattern": "core"
  },
  {
   "id": "Russian_Twist",
@@ -3215,7 +3285,8 @@
    "ex/Russian_Twist/0.jpg",
    "ex/Russian_Twist/1.jpg"
   ],
-  "bwFactor": 0.15
+  "bwFactor": 0.15,
+  "pattern": "core"
  },
  {
   "id": "Dead_Bug",
@@ -3243,7 +3314,8 @@
    "ex/Dead_Bug/0.jpg",
    "ex/Dead_Bug/1.jpg"
   ],
-  "bwFactor": 0.15
+  "bwFactor": 0.15,
+  "pattern": "core"
  },
  {
   "id": "Flat_Bench_Lying_Leg_Raise",
@@ -3270,7 +3342,8 @@
    "ex/Flat_Bench_Lying_Leg_Raise/0.jpg",
    "ex/Flat_Bench_Lying_Leg_Raise/1.jpg"
   ],
-  "bwFactor": 0.25
+  "bwFactor": 0.25,
+  "pattern": "core"
  },
  {
   "id": "Knee_Hip_Raise_On_Parallel_Bars",
@@ -3299,7 +3372,8 @@
    "ex/Knee_Hip_Raise_On_Parallel_Bars/0.jpg",
    "ex/Knee_Hip_Raise_On_Parallel_Bars/1.jpg"
   ],
-  "bwFactor": 0.3
+  "bwFactor": 0.3,
+  "pattern": "core"
  },
  {
   "id": "Decline_Crunch",
@@ -3328,7 +3402,8 @@
    "ex/Decline_Crunch/0.jpg",
    "ex/Decline_Crunch/1.jpg"
   ],
-  "bwFactor": 0.3
+  "bwFactor": 0.3,
+  "pattern": "core"
  },
  {
   "id": "Dumbbell_Side_Bend",
@@ -3353,6 +3428,7 @@
   "images": [
    "ex/Dumbbell_Side_Bend/0.jpg",
    "ex/Dumbbell_Side_Bend/1.jpg"
-  ]
+  ],
+  "pattern": "core"
  }
 ]

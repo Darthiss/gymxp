@@ -1,14 +1,16 @@
 import { useMemo, useState } from 'react';
 import { getStore, useData } from '../lib/store';
-import { fmtSet } from '../lib/exercises';
-import { settingFor, useExerciseMap } from '../lib/game';
+import { allExercises, fmtSet } from '../lib/exercises';
+import { settingFor, useExerciseMap, useGame } from '../lib/game';
 import { navigate } from '../lib/router';
 import { logHref } from '../lib/today';
 import {
-  activeRoutines, fmtRest, fmtTarget, hitTarget, inOrder, lastDone, loadOrder, loadTicks, moveTo, nextPosition, repsForSet, REST_OPTIONS, routineItems, saveOrder, saveTicks, totalSets, upNextRoutine, type Ticks,
+  activeRoutines, fmtRest, fmtTarget, hitTarget, inOrder, lastDone, loadOrder, loadTicks, moveTo, nextPosition, repsForSet, REST_OPTIONS, routineItems, saveOrder, saveTicks, totalSets, upNextRoutine, withExercise, type Ticks,
 } from '../lib/routines';
 import { fmtDate, plural, today, uid } from '../lib/util';
-import type { RoutineItem } from '../lib/types';
+import type { Routine, RoutineItem } from '../lib/types';
+import { checkRotation, MAX_FINDINGS, type Finding } from '../lib/routineCheck';
+import { RoutineCheckCard } from '../components/RoutineCheck';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { ExerciseInfo } from '../components/ExerciseInfo';
 import { ReorderSheet } from '../components/ReorderSheet';
@@ -25,6 +27,22 @@ export function Routines() {
   const routines = useMemo(() => activeRoutines(data), [data]);
   const done = useMemo(() => lastDone(data, routines), [data, routines]);
   const next = upNextRoutine(routines, done);
+  const g = useGame();
+  const pickable = useMemo(() => allExercises(data), [data]);
+  const findings = useMemo(
+    () => checkRotation({ data, routines, weekGoal: g.weekGoal, exMap, pickable }),
+    [data, routines, g.weekGoal, exMap, pickable],
+  );
+  const add = (f: Finding) => {
+    const ex = f.add && exMap.get(f.add.exerciseId);
+    const r = f.add && routines.find((x) => x.id === f.add!.routineId);
+    if (!ex || !r) return;
+    getStore().update((d) => {
+      const i = d.routines.findIndex((x) => x.id === r.id);
+      if (i >= 0) d.routines[i] = withExercise(d.routines[i], ex);
+    }, `Routine ${r.name}: add ${ex.name}`);
+    toast(`Added ${ex.name} to ${r.name}`);
+  };
 
   return (
     <div className="stack fade-in">
@@ -61,6 +79,17 @@ export function Routines() {
           </a>
         );
       })}
+      {routines.length > 0 && (
+        <RoutineCheckCard
+          title="Routine check"
+          sub={`${plural(routines.length, 'routine')} at ${plural(g.weekGoal, 'workout')} a week`}
+          findings={findings}
+          exMap={exMap}
+          routines={routines}
+          onAdd={add}
+          allGood="Your rotation trains every major muscle and movement. Nice plan."
+        />
+      )}
     </div>
   );
 }
@@ -182,6 +211,22 @@ export function RoutineEdit({ id }: { id: string }) {
     (existing ? routineItems(existing) : []).map((it) => ({ ...it, restSec: it.restSec ? String(it.restSec) : '', note: it.note ?? '' })),
   );
   const [picker, setPicker] = useState(false);
+  const g = useGame();
+  const pickable = useMemo(() => allExercises(data), [data]);
+  // The check runs on the whole rotation with this draft swapped in, and keeps what belongs here.
+  const draftId = existing?.id ?? 'new';
+  const ideas = useMemo(() => {
+    if (!items.length) return [];
+    const draft: Routine = {
+      id: draftId, updatedAt: 0, name: name.trim() || 'This routine',
+      exerciseIds: items.map((it) => it.exerciseId), items: items.map((it) => ({ exerciseId: it.exerciseId, sets: it.sets, reps: it.reps })),
+    };
+    const rotation = [...activeRoutines(data).filter((r) => r.id !== draftId), draft];
+    return checkRotation({ data, routines: rotation, weekGoal: g.weekGoal, exMap, pickable, limit: 99 })
+      .filter((f) => f.add?.routineId === draftId)
+      .slice(0, MAX_FINDINGS);
+  }, [data, draftId, name, items, g.weekGoal, exMap, pickable]);
+  const addItem = (eid: string) => setItems((l) => (l.some((it) => it.exerciseId === eid) ? l : [...l, { exerciseId: eid, sets: 3, reps: exMap.get(eid)?.hold ? '30' : '10', restSec: '', note: '' }]));
   const move = (i: number, dir: -1 | 1) => setItems((l) => { const n = [...l]; const j = i + dir; if (j < 0 || j >= n.length) return l; [n[i], n[j]] = [n[j], n[i]]; return n; });
   const setItem = (i: number, patch: Partial<DraftItem>) => setItems((l) => l.map((it, j) => (j === i ? { ...it, ...patch } : it)));
 
@@ -251,6 +296,18 @@ export function RoutineEdit({ id }: { id: string }) {
       })}
       {items.length > 0 && <p className="tiny muted">Reps can be a range (8-12) or change per set (12/10/8).</p>}
       <button className="btn dashed" onClick={() => setPicker(true)}><Icon name="plus" size={17} stroke={2.4} /> Add exercise</button>
+      {ideas.length > 0 && (
+        <RoutineCheckCard
+          title="Ideas for this routine"
+          sub="From a check of your whole rotation"
+          findings={ideas}
+          exMap={exMap}
+          routines={[]}
+          onAdd={(f) => f.add && addItem(f.add.exerciseId)}
+          allGood=""
+          showRoutine={false}
+        />
+      )}
 
       <button className="btn primary big block" onClick={save}>Save routine</button>
       {existing && <button className="btn danger block" onClick={remove}>Delete routine</button>}
@@ -258,7 +315,7 @@ export function RoutineEdit({ id }: { id: string }) {
         <ExercisePicker
           exclude={items.map((it) => it.exerciseId)}
           onClose={() => setPicker(false)}
-          onPick={(eid) => { setItems((l) => [...l, { exerciseId: eid, sets: 3, reps: exMap.get(eid)?.hold ? '30' : '10', restSec: '', note: '' }]); setPicker(false); }}
+          onPick={(eid) => { addItem(eid); setPicker(false); }}
         />
       )}
     </div>
