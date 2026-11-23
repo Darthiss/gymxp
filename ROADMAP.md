@@ -6,7 +6,7 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 
 ## Where things stand
 
-*As of 23 November 2026.* Phases 1, 2, 3 and 5 are live: the star system, the new end screen, trophies, legends (shelved since), a full balance review and training insights. The app is now called Bro, with a new look and mascot. Phase 5 went before Phase 4 at the owner's request, and so did body and strength goals. **Next:** [Phase A](#phase-a-private-accounts), private accounts on Supabase: no GitHub, free, end-to-end encrypted, for the owner, the second user and up to five friends. The second user ([Phase S](#phase-s-a-second-user), a woman) has no GitHub account, so she starts once Phase A is live, and the owner moves over first. Then [Phase 4](#phase-4-spanish), Spanish. The public launch has no date and no target.
+*As of 23 November 2026.* Phases 1, 2, 3 and 5 are live: the star system, the new end screen, trophies, legends (shelved since), a full balance review and training insights. The app is now called Bro, with a new look and mascot. Phase 5 went before Phase 4 at the owner's request, and so did body and strength goals. **Phase A is live:** private accounts on Supabase, end-to-end encrypted, with a guest list and a nightly backup. The owner moved over on 23 November 2026. **Next:** [S.3](#s3-her-setup--s), the second user's setup, whenever she's ready. After a week or two on the account, A.7 takes the GitHub path out of the app. Then [Phase 4](#phase-4-spanish), Spanish. The public launch has no date and no target.
 
 **Open checks, all for the owner:**
 - [ ] **On an iPhone,** log a workout afterwards and confirm "Add time" shows and opens the picker (step 1.1).
@@ -42,7 +42,7 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 - [x] **A.3** End-to-end encryption and the recovery key · M
 - [x] **A.4** Sign-up, sign-in, sync and photos on Supabase · L
 - [x] **A.5** Nightly backup, privacy page and account deletion · S
-- [ ] **A.6** Move the owner over · S
+- [x] **A.6** Move the owner over · S
 - [ ] **A.7** Retire the GitHub path, after a week or two on the account · S
 
 **Phase S: A second user** (S.3 on, once Phase A is live)
@@ -97,7 +97,7 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 3. **Rewards next,** on top of the new system. These shipped before the playtest finished, at the owner's request.
 4. **Spanish after the rewrites,** so we didn't translate text about to be deleted. It was planned before insights, but the owner wanted the body map sooner, so Phase 5 shipped first and its text joins the 4.2 translation.
 5. **Insights** share one library (5.1), so it comes first.
-6. **Private accounts before her,** because she has no GitHub account and the log is health data. Phase A is sized for seven people, not the public: one free Supabase setup, a guest list, end-to-end encryption. The owner moves over first, so his long log tests it before anyone else's data is on it.
+6. **Private accounts before her,** because she has no GitHub account and the log is health data. Phase A is sized for seven people, not the public: one free Supabase setup, a guest list, end-to-end encryption. The owner moves over first, so the owner's long log tests it before anyone else's data is on it.
 7. **A second user before Spanish,** at the owner's request. One real person who isn't the owner, and the first woman, will show what the app gets wrong for someone else, and that's cheaper to learn now than after translating it. If she'd rather use it in Spanish, Phase 4 comes straight after.
 8. **Public launch last, with no date.** Phase A does the hard technical part. What's left is opening sign-up, and the responsibilities that come with strangers' data.
 

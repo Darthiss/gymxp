@@ -61,8 +61,8 @@ To check it: creating an account with an email that isn't on the list should fai
 
 **The backup,** for `Bro` only:
 
-1. In the `Bro` project, press **Connect** and copy the **Session pooler** connection string. GitHub's servers can't reach the direct one. Replace `[YOUR-PASSWORD]` in it with the database password from step 1.
-2. In your **private** data repo on GitHub, open **Settings**, then **Secrets and variables**, then **Actions**, and add a repository secret named `SUPABASE_DB_URL` holding that string.
+1. Have the `Bro` database password from step 1 at hand. If it's lost, reset it under **Project Settings**, **Database**, and wait a few minutes before the first run.
+2. In your **private** data repo on GitHub, open **Settings**, then **Secrets and variables**, then **Actions**, and add a repository secret named `SUPABASE_DB_PASSWORD` holding just the password, exactly as it is: no brackets, no spaces.
 3. Still in that repo, choose **Add file**, then **Create new file**, name it `.github/workflows/backup.yml`, paste all of [`supabase/backup.yml`](../supabase/backup.yml) and commit it.
 4. Open the repo's **Actions** tab, choose **Backup Bro accounts**, then **Run workflow**. In about a minute it should finish green, with a `bro-backup-1` artifact at the bottom of the run.
 

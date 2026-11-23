@@ -1,7 +1,9 @@
 # Nightly backup of Bro accounts (roadmap A.5). This file is a template: copy it to
 # .github/workflows/backup.yml in the owner's PRIVATE data repo, never a public one.
-# It needs one repository secret, SUPABASE_DB_URL: the live project's Session pooler
-# connection string, with the database password in it (docs/ACCOUNTS.md, step 4).
+# It needs one repository secret, SUPABASE_DB_PASSWORD: the live project's database
+# password, pasted as it is (docs/ACCOUNTS.md, step 4). The host and user below are the
+# live project's Session pooler; they aren't secret. Passing the password on its own
+# avoids escaping it inside a connection string.
 #
 # What it saves: each person's vault row (data and keys, both sealed on their phone,
 # unreadable without their password or recovery key), their email so a vault can be
@@ -25,13 +27,19 @@ jobs:
     steps:
       - name: Export the sealed vaults and the guest list
         env:
-          DB: ${{ secrets.SUPABASE_DB_URL }}
+          PGHOST: aws-0-sa-east-1.pooler.supabase.com
+          PGPORT: '5432'
+          PGDATABASE: postgres
+          PGUSER: postgres.hfoeqdrcqwkpwuegajzg
+          PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          PGSSLMODE: require
         run: |
           set -euo pipefail
+          test -n "$PGPASSWORD" || { echo 'The SUPABASE_DB_PASSWORD secret is missing'; exit 1; }
           sudo apt-get install -y -qq postgresql-client > /dev/null
           mkdir backup
-          psql "$DB" -v ON_ERROR_STOP=1 -qc "\copy (select u.email, v.user_id, v.version, v.updated_at, v.keys, v.data from public.vaults v join auth.users u on u.id = v.user_id order by u.email) to 'backup/vaults.csv' with csv header"
-          psql "$DB" -v ON_ERROR_STOP=1 -qc "\copy (select email, added_at from public.guests order by email) to 'backup/guests.csv' with csv header"
+          psql -v ON_ERROR_STOP=1 -qc "\copy (select u.email, v.user_id, v.version, v.updated_at, v.keys, v.data from public.vaults v join auth.users u on u.id = v.user_id order by u.email) to 'backup/vaults.csv' with csv header"
+          psql -v ON_ERROR_STOP=1 -qc "\copy (select email, added_at from public.guests order by email) to 'backup/guests.csv' with csv header"
           echo "People: $(($(wc -l < backup/vaults.csv) - 1))"
           ls -l backup
 
