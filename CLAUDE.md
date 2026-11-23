@@ -55,6 +55,7 @@ Boot sequence (`src/App.tsx`): `boot` → `setup` or `locked` → `open`. Once o
 - A week's goal comes from `goalAt()`, not `profile.weeklyGoal` (which can be a change that starts next Monday), and changes go through `withWeeklyGoal()`, so past weeks are never rewritten.
 - `lib/career.ts` builds Career's story (`careerStory()`) and decides what gets a full-screen reveal (`bigMoments()`). `components/Celebration.tsx` compares the game before and after a save, so edited and backdated workouts show what really changed.
 - Hero Physique is shelved behind `FEATURES.hero` (`lib/features.ts`), with its code and tests intact. `lib/hero.ts` still runs, because non-Hero trophies such as `str-pullup` read its rep tracking.
+- Legends are shelved the same way, behind `FEATURES.legends`: no tab, and their 12 challenges are filtered out of `ACHIEVEMENTS`, so they pay no stars. Their tests mock the flag on ("legends, switched back on").
 
 **Exercises.** `src/data/exercises.json` is generated from the `CURATED` list in `scripts/import-exercises.mjs` plus free-exercise-db, so edit `CURATED` and regenerate instead of editing the JSON. The source is the dataset's [`dist/exercises.json`](https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json), and existing photos aren't downloaded again. Photos live in `public/ex/<id>/`. Stored sessions reference exercises by `id`, so never rename one.
 - `exerciseMap()` includes deleted custom exercises and shelved ones so old sessions still resolve. `allExercises()` is the live list for pickers.

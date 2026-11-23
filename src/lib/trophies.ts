@@ -256,7 +256,7 @@ const ALL: RawDef[] = [
 ];
 
 export const ACHIEVEMENTS: AchievementDef[] = ALL
-  .filter((a) => FEATURES.hero || a.category !== 'Hero')
+  .filter((a) => (FEATURES.hero || a.category !== 'Hero') && (FEATURES.legends || a.category !== 'Legends'))
   .map(({ value, ...a }) => {
     const rarity = rarityOf(value);
     return { ...a, rarity, stars: RARITY_STARS[rarity] };

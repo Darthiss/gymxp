@@ -69,6 +69,7 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 | Olympian | About 2,500 workouts, roughly a decade of hard training. Level 125. Nobody gets there in under 7 years |
 | Imported history | A head start, not a shortcut: it earns stars up to Gold Lifter, then only logged workouts do |
 | Hero Physique | Shelved behind a flag, with code and tests kept. Decide its future before Phase 6 |
+| Legends | Shelved behind a flag in November 2026, at the owner's request, with code and tests kept. Their challenges pay no stars while off. Decide with Hero |
 | Spanish register | Neutral Latin American |
 | Accounts | Public sign-up without GitHub, on the web and installable from the browser. Built last |
 | Next user | A second user, a woman, before Spanish and the public launch. Health formulas follow the profile's sex wherever the science differs |
@@ -175,7 +176,7 @@ Watch for what doesn't fit, and fix it as it comes up:
 
 Product choices, best made with her after S.4:
 - **Strength trophies** use absolute numbers set for men (a 140 kg bench, a 180 kg deadlift). Keep them as long-term goals, or add relative ones scaled for women? Never rename an id; add new ones.
-- **Legends** are four men. Add women, with commonly reported facts only?
+- **Legends** are shelved for now. If they return, they're four men: add women, with commonly reported facts only?
 - **Lift someone** sets the deadlift at 1.5× her own bodyweight. If the person she'd lift is much heavier than her, that target may need to follow their weight instead.
 - **Hero Physique** is shelved, and was built around a male actor's training. If it returns, it needs a version for women or a neutral one.
 

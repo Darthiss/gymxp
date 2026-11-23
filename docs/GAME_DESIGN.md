@@ -213,7 +213,7 @@ The weather and holiday bonuses keep their local charm but collapse from six XP 
 
 ### Trophies
 
-A big collection is part of the fun, including trophies you may never reach, so there are **136: 124 on the Awards tab and 12 legend challenges.** Keep it large, and keep each one worth having.
+A big collection is part of the fun, including trophies you may never reach, so there are **136: 124 on the Awards tab and 12 legend challenges** (shelved for now, see [Legends](#legends)). Keep it large, and keep each one worth having.
 
 | Rarity | Count | Pays | Takes a solid 3× lifter about | When you unlock it |
 |---|---|---|---|---|
@@ -232,6 +232,8 @@ A big collection is part of the fun, including trophies you may never reach, so 
 - **Your story:** Career lists your first workout, every rank and every Rare-or-better trophy, with dates, each linking to its workout.
 
 ### Legends
+
+**Shelved in November 2026** at the owner's request, behind `FEATURES.legends`, with code and tests kept. While it's off there's no Legends tab, and the 12 challenges aren't trophies, so they pay no stars and earned ones stop counting. Switching the flag back restores them all, recomputed from the log. Decide their future with Hero's, before Phase 6.
 
 For someone training on machines, the old score barely moved: Arnold was 1.6% after 2 years. Comparing absolute lifts with world champions was never going to be fun, so each legend card now tells a story and sets challenges you can actually beat:
 

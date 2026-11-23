@@ -5,6 +5,7 @@ import {
 import { ACHIEVEMENTS, RARITY_STARS, rarityOf, TROPHY_GROUPS } from './trophies';
 import { allExercises, BUILTIN, exerciseMap, fmtBeat, fmtPr, fmtSet, searchExercises, toBeatText } from './exercises';
 import { careerClock, LEGENDS, timesMoved } from './legends';
+import { FEATURES } from './features';
 import { bigMoments, careerStory } from './career';
 import { gameFor } from './game';
 import { emptyData, type AppData, type Exercise, type Routine, type Session } from './types';
@@ -581,7 +582,7 @@ describe('trophies', () => {
   });
 
   it('is a big collection with no loose ends', () => {
-    expect(ACHIEVEMENTS).toHaveLength(136);
+    expect(ACHIEVEMENTS).toHaveLength(124); // 136 with the 12 legend challenges, shelved for now
     expect(new Set(ACHIEVEMENTS.map((a) => a.id)).size).toBe(ACHIEVEMENTS.length);
     const grouped = new Set(TROPHY_GROUPS.flatMap((g) => g.categories));
     for (const a of ACHIEVEMENTS) expect(grouped.has(a.category) || a.category === 'Legends', a.id).toBe(true);
@@ -627,12 +628,39 @@ describe('trophies', () => {
   });
 });
 
-describe('legends', () => {
+describe('legends, while shelved', () => {
+  it('have no trophies, pay no stars and have no tab', () => {
+    expect(FEATURES.legends).toBe(false);
+    expect(ACHIEVEMENTS.some((a) => a.category === 'Legends' || a.legend)).toBe(false);
+    const d = emptyData();
+    const s = add(d, '2026-01-05', [ex('Leg_Press', 200, 10, 10, 10)]); // 2,000 kg sets: The 500, if legends were on
+    add(d, '2026-01-07', [ex('Farmers_Walk', 30, 60)]); // Strongman Carry
+    const g = game(d);
+    expect([...g.unlockedIds].some((id) => id.startsWith('leg-'))).toBe(false);
+    expect(result(g, s).items.some((i) => i.label.includes('The 500'))).toBe(false);
+  });
+});
+
+describe('legends, switched back on', () => {
   const byId = (id: string) => LEGENDS.find((l) => l.id === id)!;
-  const has = (d: AppData, id: string) => game(d).unlockedIds.has(id);
+  let has: (d: AppData, id: string) => boolean;
+  let ach: typeof ACHIEVEMENTS;
+  beforeEach(async () => {
+    vi.resetModules();
+    vi.doMock('./features', () => ({ FEATURES: { hero: false, legends: true } }));
+    const engine = await import('./engine');
+    const exercises = await import('./exercises');
+    ach = (await import('./trophies')).ACHIEVEMENTS;
+    has = (d, id) => engine.computeGame(d, exercises.exerciseMap(d)).unlockedIds.has(id);
+  });
+  afterEach(() => {
+    vi.doUnmock('./features');
+    vi.resetModules();
+  });
 
   it('each has three challenges', () => {
-    for (const l of LEGENDS) expect(ACHIEVEMENTS.filter((a) => a.legend === l.id), l.id).toHaveLength(3);
+    expect(ach).toHaveLength(136);
+    for (const l of LEGENDS) expect(ach.filter((a) => a.legend === l.id), l.id).toHaveLength(3);
   });
 
   it('tell your gym days as a story', () => {

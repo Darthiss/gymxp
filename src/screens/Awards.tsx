@@ -17,7 +17,7 @@ type Tab = 'overview' | 'achievements' | 'legends';
 export function Awards({ route }: { route: Route }) {
   const g = useGame();
   const q = route.query.get('tab');
-  const tab: Tab = q === 'achievements' || q === 'legends' ? q : 'overview';
+  const tab: Tab = q === 'achievements' || (q === 'legends' && FEATURES.legends) ? q : 'overview';
   const [help, setHelp] = useState(false);
 
   return (
@@ -30,7 +30,7 @@ export function Awards({ route }: { route: Route }) {
       <LevelCard g={g} />
       <Segmented<Tab>
         value={tab}
-        options={[['overview', 'Overview'], ['achievements', `Awards ${g.unlocked.length}`], ['legends', 'Legends']]}
+        options={[['overview', 'Overview'], ['achievements', `Awards ${g.unlocked.length}`], ...(FEATURES.legends ? [['legends', 'Legends'] as [Tab, string]] : [])]}
         onChange={(t) => navigate(t === 'overview' ? 'awards' : `awards?tab=${t}`, true)}
       />
       {tab === 'overview' && <Overview />}

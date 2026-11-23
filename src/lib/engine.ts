@@ -930,8 +930,8 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     if (s.startTime && s.startTime >= '21:00') A('special-night');
     if ((monthVisits.get(s.date.slice(0, 7)) ?? 0) >= 12) A('special-month');
     if (prs.length >= 3) A('special-double');
-    // legend challenges, for real workouts only
-    if (!s.estimated) {
+    // legend challenges, for real workouts only (and only while Legends is switched on)
+    if (FEATURES.legends && !s.estimated) {
       if (day.sets >= 20) A('leg-arnold-pump');
       if ((weekVisits.get(wk) ?? 0) >= 6) A('leg-arnold-split');
       if (consecutive(perfectSet, wk) >= 7) A('leg-arnold-seven');

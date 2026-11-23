@@ -9,7 +9,7 @@ A gym habit tracker that works like a game. Log the machines, weights and reps y
 - **Train at least once a week to keep your streak alive.** Hit your weekly goal for a Perfect Week: bonus stars, and the longer your streak, the bigger the bonus.
 - **Every machine has its own medal,** from Bronze to Master, earned by using it and getting stronger on it.
 
-Records, 136 trophies, quarterly season medals, weekly challenges and legend challenges add to that. The top rank, Olympian, takes about 2,500 workouts: roughly 9 years at 5 days a week without a miss, or 18 at a solid 3. [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md) has the full rules and the research behind them.
+Records, 124 trophies, quarterly season medals and weekly challenges add to that. The top rank, Olympian, takes about 2,500 workouts: roughly 9 years at 5 days a week without a miss, or 18 at a solid 3. [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md) has the full rules and the research behind them.
 
 ## What's in the app
 
@@ -17,7 +17,7 @@ Records, 136 trophies, quarterly season medals, weekly challenges and legend cha
 - **Routines:** save your coach's plan with sets and reps, and use it as a checklist at the gym.
 - **Exercise guide:** 134 exercises, including the usual glute work, with a description of how to recognize each machine, almost all with photos, plus your own machines with your own photos.
 - **Progress:** history, charts for each exercise, machine medals, a "lift someone" strength goal, and your body: weekly-average weight against a lean-gain, cut or maintain pace, tape measurements, and estimated body fat, lean mass and FFMI.
-- **Career:** your level and rank, season medals, your story so far, trophies and legends.
+- **Career:** your level and rank, season medals, your story so far, and trophies.
 - **Extras:** import past workouts from memory, a bar and plates calculator, per-machine settings, and optional weather and Apple Watch data.
 
 ## How it's hosted and secured
