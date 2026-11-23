@@ -4,10 +4,12 @@ import { useState } from 'react';
 import { DISCLAIMER } from '../lib/body';
 import { createAccount, MIN_PASSWORD, resetPassword, sendResetCode, signIn, type Account } from '../lib/account';
 import { RecoveryKeyBox } from '../components/RecoveryKey';
+import { PrivacyText } from '../components/Privacy';
 import { LogoMark } from './Auth';
 
 type View =
   | { kind: 'welcome' }
+  | { kind: 'privacy' }
   | { kind: 'create' }
   | { kind: 'signin' }
   | { kind: 'forgot'; sent: boolean }
@@ -73,11 +75,20 @@ export default function AccountGate({ onOpen, onGithub }: { onOpen: (a: Account)
           <button className="btn big block" onClick={() => go({ kind: 'signin' })}>Sign in</button>
         </div>
         <p className="small dim center" style={{ lineHeight: 1.5 }}>
-          Invite only for now. Your log is locked on this phone before it's uploaded, so only you can read it.
+          Invite only for now. Your log is locked on this phone before it's uploaded, so only you can read it.{' '}
+          <a href="#" onClick={(e) => { e.preventDefault(); go({ kind: 'privacy' }); }}>How it stays private</a>
         </p>
         <div className="center">
           <button type="button" className="btn ghost sm muted" onClick={onGithub}>Use a GitHub repo instead</button>
         </div>
+      </div>
+    );
+  } else if (view.kind === 'privacy') {
+    body = (
+      <div className="stack-lg">
+        <h1 className="center">Privacy</h1>
+        <PrivacyText />
+        {back}
       </div>
     );
   } else if (view.kind === 'create') {

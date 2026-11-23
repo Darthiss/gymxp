@@ -1,4 +1,4 @@
--- Bro: database setup for private accounts (roadmap A.4). Paste into each project's
+-- Bro: database setup for private accounts (roadmap A.4, A.5). Paste into each project's
 -- SQL Editor and run. It's safe to run again: everything is created only if missing,
 -- and the rules are replaced.
 --
@@ -106,3 +106,27 @@ create policy "Own photos: add" on storage.objects for insert to authenticated
   with check (bucket_id = 'photos' and (storage.foldername(name))[1] = (select auth.uid())::text);
 create policy "Own photos: replace" on storage.objects for update to authenticated
   using (bucket_id = 'photos' and (storage.foldername(name))[1] = (select auth.uid())::text);
+drop policy if exists "Own photos: delete" on storage.objects;
+create policy "Own photos: delete" on storage.objects for delete to authenticated
+  using (bucket_id = 'photos' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+-- ---------------------------------------------------------------------------
+-- Delete account (Settings > Account). The app removes the photos first, through
+-- the Storage API; deleting the user then deletes their vault (on delete cascade).
+-- ---------------------------------------------------------------------------
+create or replace function public.delete_my_account()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if (select auth.uid()) is null then
+    raise exception 'Not signed in';
+  end if;
+  delete from auth.users where id = (select auth.uid());
+end;
+$$;
+
+revoke execute on function public.delete_my_account() from public, anon;
+grant execute on function public.delete_my_account() to authenticated;

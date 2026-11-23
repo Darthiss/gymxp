@@ -55,22 +55,31 @@ Do `Bro test` first. `Bro` follows once the rehearsal works.
 
 To check it: creating an account with an email that isn't on the list should fail with "This email isn't on the guest list yet".
 
-## 4. With A.5: the nightly backup
+## 4. With A.5: run the setup again, and the nightly backup
 
-1. In the `bro` project, press **Connect** and copy the **Session pooler** connection string. GitHub's servers can't reach the direct one. Put the database password from step 1 into it.
-2. In your private data repo on GitHub, open **Settings**, then **Secrets and variables**, then **Actions**, and add a repository secret named `SUPABASE_DB_URL` holding that string.
-3. Add the workflow file that comes with A.5 to that repo, then run it once by hand from its **Actions** tab.
+**Run the setup again,** in `Bro test` and then `Bro`: paste all of [`supabase/setup.sql`](../supabase/setup.sql) into the **SQL Editor** and press **Run**. A.5 adds account deletion to it. Nothing else needs to change.
 
-From then on it runs every night. Each backup is sealed, so it's unreadable without each person's key, and the query keeps the project from pausing.
+**The backup,** for `Bro` only:
+
+1. In the `Bro` project, press **Connect** and copy the **Session pooler** connection string. GitHub's servers can't reach the direct one. Replace `[YOUR-PASSWORD]` in it with the database password from step 1.
+2. In your **private** data repo on GitHub, open **Settings**, then **Secrets and variables**, then **Actions**, and add a repository secret named `SUPABASE_DB_URL` holding that string.
+3. Still in that repo, choose **Add file**, then **Create new file**, name it `.github/workflows/backup.yml`, paste all of [`supabase/backup.yml`](../supabase/backup.yml) and commit it.
+4. Open the repo's **Actions** tab, choose **Backup Bro accounts**, then **Run workflow**. In about a minute it should finish green, with a `bro-backup-1` artifact at the bottom of the run.
+
+From then on it runs every night and each copy is kept 30 days. Everything in it is sealed, so it's unreadable without each person's key, and the nightly query keeps the project from pausing. Never put this workflow in a public repo: the wrapped keys would be open to slow password guessing.
 
 ## 5. With A.6: move your data
 
-1. Rehearse on `bro-test` first, with a copy of your export.
-2. In the current app, open **Settings**, **Data & sync**, **Export**, and keep that file.
-3. Open the new version and tap **Create account** with your email. Let iPhone suggest the password and save it.
-4. **Save the recovery key** in the Passwords app, and keep a second copy somewhere off the phone, such as on paper at home.
-5. In **Settings**, **Data & sync**, **Import** the file.
-6. Check that workouts, weigh-ins, level and stars match the old app. Use it for a week or two before the GitHub path is removed. The old data repo stays as an archive.
+The app does the move itself, including your machine photos.
+
+1. Finish any workout in progress.
+2. Open **Settings** and find **Move to a Bro account**. Tap **Start the move**.
+3. Type your email, which is on the guest list, and let iPhone suggest a new password and save it. Tap **Move my data**. The app creates the account, copies your photos and log, then reads them back from the server to check nothing's missing.
+4. **Save the recovery key** it shows: in the Passwords app, and a second copy off the phone, such as on paper at home. Tick the box.
+5. Tap **Switch this phone to the account**. The app restarts signed in to it.
+6. Check that workouts, weigh-ins, level and stars match what you had. On any other device you use, choose **Remove Bro from this device**, then sign in.
+
+Your GitHub repo isn't touched, and stays as an archive. Use the account for a week or two; after that, the GitHub path comes out of the app (A.7).
 
 ## 6. With S.3: add her
 
@@ -93,4 +102,4 @@ The same as step 6, one person at a time.
 - **Supabase emails that a project will pause:** the backup didn't run. Check the **Actions** tab in the data repo. If it already paused, press **Restore**; the data is kept.
 - **Someone forgot their password:** **Forgot password** in the app emails them a code. With the code and their recovery key, they set a new one. You can't do it for them, by design.
 - **A lost or stolen phone:** they sign in on the new phone and everything comes back from the server. Changing the password signs out other devices.
-- **Removing someone:** delete their email from `guests`. They can delete their own account in Settings, or you can delete the user under **Authentication**, **Users**, which removes their data with it.
+- **Removing someone:** delete their email from `guests`. They can delete their own account in Settings (Account, Delete account), or you can delete the user under **Authentication**, **Users**, which removes their data with it. Their photos stay in Storage in that case: delete their folder in the `photos` bucket too.

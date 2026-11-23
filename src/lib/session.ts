@@ -15,6 +15,7 @@ export interface AccountSession {
   email: string;
   changePassword: (current: string, next: string) => Promise<void>;
   newRecoveryKey: (password: string) => Promise<string>;
+  deleteAccount: (password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 

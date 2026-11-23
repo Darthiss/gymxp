@@ -41,8 +41,9 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 - [x] **A.2** A seam for sync, with GitHub still behind it · M
 - [x] **A.3** End-to-end encryption and the recovery key · M
 - [x] **A.4** Sign-up, sign-in, sync and photos on Supabase · L
-- [ ] **A.5** Nightly backup, privacy page and account deletion · S
-- [ ] **A.6** Move the owner over, then retire the GitHub path · S
+- [x] **A.5** Nightly backup, privacy page and account deletion · S
+- [ ] **A.6** Move the owner over · S
+- [ ] **A.7** Retire the GitHub path, after a week or two on the account · S
 
 **Phase S: A second user** (S.3 on, once Phase A is live)
 - [x] **S.1** Sex-specific health review: every body and health formula checked for women · M
@@ -194,17 +195,21 @@ Put a `Remote` interface between `Store` and the network: load the data with its
 - **Screens:** create account, sign in, forgot password and the recovery key, in the app's current style. Set `autocomplete` on every field, so iPhone offers a strong password and fills it later. Settings gets change password (which signs out other devices) and a new recovery key, in place of the token and PIN. Deleting a user also deletes their row and photos.
 - **Password reset:** the email carries a code typed into the app, not a link, so it never lands in Safari. On the free plan, [editing that email needs your own sender](https://supabase.com/changelog/46599-changes-to-email-template-customisation-on-free-tier), so the owner sets up a dedicated Gmail ([guide, step 2](docs/ACCOUNTS.md#2-with-a4-an-email-sender-for-password-resets)).
 - **Config:** each project's URL and publishable key in the repo, and the project's host added to the CSP's `connect-src`.
-- GitHub keeps working through A.2's seam until A.6.
+- GitHub keeps working through A.2's seam until A.7.
 
 ### A.5 Nightly backup, privacy page and account deletion · S
 
-- **Backup:** a GitHub Action in the owner's private data repo dumps the sealed rows every night and commits them. They're unreadable without each person's key, and the query counts as activity, so the project doesn't pause.
+- **Backup:** a GitHub Action in the owner's private data repo (template: `supabase/backup.yml`) exports the sealed rows, each person's email and the guest list every night, and keeps each copy 30 days as a workflow artifact. Artifacts rather than commits, because sealed data doesn't compress or diff, so daily commits would grow the repo by gigabytes a year. The copies are unreadable without each person's key, and the query counts as activity, so the project doesn't pause. Photos aren't backed up. Never run it from a public repo: the wrapped keys would be open to offline password guessing.
 - **Privacy page:** one screen saying what's stored, who can see it (nobody but you; the admin sees your email and when you synced), where it lives, and how to export or delete it.
-- **Delete account** in Settings removes the row, the photos and the sign-in. Export already exists.
+- **Delete account** in Settings, after typing the password: the app removes the photos through the Storage API (Supabase refuses SQL deletes there), then `delete_my_account()` deletes the user, and the vault goes with it. Export already exists.
 
-### A.6 Move the owner over, then retire the GitHub path · S
+### A.6 Move the owner over · S
 
-Rehearse on `bro-test` with a copy first. Export from the GitHub version, create the account, import, and check that workouts, sets, weigh-ins, `goalHistory`, tombstones and imported workouts all survive, with the same level and stars. Use it for a week or two. Then remove `github.ts`, the vault and the token screens. The old data repo stays as an archive, and as the backup's home.
+Settings, in GitHub mode, gets **Move to a Bro account** (`moveToAccount()`): it creates the account (or signs in and merges), copies the custom exercise photos from the repo, saves the whole log as is, so `goalHistory`, tombstones and imported workouts come along untouched, then reads it back from the server and refuses to switch if anything's missing. Only after the recovery key is saved does **Switch this phone** remove the GitHub vault from the phone. The repo itself is never touched. Rehearsed on `bro-test` with the demo log first.
+
+### A.7 Retire the GitHub path · S
+
+After a week or two on the account: remove `github.ts`, the vault and PIN, the token and setup screens, the Move card, and "Use a GitHub repo instead". The old data repo stays as an archive, and as the backup's home.
 
 ## Phase S: A second user
 

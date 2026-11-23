@@ -11,6 +11,8 @@ import { BMI_MAX, DISCLAIMER, goalAllowed, kgAtBmi, minGoalKg } from '../lib/bod
 import { CellIcon, PageHead, SyncBadge, toast } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { RecoveryKeyBox } from '../components/RecoveryKey';
+import { PrivacyText } from '../components/Privacy';
+import type { Moved } from '../lib/account';
 
 export function Settings() {
   const session = useSession();
@@ -20,6 +22,7 @@ export function Settings() {
       <ProfileCard />
       <WatchCard />
       {session.kind === 'github' ? <SecurityCard session={session} /> : <AccountCard session={session} />}
+      {session.kind === 'github' && <MoveCard />}
       <DataCard />
       <p className="tiny muted center" style={{ lineHeight: 1.5 }}>{DISCLAIMER}</p>
       <p className="tiny muted center">Bro · exercise photos & instructions from free-exercise-db (public domain)</p>
@@ -127,7 +130,7 @@ function WatchCard() {
 }
 
 function AccountCard({ session }: { session: AccountSession }) {
-  const [mode, setMode] = useState<'none' | 'password' | 'recovery' | 'signout'>('none');
+  const [mode, setMode] = useState<'none' | 'password' | 'recovery' | 'signout' | 'delete'>('none');
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [newKey, setNewKey] = useState('');
@@ -159,7 +162,8 @@ function AccountCard({ session }: { session: AccountSession }) {
     <div className="card stack">
       <h2 className="row" style={{ gap: 10 }}><CellIcon name="shield" color="#8e8e93" />Account</h2>
       <p className="small dim">
-        Signed in as <b>{session.email}</b>. Your log is locked on this phone before it's uploaded, and only your password or recovery key can open it.
+        Signed in as <b>{session.email}</b>. Your log is locked on this phone before it's uploaded, and only your password or recovery key can open it.{' '}
+        <a href="#/privacy">How your data stays private</a>
       </p>
       <div className="row-wrap">
         <button className="btn sm grow" onClick={() => open('password')}>Change password</button>
@@ -190,8 +194,23 @@ function AccountCard({ session }: { session: AccountSession }) {
           <button className="btn" onClick={() => open('none')}>Done</button>
         </div>
       )}
-      {mode !== 'signout' ? (
-        <button className="btn danger" onClick={() => open('signout')}>Sign out of this phone…</button>
+      {mode === 'delete' ? (
+        <form className="notice bad stack small" onSubmit={(e) => { e.preventDefault(); void run(() => session.deleteAccount(current)); }}>
+          Deletes your account for good: your log, photos and sign-in, from the server and every device. Export first if you want a copy. Backups
+          expire within 30 days. This can't be undone.
+          {username}
+          <input className="input" type="password" placeholder="Your password" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" required />
+          {err && <div>{err}</div>}
+          <div className="row">
+            <button className="btn danger grow" disabled={busy}>{busy ? <span className="spinner" /> : 'Delete account'}</button>
+            <button type="button" className="btn grow" onClick={() => open('none')}>Cancel</button>
+          </div>
+        </form>
+      ) : mode !== 'signout' ? (
+        <div className="row-wrap">
+          <button className="btn danger grow" onClick={() => open('signout')}>Sign out of this phone…</button>
+          <button className="btn ghost sm" onClick={() => open('delete')}>Delete account…</button>
+        </div>
       ) : (
         <div className="notice bad stack small">
           This phone forgets your data and key. Everything stays in your account: sign in again to get it back.
@@ -201,6 +220,90 @@ function AccountCard({ session }: { session: AccountSession }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** GitHub mode only: move this log into a Bro account (roadmap A.6). */
+function MoveCard() {
+  const data = useData();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [step, setStep] = useState('');
+  const [err, setErr] = useState('');
+  const [moved, setMoved] = useState<Moved | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const move = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErr('');
+    setStep('Starting…');
+    try {
+      const acc = await import('../lib/account');
+      const store = getStore();
+      setMoved(await acc.moveToAccount(email, password, data, (p) => store.readFile(p), setStep));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setStep('');
+    }
+  };
+  const switchOver = async () => {
+    getStore().dispose();
+    await wipeDevice();
+    location.reload();
+  };
+
+  return (
+    <div className="card stack">
+      <h2 className="row" style={{ gap: 10 }}><CellIcon name="upload" color="#c3f73a" />Move to a Bro account</h2>
+      {!moved ? (
+        <>
+          <p className="small dim">
+            Your log moves from GitHub into a private Bro account, locked on this phone with your password before it's uploaded. Nothing changes in
+            your GitHub repo, which stays as an archive. Finish any workout in progress first.
+          </p>
+          {!open ? (
+            <button className="btn tint" onClick={() => setOpen(true)}>Start the move</button>
+          ) : (
+            <form className="stack" onSubmit={move}>
+              <input className="input" type="email" placeholder="Email (must be on the guest list)" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" autoCapitalize="off" autoCorrect="off" spellCheck={false} required />
+              <input className="input" type="password" placeholder="New password, 12+ characters" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required />
+              {err && <div className="notice bad small">{err}</div>}
+              <button className="btn primary" disabled={!!step}>{step ? <><span className="spinner" /> {step}</> : 'Move my data'}</button>
+            </form>
+          )}
+        </>
+      ) : (
+        <>
+          <div className="notice good small">
+            Moved and checked: {moved.workouts} workouts, {moved.weighIns} weigh-ins
+            {moved.photos + moved.missingPhotos > 0 ? `, ${moved.photos} of ${moved.photos + moved.missingPhotos} photos` : ''}. Your GitHub repo is untouched.
+          </div>
+          {moved.recoveryKey && <RecoveryKeyBox value={moved.recoveryKey} />}
+          {moved.recoveryKey && (
+            <label className="row" style={{ gap: 10 }}>
+              <input type="checkbox" checked={saved} onChange={(e) => setSaved(e.target.checked)} />
+              <span className="small">I saved the recovery key somewhere safe</span>
+            </label>
+          )}
+          <p className="small dim">
+            Switching makes this phone use the account from now on. On any other device, use Remove Bro from this device, then sign in with
+            your account.
+          </p>
+          <button className="btn primary" disabled={!!moved.recoveryKey && !saved} onClick={() => void switchOver()}>Switch this phone to the account</button>
+        </>
+      )}
+    </div>
+  );
+}
+
+export function PrivacyPage() {
+  return (
+    <div className="stack-lg">
+      <PageHead title="Privacy" backTo="settings" />
+      <PrivacyText />
     </div>
   );
 }

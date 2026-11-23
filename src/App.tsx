@@ -12,7 +12,7 @@ import { SessionView } from './screens/SessionView';
 import { LiftDetail, Progress } from './screens/Progress';
 import { CustomExerciseEdit, Guide, GuideDetail } from './screens/Guide';
 import { Awards } from './screens/Awards';
-import { Settings } from './screens/Settings';
+import { PrivacyPage, Settings } from './screens/Settings';
 import { RoutineEdit, RoutineGuide, Routines } from './screens/Routines';
 import { Backfill } from './screens/Backfill';
 import { Hero } from './screens/Hero';
@@ -93,6 +93,12 @@ export function App() {
         email: a.email,
         changePassword: async (current, next) => (await lib()).changePassword(a, current, next),
         newRecoveryKey: async (password) => (await lib()).newRecoveryKey(a, password),
+        deleteAccount: async (password) => {
+          await (await lib()).deleteAccount(a, password);
+          phase.store.dispose();
+          setCurrentStore(null);
+          setPhase({ kind: 'welcome' });
+        },
         signOut: async () => {
           phase.store.dispose();
           setCurrentStore(null);
@@ -146,6 +152,7 @@ function Shell() {
   else if (p0 === 'guide-edit' && p1) page = <CustomExerciseEdit key={p1} id={p1} />;
   else if (p0 === 'awards') page = <Awards route={route} />;
   else if (p0 === 'settings') page = <Settings />;
+  else if (p0 === 'privacy') page = <PrivacyPage />;
   else if (p0 === 'import') page = <Backfill />;
   else if (p0 === 'hero' && FEATURES.hero) page = <Hero />;
   else if (p0 === 'routines' && p1) page = <RoutineGuide key={p1} id={p1} />;

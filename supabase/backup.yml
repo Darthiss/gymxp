@@ -1,0 +1,44 @@
+# Nightly backup of Bro accounts (roadmap A.5). This file is a template: copy it to
+# .github/workflows/backup.yml in the owner's PRIVATE data repo, never a public one.
+# It needs one repository secret, SUPABASE_DB_URL: the live project's Session pooler
+# connection string, with the database password in it (docs/ACCOUNTS.md, step 4).
+#
+# What it saves: each person's vault row (data and keys, both sealed on their phone,
+# unreadable without their password or recovery key), their email so a vault can be
+# matched to its person on a restore, and the guest list. Photos aren't included.
+# Each run is kept 30 days as a workflow artifact. The daily query also counts as
+# database activity, so the free project never pauses for inactivity.
+name: Backup Bro accounts
+
+on:
+  schedule:
+    - cron: '17 6 * * *' # every day at 06:17 UTC, 03:17 in Argentina
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Export the sealed vaults and the guest list
+        env:
+          DB: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y -qq postgresql-client > /dev/null
+          mkdir backup
+          psql "$DB" -v ON_ERROR_STOP=1 -qc "\copy (select u.email, v.user_id, v.version, v.updated_at, v.keys, v.data from public.vaults v join auth.users u on u.id = v.user_id order by u.email) to 'backup/vaults.csv' with csv header"
+          psql "$DB" -v ON_ERROR_STOP=1 -qc "\copy (select email, added_at from public.guests order by email) to 'backup/guests.csv' with csv header"
+          echo "People: $(($(wc -l < backup/vaults.csv) - 1))"
+          ls -l backup
+
+      - name: Keep it for 30 days
+        uses: actions/upload-artifact@v4
+        with:
+          name: bro-backup-${{ github.run_number }}
+          path: backup/
+          retention-days: 30
+          if-no-files-found: error

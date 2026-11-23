@@ -18,7 +18,9 @@ import {
 } from './e2e';
 import { PBKDF2_ITERATIONS } from './crypto';
 import { CACHE_KEY, forgetKey } from './vault';
+import { mergeData, normalizeData } from './merge';
 import type { Remote } from './remote';
+import type { AppData } from './types';
 
 export interface Account {
   userId: string;
@@ -213,6 +215,104 @@ export async function newRecoveryKey(a: Account, password: string): Promise<stri
   } catch (e) {
     throw new Error(e instanceof WrongKeyError ? 'Wrong password.' : e instanceof Error ? e.message : String(e));
   }
+}
+
+/**
+ * Deletes the account for good: photos, data, keys and sign-in. Asks for the password
+ * first. Backups made before it expire within 30 days.
+ */
+export async function deleteAccount(a: Account, password: string) {
+  const bundle = await keysOf(a.userId);
+  if (bundle) {
+    try {
+      await openWithPassword(bundle, a.email, password);
+    } catch {
+      throw new Error('Wrong password.');
+    }
+  }
+  const bucket = sb().storage.from('photos');
+  for (const folder of [`${a.userId}/photos`, a.userId]) {
+    const { data: files, error } = await bucket.list(folder, { limit: 1000 });
+    if (error) throw new Error(friendly(error.message));
+    const paths = (files ?? []).filter((f) => f.id).map((f) => `${folder}/${f.name}`);
+    if (paths.length) {
+      const { error: e } = await bucket.remove(paths);
+      if (e) throw new Error(friendly(e.message));
+    }
+  }
+  const { error } = await sb().rpc('delete_my_account');
+  if (error) throw new Error(friendly(error.message));
+  await signOut();
+}
+
+export interface Moved {
+  account: Account;
+  /** Only when the account was created by the move. */
+  recoveryKey?: string;
+  workouts: number;
+  weighIns: number;
+  photos: number;
+  missingPhotos: number;
+}
+
+const live = <T extends { deleted?: boolean }>(xs: T[]) => xs.filter((x) => !x.deleted).length;
+
+/**
+ * Moves a GitHub user's log into a Bro account (roadmap A.6): creates the account (or signs
+ * in to one that exists, and merges), copies the photos, saves the data, then reads it back
+ * from the server and checks nothing went missing. This phone isn't switched over here: the
+ * caller does that once the recovery key is saved.
+ */
+export async function moveToAccount(
+  emailIn: string,
+  password: string,
+  data: AppData,
+  readPhoto: (path: string) => Promise<Blob | null>,
+  step: (what: string) => void = () => {},
+): Promise<Moved> {
+  step('Creating your account…');
+  let account: Account;
+  let recoveryKey: string | undefined;
+  try {
+    ({ account, recoveryKey } = await createAccount(emailIn, password));
+  } catch (e) {
+    if (!/already an account/i.test(e instanceof Error ? e.message : '')) throw e;
+    step('Signing in to your account…');
+    ({ account, recoveryKey } = await signIn(emailIn, password));
+  }
+  const remote = remoteFor(account);
+
+  const paths = [...new Set(data.customExercises.filter((c) => !c.deleted && c.photo).map((c) => c.photo!))];
+  let photos = 0;
+  for (const path of paths) {
+    step(`Copying photos (${photos + 1} of ${paths.length})…`);
+    const blob = await readPhoto(path).catch(() => null);
+    if (!blob) continue;
+    await remote.putFile(path, blob);
+    photos++;
+  }
+
+  step('Saving your log…');
+  for (let attempt = 0; ; attempt++) {
+    const there = await remote.load();
+    const merged = there ? mergeData(normalizeData(JSON.parse(there.text)), data) : data;
+    try {
+      await remote.save(JSON.stringify(merged), there?.version, 'Move from GitHub');
+      break;
+    } catch (e) {
+      if (attempt >= 2) throw e;
+    }
+  }
+
+  step('Checking it arrived…');
+  const back = await remote.load();
+  const saved = normalizeData(back ? JSON.parse(back.text) : null);
+  const workouts = live(saved.sessions);
+  const weighIns = live(saved.weights);
+  if (workouts < live(data.sessions) || weighIns < live(data.weights) || live(saved.routines) < live(data.routines) || live(saved.customExercises) < live(data.customExercises)) {
+    throw new Error('The copy on the server is missing something, so nothing was switched. Your GitHub data is untouched. Try again.');
+  }
+  return { account, recoveryKey, workouts, weighIns, photos, missingPhotos: paths.length - photos };
 }
 
 /** The account this phone was signed in to, if it still is. Opens offline too. */

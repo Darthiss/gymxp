@@ -244,6 +244,11 @@ export class Store {
     return path;
   }
 
+  /** A stored file as it is, for moving it elsewhere (roadmap A.6). */
+  readFile(path: string): Promise<Blob | null> {
+    return this.remote.getFile(path);
+  }
+
   photoUrl(path: string): Promise<string> {
     let p = this.photoCache.get(path);
     if (!p) {
