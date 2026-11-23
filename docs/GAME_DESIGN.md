@@ -538,6 +538,32 @@ The owner brought a coach's plan for a lean gain: four tape measurements, weight
 - **The personal goal.** The plan named a person. **Adjusted:** the app is public, so it's a "Lift someone" goal with the name and weight kept in the user's own data. The benchmarks scale from their weight: deadlift 1.5× your bodyweight (lifting from the floor), goblet squat with half their weight for 10 (getting down and up with a load in front; about 24–30 kg for a typical adult), and a front carry with their full weight for 20 seconds (holding someone in your arms). The catalog gained Goblet Squat and two hand-written carries the dataset lacks: Front Carry (a sandbag, plate or other load hugged at the chest) and Goblet Carry (one dumbbell held upright at the chest). Both are the same front-loaded pattern, so both count toward the carry benchmark.
 - **Legends.** Bars measuring your lifts against world-record holders are gone; their challenges and fun facts stay. Hero Physique was already shelved behind its flag, and is unchanged.
 
+## Sex-specific review (November 2026)
+
+The next user is a woman, so every body and health formula was reviewed against the evidence for women. Where the science differs, the profile's sex picks the formula; where it doesn't, nothing changed, and that's listed too, so nobody "fixes" it later. "Other" and unset use the formulas that don't depend on sex and skip the ones that only exist per sex, and the Body tab asks for the setting until it's filled in. Everything stays information, not medical advice.
+
+**Changed for women.**
+- **Max heart rate:** 206 − 0.88 × age ([Gulati et al. 2010](https://pubmed.ncbi.nlm.nih.gov/20585008/), 5,437 women), because formulas built mostly on men run high for women. Heart of Steel's bar at 30 drops from 140 to 135 bpm. Men keep Tanaka (208 − 0.7 × age).
+- **Lean-gain pace:** 0.5–1.25% of bodyweight a month, against 0.75–1.5% for men. Women build muscle at a similar *relative* rate in the same program (Roberts et al. 2020, meta-analysis), but carry less lean mass per kilo of bodyweight, so the same growth is a smaller share of their weight. This band is derived from that, not taken from a study. Starting calories are smaller too (a 150–250 kcal surplus, a 250–400 kcal deficit), and labelled as rough starting points.
+- **Where to measure the waist:** at its narrowest point, usually a little above the belly button. That's the site of the US Navy method for women ([Navy BCA guide](https://www.mynavyhr.navy.mil/Portals/55/Support/Culture%20Resilience/Physical/Guide_4-Body_Composition_Assessment_BCA_JAN_2023.pdf); [Hodgdon and Beckett 1984](https://apps.dtic.mil/sti/html/tr/ADA146456/index.html)), and it sits close to NICE's rib-to-hip midpoint, so it serves waist ÷ height as well. Men keep the belly button. Hips are measured at the fullest part of the glutes, seen from the side.
+- **Which measurements:** waist, hips and neck (the three the women's formula needs), then arm and thigh, where glute and leg training shows. Chest is dropped for women, because on women it mostly tracks breast tissue, not muscle. Thigh is new.
+- **FFMI:** plain lean kg ÷ height², not adjusted to 1.80 m, because the women's references use plain FFMI. Active women average about 15.5 (Britton et al. 2024); female college athletes averaged 18.8, with a 97.5th percentile of 23.9 ([Harty et al. 2019](https://digitalcommons.lindenwood.edu/faculty-research-papers/121), n = 372, DXA). So the bar runs to 18.5, a visibly athletic physique, and about 24 is "near the top". Men keep Kouri's 22 and 25, height-adjusted.
+- **The menstrual cycle.** Bloating peaks on the first day of a period ([White et al. 2011](https://pmc.ncbi.nlm.nih.gov/articles/PMC3154522)), and weight runs about 0.5 kg higher then, mostly water. The Body tab says so next to the weekly average, notes that comparing averages 4 weeks apart lines up with a typical cycle, and suggests measuring the waist at the same point each month, for example the week after the period. A gain check-in for a woman suggests re-measuring then before acting on it.
+- **Eating enough.** During a cut, and whenever her body-fat estimate is below the healthy range, the app says that an irregular or missing period is the main sign of eating too little for the training load, and to eat more and see a doctor (IOC consensus on Relative Energy Deficiency in Sport, 2023). It never rewards getting leaner.
+
+**Changed for everyone.**
+- **Healthy body-fat ranges** by sex and age, from [Gallagher et al. 2000](https://pubmed.ncbi.nlm.nih.gov/10966886/): the body fat that matches a BMI of 18.5, 25 and 30. Women 20–39: 21–32%; men 20–39: 8–19%, rising with age. The authors called them provisional and built them mostly on white adults, and secondary sources quote the men's upper bound a point apart, so the app shows them as "about" and next to the ±3–4% of the tape estimate. Not shown under 20.
+
+**Unchanged, on purpose.**
+- **BMI bands and the goal-weight floor (18.5):** the WHO cut-offs are the same for both sexes.
+- **Waist ÷ height under 0.5:** one cut-off for women and men (NICE 2022). Only where to put the tape differs.
+- **Cut pace (0.5–1% a week) and maintenance:** the evidence doesn't separate them by sex. The energy-availability warning covers the risk that does differ.
+- **Protein (1.6–2.2 g per kg):** the meta-analyses behind it included women.
+- **Weekly sets per muscle (10–20) and estimated 1RM:** the same for both.
+- **The 4 cm waist check-in and gain-quality gates:** 4 cm is about 5% of either sex's waist. Women tend to gain fat on the hips and thighs first, so the waist is a slower signal for them; the photos and gain quality back it up.
+
+**Not done yet.** Strength trophies use absolute numbers set for men, the legends are four men, and Hero Physique (shelved) was built around a male actor. These are product choices, left for after her first month ([Phase S.5](../ROADMAP.md#s5-open-questions-for-her--s)).
+
 ## How we'll know it works
 
 1. **Calibrate on a real log.** Export a backup from Settings and run `npm run calibrate -- path/to/backup.json`, which compares the rates with these targets. It holds its verdict on the third star until there are 6 months and 30 gym days of history. The first pass was in November 2026, and the next useful run is from March 2027.

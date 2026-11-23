@@ -1,5 +1,8 @@
 // Body measures and the few health formulas the app uses. They are population rules of thumb,
 // shown for information only: none of them is a diagnosis, and the copy must never say otherwise.
+// Where a formula or range differs between women and men, the profile's sex picks it (see
+// docs/GAME_DESIGN.md#sex-specific-review-november-2026). 'other' and unset use the formulas that
+// don't depend on sex, and skip the ones that only exist per sex.
 import { addDays, parseDate, today, weekKey } from './util';
 import type { Phase, PhaseType, Profile, Sex, WeightEntry } from './types';
 
@@ -61,13 +64,15 @@ export function goalReached(kgs: number[], goalKg: number, heightCm: number | nu
 
 // ---------- Heart rate ----------
 
-/** Estimated max heart rate by age (Tanaka 2001: 208 − 0.7 × age). Individuals vary by 10+ bpm. */
-export const maxHeartRate = (age: number) => 208 - 0.7 * age;
+/** Estimated max heart rate by age. Women: Gulati et al. 2010 (206 − 0.88 × age, from 5,437 women), because
+ *  formulas built mostly on men run high for women. Everyone else: Tanaka 2001 (208 − 0.7 × age).
+ *  Individuals vary by 10+ bpm. */
+export const maxHeartRate = (age: number, sex: Sex | '' = '') => (sex === 'female' ? 206 - 0.88 * age : 208 - 0.7 * age);
 export const HARD_HR_SHARE = 0.75;
-const DEFAULT_AGE = 30; // used until a birth year is set: 75% is then 140 bpm
+const DEFAULT_AGE = 30; // used until a birth year is set: 75% is then 140 bpm, or 135 for a woman
 
 /** The average heart rate that counts as a hard session at your age: 75% of the estimated max. */
-export const hardHeartRate = (age: number | null) => Math.round(HARD_HR_SHARE * maxHeartRate(age ?? DEFAULT_AGE));
+export const hardHeartRate = (age: number | null, sex: Sex | '' = '') => Math.round(HARD_HR_SHARE * maxHeartRate(age ?? DEFAULT_AGE, sex));
 export const ageOn = (birthYear: number | null, date: string) => (birthYear ? Number(date.slice(0, 4)) - birthYear : null);
 
 // ---------- Weekly average and rate ----------
@@ -133,10 +138,18 @@ export const RATE_BANDS: Record<PhaseType, { good: [number, number]; ok: [number
   maintain: { good: [-1, 1], ok: [-2, 2] },
 };
 
+/** A lean gain for women. Women build muscle at a similar *relative* rate to men in the same program
+ *  (Roberts et al. 2020, meta-analysis), but carry less lean mass per kilo of bodyweight (about 70–75%
+ *  against 80–85%), so the same growth is a smaller share of their weight: about 0.5–1.25% a month.
+ *  Cuts and maintenance are the same for everyone. */
+export const FEMALE_GAIN_BAND: { good: [number, number]; ok: [number, number] } = { good: [0.5, 1.25], ok: [0.25, 1.75] };
+
+export const rateBands = (type: PhaseType, sex: Sex | '' = '') => (type === 'gain' && sex === 'female' ? FEMALE_GAIN_BAND : RATE_BANDS[type]);
+
 /** Where a monthly rate sits for a phase: in the good band, close to it, or below or above it. */
 export type RateBand = 'good' | 'ok' | 'low' | 'high';
-export function rateBand(type: PhaseType, pctPerMonth: number): RateBand {
-  const { good, ok } = RATE_BANDS[type];
+export function rateBand(type: PhaseType, pctPerMonth: number, sex: Sex | '' = ''): RateBand {
+  const { good, ok } = rateBands(type, sex);
   if (pctPerMonth >= good[0] && pctPerMonth <= good[1]) return 'good';
   if (pctPerMonth >= ok[0] && pctPerMonth <= ok[1]) return 'ok';
   return pctPerMonth < ok[0] ? 'low' : 'high';
@@ -188,22 +201,45 @@ export function navyBodyFat(sex: Sex | '', heightCm: number | null, m: Pick<Weig
 
 export const leanKgOf = (kg: number, bfPct: number) => kg * (1 - bfPct / 100);
 
-/** Fat-free mass index: lean kg ÷ height² in metres, adjusted to a height of 1.80 m as Kouri et al.
- *  (1995) did, so the benchmarks below hold for short and tall people alike. */
-export function ffmiOf(leanKg: number, heightCm: number): number {
+/** Fat-free mass index: lean kg ÷ height² in metres. For men it's adjusted to a height of 1.80 m, as
+ *  Kouri et al. (1995) did, because their benchmarks are on that scale; the women's benchmarks below
+ *  come from studies that used plain FFMI, so women's isn't adjusted. */
+export function ffmiOf(leanKg: number, heightCm: number, adjusted = true): number {
   const m = heightCm / 100;
-  return leanKg / (m * m) + 6.1 * (1.8 - m);
+  return leanKg / (m * m) + (adjusted ? 6.1 * (1.8 - m) : 0);
 }
 
-/** From Kouri et al. 1995, which studied men: drug-free lifters averaged about 22, and about 25 is
- *  where natural lifters top out after many years. There are no equally solid numbers for women,
- *  so women see their FFMI and its change without these marks. */
-export const FFMI_TRAINED = 22;
-export const FFMI_CEILING = 25;
-export const FFMI_BAR_FROM = 17; // where the progress bar starts: untrained men are usually 17–20
+/** What an FFMI means, by sex. `trained` is a visibly trained natural physique and the end of the
+ *  progress bar; `top` is about where natural lifters top out.
+ *  - Men: Kouri et al. 1995. Drug-free lifters averaged about 22, and about 25 is the natural limit.
+ *  - Women: female college athletes averaged 18.8 and their 97.5th percentile was 23.9 (Harty et al.
+ *    2019, n = 372, DXA); active women average about 15.5 (Britton et al. 2024). */
+export interface FfmiMarks { average: number; trained: number; top: number; barFrom: number; adjusted: boolean }
+export const FFMI_MARKS: Record<'male' | 'female', FfmiMarks> = {
+  male: { average: 20, trained: 22, top: 25, barFrom: 17, adjusted: true },
+  female: { average: 16.5, trained: 18.5, top: 24, barFrom: 14, adjusted: false },
+};
+export const ffmiMarks = (sex: Sex | ''): FfmiMarks | null => (sex === 'male' || sex === 'female' ? FFMI_MARKS[sex] : null);
 
-export function ffmiLabel(ffmi: number): string {
-  return ffmi < 20 ? 'about average' : ffmi < FFMI_TRAINED ? 'trained' : ffmi < FFMI_CEILING ? 'well trained' : 'near the natural limit';
+export function ffmiLabel(ffmi: number, m: FfmiMarks): string {
+  return ffmi < m.average ? 'about average' : ffmi < m.trained ? 'trained' : ffmi < m.top ? 'well trained' : 'near the natural limit';
+}
+
+/** Body fat for your sex and age, against the ranges Gallagher et al. (2000) matched to BMI 18.5, 25
+ *  and 30. They called them provisional, and built them mostly on white adults, so they're a rough
+ *  frame for an estimate that is itself ±3–4%. Not given under 20, where the ranges don't apply.
+ *  Rows: [from age, healthy from, overweight from, obese from]. */
+const BF_CUTS: Record<'male' | 'female', [number, number, number, number][]> = {
+  female: [[20, 21, 33, 39], [40, 23, 34, 40], [60, 24, 36, 42]],
+  male: [[20, 8, 20, 25], [40, 11, 22, 28], [60, 13, 25, 30]],
+};
+export type BodyFatBand = 'low' | 'healthy' | 'high' | 'very high';
+export function bodyFatBand(bf: number, sex: Sex | '', age: number | null): { band: BodyFatBand; healthy: [number, number] } | null {
+  if ((sex !== 'male' && sex !== 'female') || (age !== null && age < 20)) return null;
+  let row = BF_CUTS[sex][0];
+  for (const r of BF_CUTS[sex]) if ((age ?? DEFAULT_AGE) >= r[0]) row = r;
+  const [, lo, hi, obese] = row;
+  return { band: bf < lo ? 'low' : bf < hi ? 'healthy' : bf < obese ? 'high' : 'very high', healthy: [lo, hi] };
 }
 
 /** Gain quality: how much of the weight gained is lean mass. Only shown 8+ weeks into a gain and
@@ -220,11 +256,22 @@ export const qualityLabel = (q: number) => (q >= 0.5 ? 'mostly lean' : q >= 0.25
 
 // ---------- Reading the log ----------
 
-export type Measure = 'waistCm' | 'neckCm' | 'armCm' | 'chestCm' | 'hipCm';
+export type Measure = 'waistCm' | 'neckCm' | 'armCm' | 'chestCm' | 'hipCm' | 'thighCm';
 
 /** How often each tape measurement is worth taking: the waist every 2 weeks, the rest monthly.
  *  Measuring more often mostly measures the tape. */
-export const MEASURE_DAYS: Record<Measure, number> = { waistCm: 14, neckCm: 28, armCm: 28, chestCm: 28, hipCm: 28 };
+export const MEASURE_DAYS: Record<Measure, number> = { waistCm: 14, neckCm: 28, armCm: 28, chestCm: 28, hipCm: 28, thighCm: 28 };
+
+/** The tape measurements that fit a body, in the order to take them.
+ *  - Women: waist, hips and neck (the three the body-fat formula needs), then arm and thigh, where
+ *    glute and leg training shows. No chest: on women it mostly tracks breast tissue, not muscle.
+ *  - Men: waist and neck (body fat), then arm and chest.
+ *  - Other or unset: all of them, to pick from. */
+export function measuresFor(sex: Sex | ''): Measure[] {
+  if (sex === 'female') return ['waistCm', 'hipCm', 'neckCm', 'armCm', 'thighCm'];
+  if (sex === 'male') return ['waistCm', 'neckCm', 'armCm', 'chestCm'];
+  return ['waistCm', 'neckCm', 'armCm', 'chestCm', 'hipCm', 'thighCm'];
+}
 
 /** Live entries, oldest first. */
 export const liveWeights = (ws: WeightEntry[]) => ws.filter((w) => !w.deleted).sort((a, b) => a.date.localeCompare(b.date));
@@ -276,11 +323,12 @@ export function compositionAt(entries: WeightEntry[], p: Pick<Profile, 'sex' | '
   const kg = kgNear(entries, waist.date);
   if (bf === null || kg === null) return null;
   const leanKg = leanKgOf(kg, bf);
-  return { date: waist.date, kg, bf, leanKg, fatKg: kg - leanKg, ffmi: ffmiOf(leanKg, p.heightCm) };
+  return { date: waist.date, kg, bf, leanKg, fatKg: kg - leanKg, ffmi: ffmiOf(leanKg, p.heightCm, p.sex !== 'female') };
 }
 
-/** A waist this much bigger since a gain began is worth a check-in: on most men it's about 3–4%
- *  more body fat, more than a lean gain adds in a few months. */
+/** A waist this much bigger since a gain began is worth a check-in, for anyone: about 5% of a typical
+ *  waist, more than a lean gain adds in a few months. Women gain fat more on the hips and thighs, so the
+ *  waist is a slower signal for them; the photos and the gain-quality number back it up. */
 export const WAIST_CHECK_CM = 4;
 
 export interface PhaseSummary {
@@ -318,6 +366,6 @@ export function phaseSummary(entries: WeightEntry[], phase: Phase, p: Pick<Profi
   }
   return {
     phase, days, startKg, nowKg, startWaist: startW?.cm ?? null, nowWaist, rate,
-    band: rate ? rateBand(phase.type, rate.pctPerMonth) : null, waistCheck, quality,
+    band: rate ? rateBand(phase.type, rate.pctPerMonth, p.sex) : null, waistCheck, quality,
   };
 }

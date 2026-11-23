@@ -7,35 +7,47 @@ import { LineChart } from '../components/charts';
 import { Icon } from '../components/Icon';
 import { Cell, Empty, ProgressBar, Ring, Segmented, Sheet, toast } from '../components/ui';
 import {
-  ageOn, bmiApplies, bmiLabel, bmiOf, compositionAt, currentPhase, DISCLAIMER_SHORT, FFMI_BAR_FROM, FFMI_CEILING, FFMI_TRAINED, ffmiLabel, goalAllowed,
-  latestMeasure, liveWeights, MEASURE_DAYS, measureNear, PHASE_LABEL, phaseSummary, QUALITY_MIN_KG, QUALITY_MIN_WEEKS, qualityLabel, RATE_BANDS,
-  rateAdvice, trendKg, weeklyAverages, WHTR_MAX, WHTR_MIN, whtrLabel, whtrOf, withPhase, type Composition, type Measure, type PhaseSummary,
+  ageOn, bmiApplies, bmiLabel, bmiOf, bodyFatBand, compositionAt, currentPhase, DISCLAIMER_SHORT, ffmiLabel, ffmiMarks, goalAllowed, latestMeasure,
+  liveWeights, MEASURE_DAYS, measureNear, measuresFor, PHASE_LABEL, phaseSummary, QUALITY_MIN_KG, QUALITY_MIN_WEEKS, qualityLabel, rateAdvice,
+  rateBands, trendKg, weeklyAverages, WHTR_MAX, WHTR_MIN, whtrLabel, whtrOf, withPhase, type Composition, type Measure, type PhaseSummary,
 } from '../lib/body';
-import type { PhaseType, Profile, WeightEntry } from '../lib/types';
+import type { PhaseType, Profile, Sex, WeightEntry } from '../lib/types';
 
-const MEASURES: { key: Measure; label: string; how: string; female?: boolean }[] = [
-  { key: 'waistCm', label: 'Waist', how: "At your belly button, standing relaxed, after a normal breath out. Don't suck in." },
-  { key: 'neckCm', label: 'Neck', how: "Just below the Adam's apple, with the tape sloping slightly down to the front." },
-  { key: 'armCm', label: 'Arm', how: 'Flexed, around the widest part of the upper arm. Same arm every time.' },
-  { key: 'chestCm', label: 'Chest', how: 'At nipple height, arms down, after a normal breath out.' },
-  { key: 'hipCm', label: 'Hips', how: 'Around the widest part of your glutes, feet together.', female: true },
-];
-const RANGE: Record<Measure, [number, number]> = { waistCm: [40, 250], neckCm: [20, 70], armCm: [15, 70], chestCm: [50, 200], hipCm: [50, 200] };
-const EMPTY: Record<Measure, string> = { waistCm: '', neckCm: '', armCm: '', chestCm: '', hipCm: '' };
+const LABEL: Record<Measure, string> = { waistCm: 'Waist', neckCm: 'Neck', armCm: 'Arm', chestCm: 'Chest', hipCm: 'Hips', thighCm: 'Thigh' };
+/** Where to put the tape. The waist site follows the US Navy method, which differs by sex. */
+function howTo(key: Measure, sex: Sex | ''): string {
+  switch (key) {
+    case 'waistCm': return sex === 'female'
+      ? "At the narrowest part of your waist, usually a little above the belly button, standing relaxed, after a normal breath out. Don't suck in."
+      : "At your belly button, standing relaxed, after a normal breath out. Don't suck in.";
+    case 'neckCm': return sex === 'female' ? 'Just below the voice box, with the tape sloping slightly down to the front.' : "Just below the Adam's apple, with the tape sloping slightly down to the front.";
+    case 'armCm': return 'Flexed, around the widest part of the upper arm. Same arm every time.';
+    case 'chestCm': return 'At nipple height, arms down, after a normal breath out.';
+    case 'hipCm': return 'Around the fullest part of your glutes, seen from the side, feet together.';
+    case 'thighCm': return 'Around the fullest part of your thigh, just below the glutes, standing relaxed with your weight on both feet. Same leg every time.';
+  }
+}
+const RANGE: Record<Measure, [number, number]> = { waistCm: [40, 250], neckCm: [20, 70], armCm: [15, 70], chestCm: [50, 200], hipCm: [50, 200], thighCm: [30, 120] };
+const EMPTY: Record<Measure, string> = { waistCm: '', neckCm: '', armCm: '', chestCm: '', hipCm: '', thighCm: '' };
 
-const measuresFor = (p: Profile) => MEASURES.filter((m) => !m.female || p.sex === 'female');
 const signed = (n: number, digits = 1) => `${n > 0 ? '+' : n < 0 ? '−' : '±'}${fmtNum(Math.abs(n), digits)}`;
 const short = (date: string) => fmtDate(date, { day: 'numeric', month: 'short' });
 
-const PHASE_HELP: Record<PhaseType, string> = {
-  gain: 'Eat a small surplus, about 200–300 kcal a day over maintenance, with 1.6–2.2 g of protein per kg of bodyweight. Aim for 0.75–1.5% of your bodyweight a month: slower than a classic bulk, so most of what you gain is muscle.',
-  cut: 'Eat about 300–500 kcal a day under maintenance, keep lifting heavy and keep protein high (1.6–2.2 g per kg or more). Lose 0.5–1% of your bodyweight a week, so the weight comes off as fat and your strength stays.',
-  maintain: 'Hold your weight within about 1% a month while your training keeps improving. Good between a gain and a cut, or as a break from either.',
-};
+/** Starting points for each phase. Calories are smaller for women, whose maintenance is usually lower. */
+function phaseHelp(type: PhaseType, sex: Sex | ''): string {
+  const f = sex === 'female';
+  if (type === 'gain') return `Eat a small surplus, about ${f ? '150–250' : '200–300'} kcal a day over maintenance, with 1.6–2.2 g of protein per kg of bodyweight. Aim for ${f ? '0.5–1.25' : '0.75–1.5'}% of your bodyweight a month: slower than a classic bulk, so most of what you gain is muscle.`;
+  if (type === 'cut') return `Eat about ${f ? '250–400' : '300–500'} kcal a day under maintenance, keep lifting heavy and keep protein high (1.6–2.2 g per kg or more). Lose 0.5–1% of your bodyweight a week, so the weight comes off as fat and your strength stays.${f ? ' If your period becomes irregular or stops, eat more and see a doctor: it is the main sign of eating too little for your training (IOC consensus on RED-S, 2023).' : ''}`;
+  return 'Hold your weight within about 1% a month while your training keeps improving. Good between a gain and a cut, or as a break from either.';
+}
+
+const ALL = Object.keys(LABEL) as Measure[];
+/** The measurement fields for a profile, with their labels and how to take them. */
+const fieldsFor = (p: Profile) => measuresFor(p.sex).map((key) => ({ key, label: LABEL[key], how: howTo(key, p.sex) }));
 
 /** The healthy pace for a phase, in kg a month at your weight. */
-function paceText(type: PhaseType, kg: number): string {
-  const [a, b] = RATE_BANDS[type].good.map((pct) => fmtNum((Math.abs(pct) * kg) / 100, 1));
+function paceText(type: PhaseType, kg: number, sex: Sex | ''): string {
+  const [a, b] = rateBands(type, sex).good.map((pct) => fmtNum((Math.abs(pct) * kg) / 100, 1));
   return type === 'gain' ? `Lean-gain pace for you: +${a}–${b} kg a month` : type === 'cut' ? `Steady-cut pace for you: −${b}–${a} kg a month` : `Steady for you: within ±${b} kg a month`;
 }
 
@@ -52,18 +64,21 @@ export function Body() {
 
   return (
     <div className="stack-lg">
-      <PhaseCard s={summary} nowKg={week?.kg ?? 0} onEdit={() => setEditPhase(true)} />
+      {!p.sex && entries.length > 0 && (
+        <div className="notice small">Set your sex in Settings: body fat, healthy ranges, the lean-gain pace and heart rate all use formulas that differ for women and men.</div>
+      )}
+      <PhaseCard s={summary} nowKg={week?.kg ?? 0} sex={p.sex} onEdit={() => setEditPhase(true)} />
       {entries.length > 0 && <WeightCard entries={entries} p={p} />}
       {entries.some((e) => e.waistCm) && <CompositionCard entries={entries} p={p} comp={comp} since={phase?.start} />}
       {entries.length > 0 && <MeasuresCard entries={entries} p={p} since={phase?.start} />}
       <LogForm entries={entries} p={p} />
-      <History entries={entries} p={p} />
+      <History entries={entries} />
       {editPhase && <PhaseSheet p={p} onClose={() => setEditPhase(false)} />}
     </div>
   );
 }
 
-function PhaseCard({ s, nowKg, onEdit }: { s: PhaseSummary | null; nowKg: number; onEdit: () => void }) {
+function PhaseCard({ s, nowKg, sex, onEdit }: { s: PhaseSummary | null; nowKg: number; sex: Sex | ''; onEdit: () => void }) {
   if (!s)
     return (
       <div className="card stack" style={{ gap: 8 }}>
@@ -92,10 +107,13 @@ function PhaseCard({ s, nowKg, onEdit }: { s: PhaseSummary | null; nowKg: number
             <span className="tiny muted num">{signed(rate.pctPerMonth)}% of bodyweight</span>
           </div>
           <div className="small">{rateAdvice(phase.type, band)}</div>
-          {nowKg > 0 && <div className="tiny dim">{paceText(phase.type, nowKg)}. Weekly averages, {short(rate.from.week)} → {short(rate.to.week)}.</div>}
+          {nowKg > 0 && <div className="tiny dim">{paceText(phase.type, nowKg, sex)}. Weekly averages, {short(rate.from.week)} → {short(rate.to.week)}.</div>}
         </div>
       ) : (
-        <p className="small dim" style={{ lineHeight: 1.45 }}>Your rate shows from about week 4, comparing weekly averages. Weigh in 3–4 mornings a week, after the bathroom and before eating.{nowKg > 0 ? ` ${paceText(phase.type, nowKg)}.` : ''}</p>
+        <p className="small dim" style={{ lineHeight: 1.45 }}>Your rate shows from about week 4, comparing weekly averages. Weigh in 3–4 mornings a week, after the bathroom and before eating.{nowKg > 0 ? ` ${paceText(phase.type, nowKg, sex)}.` : ''}</p>
+      )}
+      {phase.type === 'cut' && sex === 'female' && (
+        <div className="tiny muted" style={{ lineHeight: 1.45 }}>If your period becomes irregular or stops during a cut, eat more and see a doctor: it is the main sign of eating too little for your training (RED-S).</div>
       )}
       <div className="passport" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
         <div><div className="label">Since</div><div className="value" style={{ fontSize: '1.05rem', paddingTop: 4 }}>{short(phase.start)}</div></div>
@@ -104,7 +122,7 @@ function PhaseCard({ s, nowKg, onEdit }: { s: PhaseSummary | null; nowKg: number
       </div>
       {s.waistCheck === 'up' && dWaist !== null && (
         <div className="notice warn small">
-          <b>Check-in:</b> your waist is up {fmtNum(dWaist, 1)} cm since this gain began. Compare your photos: if most of the change sits around your middle, 2–4 weeks at maintenance, or a short cut, keeps the muscle and trims the extra fat before you gain again.
+          <b>Check-in:</b> your waist is up {fmtNum(dWaist, 1)} cm since this gain began. {sex === 'female' ? 'Check it again the week after your period, when bloating is lowest, and compare your photos. ' : 'Compare your photos: '}If most of the change sits around your middle, 2–4 weeks at maintenance, or a short cut, keeps the muscle and trims the extra fat before you gain again.
         </div>
       )}
       {s.waistCheck === 'whtr' && (
@@ -116,7 +134,7 @@ function PhaseCard({ s, nowKg, onEdit }: { s: PhaseSummary | null; nowKg: number
         s.quality !== null ? (
           <div className="small">Gain quality <b className="num">{fmtNum(s.quality, 2)}</b>: {qualityLabel(s.quality)}. That's lean mass gained ÷ weight gained, from your tape measurements. Around 0.5 or more is a good lean gain.</div>
         ) : (
-          <div className="tiny muted">Gain quality (how much of the gain is lean) shows from week {QUALITY_MIN_WEEKS} and {QUALITY_MIN_KG} kg gained, with your waist and neck measured near the start and since.</div>
+          <div className="tiny muted">Gain quality (how much of the gain is lean) shows from week {QUALITY_MIN_WEEKS} and {QUALITY_MIN_KG} kg gained, with your waist, neck{sex === 'female' ? ' and hips' : ''} measured near the start and since.</div>
         )
       )}
     </div>
@@ -136,7 +154,7 @@ function PhaseSheet({ p, onClose }: { p: Profile; onClose: () => void }) {
     <Sheet onClose={onClose} title="Your phase">
       <div className="stack">
         <Segmented<PhaseType> value={type} options={[['gain', 'Lean gain'], ['cut', 'Cut'], ['maintain', 'Maintain']]} onChange={setType} />
-        <p className="small dim" style={{ lineHeight: 1.5 }}>{PHASE_HELP[type]}</p>
+        <p className="small dim" style={{ lineHeight: 1.5 }}>{phaseHelp(type, p.sex)}</p>
         <label className="field">Starting<input className="input" type="date" value={start} max={today()} onChange={(e) => setStart(e.target.value || today())} /></label>
         <button className="btn primary block" onClick={save}>Start {PHASE_LABEL[type].toLowerCase()}</button>
         {cur && <p className="tiny muted">Your {PHASE_LABEL[cur.type].toLowerCase()} phase, since {short(cur.start)}, ends when this one starts.</p>}
@@ -192,6 +210,7 @@ function WeightCard({ entries, p }: { entries: WeightEntry[]; p: Profile }) {
       )}
       <div className="stack tiny muted" style={{ gap: 6, lineHeight: 1.45 }}>
         <p>One weigh-in swings a kilo either way with water, salt and food, so Bro reads the Monday–Sunday average. Weigh in 3–4 mornings a week, after the bathroom and before eating.</p>
+        {p.sex === 'female' && <p>Around your period, water retention can add about half a kilo or more for a few days. The rate compares weeks 4 weeks apart, which lines up with a typical cycle, so it mostly cancels out. A heavier week around your period isn't fat.</p>}
         {goal && trend !== null && <p>Your goal weight is judged on the average of your last 3 weigh-ins: {fmtNum(trend, 1)} kg now.</p>}
         {whtr !== null && <p>Waist ÷ height {whtr.toFixed(2)}: {whtrLabel(whtr)}. Under 0.5 is the commonly used healthy cut-off, and muscle doesn't distort it.</p>}
         {bmi !== null && <p>BMI {fmtNum(bmi, 1)}: {bmiLabel(bmi)}. BMI can't tell muscle from fat, so people who lift often read high{whtr === null ? '. Add your waist below for a better guide' : ''}.</p>}
@@ -209,11 +228,14 @@ function CompositionCard({ entries, p, comp, since }: { entries: WeightEntry[]; 
     return <p className="tiny muted" style={{ padding: '0 4px' }}>To estimate body fat from your tape measurements, set your sex to male or female in Settings: the formula is different for each.</p>;
   if (!p.heightCm) return null;
   if (!comp)
-    return <p className="tiny muted" style={{ padding: '0 4px' }}>Log your neck{female ? ' and hips' : ''} along with your waist to estimate body fat, lean mass and FFMI.</p>;
+    return <p className="tiny muted" style={{ padding: '0 4px' }}>Log your {female ? 'hips and neck' : 'neck'} along with your waist to estimate body fat, lean mass and FFMI.</p>;
   // Change since the phase began (or your first full set of measurements).
   const firstWaist = entries.find((e) => e.waistCm)?.date;
   const start = compositionAt(entries, p, since ?? firstWaist);
   const changed = start && start.date < comp.date ? start : null;
+  const marks = ffmiMarks(p.sex)!;
+  const range = bodyFatBand(comp.bf, p.sex, ageOn(p.birthYear, today()));
+  const rangeText = range && `${range.healthy[0]}–${range.healthy[1] - 1}%`;
   return (
     <div className="card stack" style={{ gap: 12 }}>
       <div className="row between">
@@ -230,21 +252,32 @@ function CompositionCard({ entries, p, comp, since }: { entries: WeightEntry[]; 
         <div><div className="label">Fat mass</div><div className="value">{fmtNum(comp.fatKg, 1)}<small>kg</small></div></div>
         <div><div className="label">FFMI</div><div className="value">{fmtNum(comp.ffmi, 1)}</div></div>
       </div>
-      {!female && (
-        <div className="stack" style={{ gap: 5 }}>
-          <div className="row between small">
-            <span className="dim">FFMI · {ffmiLabel(comp.ffmi)}</span>
-            <span className="num bold">{fmtNum(comp.ffmi, 1)} <span className="muted">/ {FFMI_TRAINED}</span></span>
-          </div>
-          <ProgressBar thin pct={(comp.ffmi - FFMI_BAR_FROM) / (FFMI_TRAINED - FFMI_BAR_FROM)} />
+      {range && (
+        <div className="small">
+          {range.band === 'healthy' ? `In the healthy range for your age and sex (about ${rangeText}).`
+            : range.band === 'low' ? (female
+              ? `Below the general healthy range for women your age (about ${rangeText}). Common in athletes, but if your period gets irregular or stops, eat more and see a doctor.`
+              : `Very lean: below the general range for men your age (about ${rangeText}). Fine for a while, hard to hold for long.`)
+            : range.band === 'high' ? `Above the healthy range for your age and sex (about ${rangeText}).`
+            : `Well above the healthy range for your age and sex (about ${rangeText}).`}
         </div>
       )}
+      <div className="stack" style={{ gap: 5 }}>
+        <div className="row between small">
+          <span className="dim">FFMI · {ffmiLabel(comp.ffmi, marks)}</span>
+          <span className="num bold">{fmtNum(comp.ffmi, 1)} <span className="muted">/ {marks.trained}</span></span>
+        </div>
+        <ProgressBar thin pct={(comp.ffmi - marks.barFrom) / (marks.trained - marks.barFrom)} />
+      </div>
       {changed && (
         <div className="small">Since {short(changed.date)}: lean mass <b className="num">{signed(comp.leanKg - changed.leanKg)} kg</b>, fat <b className="num">{signed(comp.fatKg - changed.fatKg)} kg</b>.</div>
       )}
       <div className="stack tiny muted" style={{ gap: 6, lineHeight: 1.45 }}>
         <p>Body fat comes from the US Navy tape formula (waist, neck{female ? ', hips' : ''} and height). It can be 3–4% off, but mostly in the same direction for the same person, so watch how it changes over months, not the exact number.</p>
-        <p>FFMI is lean mass for your height{female ? '' : `, adjusted to 1.80 m. About ${FFMI_TRAINED} is a visibly trained natural physique, and about ${FFMI_CEILING} is where natural lifters top out after many years (Kouri et al. 1995, a study of men)`}.</p>
+        {female
+          ? <p>FFMI is lean mass for your height. Active women average about 15–16 and female college athletes about 19 (Harty et al. 2019), so about {marks.trained} is a visibly trained, athletic physique; about {marks.top} is near the top even for athletes.</p>
+          : <p>FFMI is lean mass for your height, adjusted to 1.80 m. About {marks.trained} is a visibly trained natural physique, and about {marks.top} is where natural lifters top out after many years (Kouri et al. 1995).</p>}
+        {range && <p>Healthy ranges are Gallagher et al. (2000): the body fat that matches a healthy BMI at your age and sex. They're provisional, and your estimate is ±3–4% on top.</p>}
       </div>
     </div>
   );
@@ -256,7 +289,7 @@ function MeasuresCard({ entries, p, since }: { entries: WeightEntry[]; p: Profil
     <div className="stack">
       <div className="section-title">Measurements</div>
       <div className="group">
-        {measuresFor(p).map((m) => {
+        {fieldsFor(p).map((m) => {
           const last = latestMeasure(entries, m.key);
           const firstOne = entries.find((e) => e[m.key]);
           const from = since ? measureNear(entries, m.key, since) : firstOne ? { date: firstOne.date, cm: firstOne[m.key]! } : null;
@@ -271,7 +304,7 @@ function MeasuresCard({ entries, p, since }: { entries: WeightEntry[]; p: Profil
         })}
       </div>
       <p className="tiny muted" style={{ padding: '0 4px', lineHeight: 1.45 }}>
-        Waist every 2 weeks, the rest monthly, on a weigh-in morning. Once a month, take progress photos too: front, side and back, same light, same spot, same time of day. Keep them on your phone; Bro doesn't store photos.
+        Waist every 2 weeks, the rest monthly, on a weigh-in morning.{p.sex === 'female' ? ' Measure at the same point in your cycle each month, for example the week after your period: bloating peaks on its first day and can add a centimetre or two to your waist.' : ''} Once a month, take progress photos too: front, side and back, same light, same spot, same time of day. Keep them on your phone; Bro doesn't store photos.
       </p>
     </div>
   );
@@ -291,7 +324,7 @@ function LogForm({ entries, p }: { entries: WeightEntry[]; p: Profile }) {
     const v = kg.trim() ? num(kg) : 0;
     if (kg.trim() && (v < 20 || v > 400)) return toast('Enter your weight in kg');
     const cms: Partial<Record<Measure, number>> = {};
-    for (const m of measuresFor(p)) {
+    for (const m of fieldsFor(p)) {
       const s = cm[m.key].trim();
       if (!s) continue;
       const c = num(s);
@@ -330,7 +363,7 @@ function LogForm({ entries, p }: { entries: WeightEntry[]; p: Profile }) {
       {open && (
         <div className="stack" style={{ gap: 10 }}>
           <div className="measure-grid">
-            {measuresFor(p).map((m) => (
+            {fieldsFor(p).map((m) => (
               <div key={m.key} className="unit-input">
                 <input className="input" inputMode="decimal" placeholder={m.label} value={cm[m.key]} onChange={(e) => setCm({ ...cm, [m.key]: e.target.value })} aria-label={`${m.label} in cm, optional`} />
                 <span>cm</span>
@@ -338,7 +371,7 @@ function LogForm({ entries, p }: { entries: WeightEntry[]; p: Profile }) {
             ))}
           </div>
           <div className="stack tiny muted" style={{ gap: 4, lineHeight: 1.45 }}>
-            {measuresFor(p).map((m) => <p key={m.key}><b style={{ color: 'var(--text-2)' }}>{m.label}:</b> {m.how}</p>)}
+            {fieldsFor(p).map((m) => <p key={m.key}><b style={{ color: 'var(--text-2)' }}>{m.label}:</b> {m.how}</p>)}
             <p>Use a soft tape, snug but not pressing into the skin. Fill in only what you measured today.</p>
           </div>
         </div>
@@ -348,7 +381,7 @@ function LogForm({ entries, p }: { entries: WeightEntry[]; p: Profile }) {
   );
 }
 
-function History({ entries, p }: { entries: WeightEntry[]; p: Profile }) {
+function History({ entries }: { entries: WeightEntry[] }) {
   if (!entries.length) return <Empty title="No weigh-ins yet">Weigh in 3–4 mornings a week. Your week average shows whether you're really gaining or losing, and it makes assisted machines count correctly.</Empty>;
   const del = (id: string) =>
     getStore().update((d) => {
@@ -360,7 +393,7 @@ function History({ entries, p }: { entries: WeightEntry[]; p: Profile }) {
       <div className="section-title">History</div>
       <div className="group">
         {[...entries].reverse().map((w) => {
-          const ms = measuresFor(p).filter((m) => w[m.key]).map((m) => `${m.label.toLowerCase()} ${w[m.key]}`);
+          const ms = ALL.filter((k) => w[k]).map((k) => `${LABEL[k].toLowerCase()} ${w[k]}`);
           return (
             <Cell key={w.id} title={fmtDate(w.date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })} sub={ms.length ? `${ms.join(' · ')} cm` : undefined}>
               <b className="num">{w.kg} kg</b>

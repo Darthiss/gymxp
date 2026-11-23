@@ -6,7 +6,7 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 
 ## Where things stand
 
-*As of 23 November 2026.* Phases 1, 2, 3 and 5 are live: the star system, the new end screen, trophies, legends, a full balance review and training insights. The app is now called Bro, with a new look and mascot. Phase 5 went before Phase 4 at the owner's request, and so did body and strength goals. **Next:** the checks below, then Phase 4.
+*As of 23 November 2026.* Phases 1, 2, 3 and 5 are live: the star system, the new end screen, trophies, legends, a full balance review and training insights. The app is now called Bro, with a new look and mascot. Phase 5 went before Phase 4 at the owner's request, and so did body and strength goals. **Next:** [Phase S](#phase-s-a-second-user), a second user (a woman), before Spanish and the public launch. Its first two steps are done; her setup and first month are next. Then the checks below, then Phase 4.
 
 **Open checks, all for the owner:**
 - [ ] **On an iPhone,** log a workout afterwards and confirm "Add time" shows and opens the picker (step 1.1).
@@ -36,6 +36,13 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 - [x] **3.3** Legends rework · M
 - [x] **3.4** Balance review: ranks, rarity, long-term trophies · M
 
+**Phase S: A second user** (next, before Spanish and the public launch)
+- [x] **S.1** Sex-specific health review: every body and health formula checked for women · M
+- [x] **S.2** Glute and lower-body exercises, and the staples women train most · S
+- [ ] **S.3** Her setup: account, data repo, profile and routine · S
+- [ ] **S.4** Her first month: playtest and fix what's missing · S
+- [ ] **S.5** Decide the open questions for her · S
+
 **Phase 4: Spanish**
 - [ ] **4.1** i18n foundation · M
 - [ ] **4.2** Translate the app and add the setting · L
@@ -64,6 +71,7 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 | Hero Physique | Shelved behind a flag, with code and tests kept. Decide its future before Phase 6 |
 | Spanish register | Neutral Latin American |
 | Accounts | Public sign-up without GitHub, on the web and installable from the browser. Built last |
+| Next user | A second user, a woman, before Spanish and the public launch. Health formulas follow the profile's sex wherever the science differs |
 
 ## Open question
 
@@ -76,7 +84,8 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 3. **Rewards next,** on top of the new system. These shipped before the playtest finished, at the owner's request.
 4. **Spanish after the rewrites,** so we didn't translate text about to be deleted. It was planned before insights, but the owner wanted the body map sooner, so Phase 5 shipped first and its text joins the 4.2 translation.
 5. **Insights** share one library (5.1), so it comes first.
-6. **Public launch last.** It's the biggest change here, and the people it serves will expect Spanish and stable rules from day one.
+6. **A second user before Spanish,** at the owner's request. One real person who isn't the owner, and the first woman, will show what the app gets wrong for someone else, and that's cheaper to learn now than after translating it. If she'd rather use it in Spanish, Phase 4 comes straight after.
+7. **Public launch last.** It's the biggest change here, and the people it serves will expect Spanish and stable rules from day one.
 
 ## Working rules
 
@@ -128,11 +137,45 @@ Shipped before Phase 4, at the owner's request.
 
 - **Health review.** Every piece of training and body content was checked for accuracy: [what changed and why](docs/GAME_DESIGN.md#health-review-november-2026). In short: corrected muscle data with shoulders split in three, warm-ups left out of set counts, estimated 1RM capped at 12 reps, heavier lifts needing half the reps to count as a beat, session titles by split, a goal-weight floor and trend, waist ÷ height beside BMI, no star for heat, an age-based heart-rate trophy, fixed instruction cues and a "not medical advice" line. It re-scores history slightly, so recheck the third star at the next calibration.
 
-- **Body and strength goals.** A coach's plan, reviewed and adjusted: [what was built and why](docs/GAME_DESIGN.md#body-and-strength-review-november-2026). The Body tab reads weight as a weekly average with a monthly rate judged against a phase (lean gain, cut or maintain), adds tape measurements (waist, neck, arm, chest, and hips for women) to the weigh-in they're taken with, and estimates body fat, lean mass and FFMI. A gain gets a check-in when the waist is up 4 cm, and a gain-quality number after 8 weeks. Strength has a "Lift someone" goal with three benchmarks, barbell lifts show estimated 1RM ÷ bodyweight, sets can be marked as warm-ups, and the logger fills in the next weight ("Go up") once every working set reaches the top of the routine's range. Goblet Squat and two new carries, Front Carry and Goblet Carry, joined the catalog. The legends no longer compare your lifts with their records.
+- **Body and strength goals.** A coach's plan, reviewed and adjusted: [what was built and why](docs/GAME_DESIGN.md#body-and-strength-review-november-2026). The Body tab reads weight as a weekly average with a monthly rate judged against a phase (lean gain, cut or maintain), adds tape measurements (waist, neck, arm and chest; for women, hips and thigh in place of chest since S.1) to the weigh-in they're taken with, and estimates body fat, lean mass and FFMI. A gain gets a check-in when the waist is up 4 cm, and a gain-quality number after 8 weeks. Strength has a "Lift someone" goal with three benchmarks, barbell lifts show estimated 1RM ÷ bodyweight, sets can be marked as warm-ups, and the logger fills in the next weight ("Go up") once every working set reaches the top of the routine's range. Goblet Squat and two new carries, Front Carry and Goblet Carry, joined the catalog. The legends no longer compare your lifts with their records.
 
 - **Farmer's Walk,** logged as weight per hand and seconds walked. Adding it made time records work on any timed exercise, and exercise pages show the longest time in place of an estimated 1RM.
 
 ---
+
+## Phase S: A second user
+
+The next user is a woman, and she comes before Spanish and the public launch. Bro was built and tuned around one man's training, so this phase makes every body and health number right for her and fills the catalog with what she's likely to train.
+
+### S.1 Sex-specific health review · M · ✓
+
+Every formula and range that differs between women and men now follows the profile's sex: max heart rate, the lean-gain pace, the body-fat formula and where to measure the waist, healthy body-fat ranges by age, FFMI and its benchmarks, which tape measurements to take, and notes on the menstrual cycle and on eating enough during a cut. [The review](docs/GAME_DESIGN.md#sex-specific-review-november-2026) lists each change, its source, and what stays the same because the science doesn't differ.
+
+### S.2 Glute and lower-body exercises · S · ✓
+
+14 exercises: Hip Thrust Machine, Glute Kickback Machine, Glute Bridge, Single-Leg Glute Bridge, Donkey Kick, Kettlebell Swing, Bulgarian Split Squat, Dumbbell Reverse Lunge, Dumbbell Step-Up, Dumbbell Sumo Squat, Single-Leg Romanian Deadlift, Sumo Deadlift, Incline Push-up and Knee Push-up. Each has its muscles set, Spanish search names and, where the dataset has them, photos; the two machines and the knee push-up are written by hand. The routine check can now suggest hip thrusts, glute bridges and reverse lunges too.
+
+### S.3 Her setup · S
+
+- **Her own data.** Each user's log lives in their own private GitHub repo, so she needs a GitHub account, a private repo and a fine-grained token, set up together. Using her own account keeps her data out of the owner's. This is the friction 6.2 removes for everyone later.
+- **Profile first:** sex, height and birth year, before her first weigh-in, since they pick the formulas. Then a weekly goal she can keep, and her routine in Routines.
+- **Install** it to her Home Screen, and check the Body tab and the logger on her phone.
+
+### S.4 Her first month · S
+
+Watch for what doesn't fit, and fix it as it comes up:
+- Does she follow the app in English? If not, Phase 4 comes next.
+- Exercises she does that aren't in the catalog. Cardio machines (stair climber, incline walking) still count only through watch minutes.
+- Whether her stars, trophies and weekly challenges feel winnable. The engine was calibrated on one man's log.
+- Whether the Body tab's numbers match what she sees in the mirror and the photos.
+
+### S.5 Open questions for her · S
+
+Product choices, best made with her after S.4:
+- **Strength trophies** use absolute numbers set for men (a 140 kg bench, a 180 kg deadlift). Keep them as long-term goals, or add relative ones scaled for women? Never rename an id; add new ones.
+- **Legends** are four men. Add women, with commonly reported facts only?
+- **Lift someone** sets the deadlift at 1.5× her own bodyweight. If the person she'd lift is much heavier than her, that target may need to follow their weight instead.
+- **Hero Physique** is shelved, and was built around a male actor's training. If it returns, it needs a version for women or a neutral one.
 
 ## Phase 4: Spanish
 
@@ -282,3 +325,6 @@ The [design doc](docs/GAME_DESIGN.md#later-when-there-are-other-players) explain
 | volver los achievements e hitos más importantes | 3.2 ✓ |
 | diagrama o mapa del cuerpo con los músculos | 5.1, 5.2 |
 | análisis de qué le falta a la rutina | 5.1, 5.3 |
+| que la app funcione para ella: cada cálculo de salud y medidas según el sexo | S.1 ✓ |
+| más ejercicios de glúteos y los más usados por mujeres | S.2 ✓ |
+| ella es la próxima usuaria, antes del español y del lanzamiento | S.3–S.5 |

@@ -78,7 +78,8 @@ export interface WeightEntry extends Rec {
   neckCm?: number; // just below the Adam's apple
   armCm?: number; // flexed, at the widest point, same arm every time
   chestCm?: number; // at nipple height, after a normal breath out
-  hipCm?: number; // widest point of the glutes; only the women's body-fat formula uses it
+  hipCm?: number; // widest point of the glutes; the women's body-fat formula uses it
+  thighCm?: number; // fullest part of the thigh, just below the glutes, same leg every time
 }
 
 export interface CustomExercise extends Rec {

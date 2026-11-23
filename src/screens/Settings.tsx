@@ -66,6 +66,7 @@ function ProfileCard() {
         <label className="field">Height (cm)<input className="input" inputMode="decimal" value={f.heightCm} onChange={(e) => setF({ ...f, heightCm: e.target.value })} /></label>
         <label className="field">Goal weight (kg)<input className="input" inputMode="decimal" value={f.goalWeightKg} onChange={(e) => setF({ ...f, goalWeightKg: e.target.value })} placeholder="optional" /></label>
       </div>
+      <p className="tiny muted">Sex and birth year pick the formulas that differ between women and men: body fat and its healthy range, FFMI, the lean-gain pace, which measurements to take, and max heart rate. With Other, Bro uses the ones that don't depend on sex.</p>
       {height && height > 100 && height < 250 && (
         <p className="tiny muted">For your height, {minGoalKg(height)}–{Math.floor(kgAtBmi(BMI_MAX, height))} kg is the range usually called healthy (BMI 18.5–25). Muscle can put you above it.</p>
       )}

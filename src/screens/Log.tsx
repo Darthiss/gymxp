@@ -562,7 +562,7 @@ function Elapsed({ since }: { since: string }) {
 
 /** Per-machine settings memo ("seat 4, back pad 2"), synced with your data. */
 export function SettingNote({ exerciseId, value, equipment }: { exerciseId: string; value: string; equipment?: string }) {
-  const freeWeight = ['Dumbbell', 'Barbell', 'EZ bar', 'Bodyweight', 'Benchmark', 'Free weight'].includes(equipment ?? '');
+  const freeWeight = ['Dumbbell', 'Kettlebell', 'Barbell', 'EZ bar', 'Bodyweight', 'Benchmark', 'Free weight'].includes(equipment ?? '');
   const [edit, setEdit] = useState(false);
   const [v, setV] = useState(value);
   if (!edit)

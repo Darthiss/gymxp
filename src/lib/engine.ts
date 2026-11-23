@@ -907,7 +907,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     if ((['Chest', 'Back', 'Shoulders', 'Arms', 'Legs'] as MuscleGroup[]).every((g) => groups.has(g))) A('hab-fullbody');
     if (s.exercises.filter((e) => workingSets(e.sets).length).length >= 8) A('hab-variety');
     if (reps >= 500) A('hab-reps');
-    if ((s.watch?.avgHr ?? 0) >= hardHeartRate(ageOn(data.profile.birthYear, s.date)) && minutes >= 45) A('hab-heart');
+    if ((s.watch?.avgHr ?? 0) >= hardHeartRate(ageOn(data.profile.birthYear, s.date), data.profile.sex) && minutes >= 45) A('hab-heart');
     if (firstVisit && s.date >= addDays(firstVisit, 365)) A('hab-anniversary');
     if (firstVisit && s.date >= addDays(firstVisit, 1826)) A('hab-anniversary-5');
     if (firstVisit && s.date >= addDays(firstVisit, 3652)) A('hab-anniversary-10');

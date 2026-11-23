@@ -45,13 +45,13 @@ const FOR_MUSCLE: Record<Muscle, string[]> = {
   'Front Delts': ['Machine_Shoulder_Military_Press', 'Dumbbell_Shoulder_Press'], 'Side Delts': ['Side_Lateral_Raise', 'Standing_Low-Pulley_Deltoid_Raise'], 'Rear Delts': ['Reverse_Machine_Flyes', 'Face_Pull'],
   Lats: ['Wide-Grip_Lat_Pulldown', 'Assisted_Pull-Up_Machine'], 'Middle Back': ['Seated_Cable_Rows', 'Leverage_Iso_Row'], 'Lower Back': ['Hyperextensions_Back_Extensions'],
   Biceps: ['Machine_Bicep_Curl', 'Dumbbell_Bicep_Curl'], Triceps: ['Triceps_Pushdown_-_Rope_Attachment', 'Triceps_Pushdown'], Forearms: ['Farmers_Walk'],
-  Abdominals: ['Cable_Crunch', 'Plank'], Glutes: ['Barbell_Hip_Thrust', 'One-Legged_Cable_Kickback'], Abductors: ['Thigh_Abductor'], Adductors: ['Thigh_Adductor'],
+  Abdominals: ['Cable_Crunch', 'Plank'], Glutes: ['Barbell_Hip_Thrust', 'One-Legged_Cable_Kickback', 'Hip_Thrust_Machine', 'Butt_Lift_Bridge'], Abductors: ['Thigh_Abductor'], Adductors: ['Thigh_Adductor'],
   Quadriceps: ['Leg_Press', 'Leg_Extensions'], Hamstrings: ['Seated_Leg_Curl', 'Lying_Leg_Curls'], Calves: ['Standing_Calf_Raises', 'Seated_Calf_Raise'],
 };
 const FOR_PATTERN: Record<Pattern, string[]> = {
   'h-push': ['Machine_Bench_Press', 'Dumbbell_Bench_Press'], 'v-push': ['Machine_Shoulder_Military_Press', 'Dumbbell_Shoulder_Press'],
   'h-pull': ['Seated_Cable_Rows', 'Leverage_Iso_Row'], 'v-pull': ['Wide-Grip_Lat_Pulldown', 'Assisted_Pull-Up_Machine'],
-  squat: ['Leg_Press', 'Hack_Squat'], hinge: ['Hyperextensions_Back_Extensions', 'Pull_Through', 'Romanian_Deadlift'], lunge: ['Dumbbell_Lunges'], // the easiest hinge to learn first
+  squat: ['Leg_Press', 'Hack_Squat'], hinge: ['Hyperextensions_Back_Extensions', 'Pull_Through', 'Romanian_Deadlift'], lunge: ['Dumbbell_Lunges', 'Dumbbell_Rear_Lunge', 'Split_Squat_with_Dumbbells'], // the easiest hinge to learn first
   core: ['Cable_Crunch', 'Plank'], carry: ['Farmers_Walk'],
 };
 

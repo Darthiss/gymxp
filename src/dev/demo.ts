@@ -52,12 +52,20 @@ function sampleData(): AppData {
     d.sessions.push(s);
   });
   // A lean gain: three mornings a week, about +0.9 kg a month, the waist every 2 weeks and the rest monthly.
+  // ?demo&female shows a woman's body tab instead: her measurements, about +0.5 kg a month.
+  const female = location.search.includes('female');
+  if (female) d.profile = { ...d.profile, sex: 'female', heightCm: 163, goalWeightKg: null };
+  const r1 = (n: number) => Math.round(n * 10) / 10;
   for (let day = -70; day <= -1; day++) {
     const dow = new Date(addDays(t, day) + 'T12:00').getDay();
     if (dow !== 1 && dow !== 3 && dow !== 6) continue;
     const week = Math.floor((day + 70) / 7);
-    const tape = dow === 1 && week % 2 === 0 ? { waistCm: Math.round((76 + week * 0.12) * 10) / 10, ...(week % 4 === 0 ? { neckCm: 37.5, armCm: Math.round((33 + week * 0.06) * 10) / 10, chestCm: Math.round((97 + week * 0.1) * 10) / 10 } : {}) } : {};
-    d.weights.push({ id: uid(), updatedAt: 1, date: addDays(t, day), kg: Math.round((70 + (day + 70) * 0.03 + (r() - 0.5) * 0.9) * 10) / 10, ...tape });
+    const monthly = week % 4 === 0;
+    const tape = dow !== 1 || week % 2 ? {} : female
+      ? { waistCm: r1(68 + week * 0.05), ...(monthly ? { hipCm: r1(96 + week * 0.1), neckCm: 31.5, armCm: r1(26.5 + week * 0.04), thighCm: r1(55 + week * 0.08) } : {}) }
+      : { waistCm: r1(76 + week * 0.12), ...(monthly ? { neckCm: 37.5, armCm: r1(33 + week * 0.06), chestCm: r1(97 + week * 0.1) } : {}) };
+    const kg = female ? 57 + (day + 70) * 0.016 : 70 + (day + 70) * 0.03;
+    d.weights.push({ id: uid(), updatedAt: 1, date: addDays(t, day), kg: r1(kg + (r() - 0.5) * 0.9), ...tape });
   }
   const reps = ['12/10/8', '10', '10', '12', '15', '10'];
   d.routines = names.map((n, i) => ({

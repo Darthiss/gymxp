@@ -10,7 +10,8 @@ import { gameFor } from './game';
 import { emptyData, type AppData, type Exercise, type Routine, type Session } from './types';
 import { withExercise, activeRoutines, firstReps, fmtRest, fmtTarget, goUp, hitTarget, inOrder, lastDone, moveTo, nextPosition, planFor, repsForSet, routineItems, upNextRoutine, weightStep } from './routines';
 import {
-  compositionAt, currentKg, currentPhase, ffmiOf, gainQuality, kgNear, liveWeights, measureNear, monthlyRate, navyBodyFat, phaseSummary, rateBand, weeklyAverages, withPhase,
+  bodyFatBand, compositionAt, currentKg, currentPhase, ffmiLabel, FFMI_MARKS, ffmiOf, gainQuality, kgNear, liveWeights, measureNear, measuresFor, monthlyRate,
+  navyBodyFat, phaseSummary, rateBand, weeklyAverages, withPhase,
 } from './body';
 import { CARRY_SECONDS, gobletTarget, liftBenchmarks, liftGoalPct } from './liftGoal';
 import type { WeightEntry } from './types';
@@ -1935,5 +1936,98 @@ describe('lift goal', () => {
     expect(exMap.get('Goblet_Carry')!.loadFactor).toBeUndefined(); // one dumbbell, logged as itself
     expect(searchExercises(allExercises(emptyData()), 'mancuerna al pecho')[0].id).toBe('Goblet_Carry');
     expect(searchExercises(allExercises(emptyData()), 'goblet carry')[0].id).toBe('Goblet_Carry');
+  });
+});
+
+describe('sex-specific health', () => {
+  it('estimates max heart rate for women with the Gulati formula', () => {
+    expect(hardHeartRate(30, 'female')).toBe(135); // 75% of 206 − 0.88 × 30
+    expect(hardHeartRate(50, 'female')).toBe(122);
+    expect(hardHeartRate(30, 'male')).toBe(140);
+    expect(hardHeartRate(30, 'other')).toBe(140);
+    const trophy = (sex: 'male' | 'female') => {
+      const d = emptyData();
+      d.profile.birthYear = 1996;
+      d.profile.sex = sex;
+      add(d, '2026-03-02', [ex('Leg_Press', 50, 10)], { watch: { durationMin: 50, avgHr: 137 } });
+      return game(d).unlockedIds.has('hab-heart');
+    };
+    expect(trophy('female')).toBe(true); // 137 bpm is hard work for a woman of 30
+    expect(trophy('male')).toBe(false);
+  });
+
+  it('sets a smaller lean-gain pace for women, and the same cut', () => {
+    expect([0.4, 1.0, 1.4, 2.0].map((pct) => rateBand('gain', pct, 'female'))).toEqual(['ok', 'good', 'ok', 'high']);
+    expect(rateBand('gain', 1.4, 'male')).toBe('good');
+    expect(rateBand('gain', 1.4)).toBe('good');
+    expect(rateBand('cut', -3, 'female')).toBe(rateBand('cut', -3, 'male'));
+  });
+
+  it('reads body fat against healthy ranges by sex and age (Gallagher 2000)', () => {
+    expect([19, 25, 35, 40].map((bf) => bodyFatBand(bf, 'female', 30)?.band)).toEqual(['low', 'healthy', 'high', 'very high']);
+    expect(bodyFatBand(25, 'female', 30)!.healthy).toEqual([21, 33]);
+    expect(bodyFatBand(22, 'female', 45)!.band).toBe('low'); // the range moves up with age
+    expect([7, 12, 22, 26].map((bf) => bodyFatBand(bf, 'male', 30)?.band)).toEqual(['low', 'healthy', 'high', 'very high']);
+    expect(bodyFatBand(12, 'male', 65)!.band).toBe('low');
+    expect(bodyFatBand(25, 'female', null)!.band).toBe('healthy'); // no birth year: read as an adult of 30
+    expect(bodyFatBand(25, 'female', 17)).toBeNull(); // the ranges are for adults
+    expect(bodyFatBand(25, 'other', 30)).toBeNull();
+  });
+
+  it('gives women plain FFMI with their own marks', () => {
+    const w = (date: string, kg: number, extra: Partial<WeightEntry> = {}): WeightEntry => ({ id: `w${date}`, updatedAt: 1, date, kg, ...extra });
+    const c = compositionAt([w('2026-11-02', 58, { waistCm: 70, hipCm: 95, neckCm: 32 })], { sex: 'female', heightCm: 165 })!;
+    expect(c.bf).toBeCloseTo(navyBodyFat('female', 165, { waistCm: 70, hipCm: 95, neckCm: 32 })!, 5);
+    expect(c.ffmi).toBeCloseTo(c.leanKg / 1.65 ** 2, 5); // not adjusted to 1.80 m
+    expect(ffmiOf(50, 165, false)).toBeCloseTo(50 / 1.65 ** 2, 5);
+    expect([15, 17, 19, 24.5].map((f) => ffmiLabel(f, FFMI_MARKS.female))).toEqual(['about average', 'trained', 'well trained', 'near the natural limit']);
+    expect(ffmiLabel(21, FFMI_MARKS.male)).toBe('trained');
+  });
+
+  it('asks each body for the measurements that mean something on it', () => {
+    expect(measuresFor('female')).toEqual(['waistCm', 'hipCm', 'neckCm', 'armCm', 'thighCm']);
+    expect(measuresFor('male')).toEqual(['waistCm', 'neckCm', 'armCm', 'chestCm']);
+    expect(measuresFor('')).toHaveLength(6);
+  });
+
+  it('judges a woman\'s gain on her own pace', () => {
+    const es: WeightEntry[] = [];
+    for (let k = 0; k <= 9; k++) es.push({ id: `w${k}`, updatedAt: 1, date: addDays('2026-09-07', 7 * k), kg: 60 + (0.75 * k) / 9 }, { id: `t${k}`, updatedAt: 1, date: addDays('2026-09-10', 7 * k), kg: 60 + (0.75 * k) / 9 });
+    const phase = { type: 'gain' as const, start: '2026-09-07' };
+    const her = phaseSummary(es, phase, { sex: 'female', heightCm: 165 }, '2026-11-12');
+    const him = phaseSummary(es, phase, { sex: 'male', heightCm: 165 }, '2026-11-12');
+    expect(her.rate!.pctPerMonth).toBeCloseTo(0.6, 1); // about 0.36 kg a month at 60 kg
+    expect([her.band, him.band]).toEqual(['good', 'ok']); // on pace for her, a little slow for him
+  });
+});
+
+describe('glutes and lower body', () => {
+  const exMap = exerciseMap(emptyData());
+  const NEW = ['Hip_Thrust_Machine', 'Glute_Kickback_Machine', 'Butt_Lift_Bridge', 'Single_Leg_Glute_Bridge', 'Glute_Kickback', 'One-Arm_Kettlebell_Swings',
+    'Split_Squat_with_Dumbbells', 'Dumbbell_Rear_Lunge', 'Dumbbell_Step_Ups', 'Plie_Dumbbell_Squat', 'Kettlebell_One-Legged_Deadlift', 'Sumo_Deadlift'];
+
+  it('are in the catalog, all crediting the glutes as a main muscle', () => {
+    for (const id of NEW) expect(exMap.get(id)?.primaryMuscles, id).toContain('Glutes');
+    expect(BUILTIN.filter((e) => e.group === 'Glutes').length).toBeGreaterThanOrEqual(10);
+  });
+
+  it('log the way you lift them', () => {
+    expect(exMap.get('Split_Squat_with_Dumbbells')).toMatchObject({ loadFactor: 2, pattern: 'lunge' }); // one dumbbell, both count
+    expect(exMap.get('Plie_Dumbbell_Squat')!.loadFactor).toBeUndefined(); // one dumbbell held between the legs
+    expect(exMap.get('Sumo_Deadlift')).toMatchObject({ barKg: 20, pattern: 'hinge' });
+    expect(exMap.get('Butt_Lift_Bridge')).toMatchObject({ bwFactor: 0.4, pattern: 'hinge' });
+    expect(exMap.get('Hip_Thrust_Machine')).toMatchObject({ pattern: 'hinge', images: [] });
+    expect(exMap.get('Knee_Push-Up')).toMatchObject({ bwFactor: 0.49, pattern: 'h-push' }); // Ebben et al. 2011
+    expect(exMap.get('Incline_Push-Up')).toMatchObject({ bwFactor: 0.45, pattern: 'h-push' });
+  });
+
+  it('can be found by their gym names, in English and Spanish', () => {
+    const top = (q: string) => searchExercises(allExercises(emptyData()), q)[0]?.id;
+    expect(top('bulgarian')).toBe('Split_Squat_with_Dumbbells');
+    expect(top('sentadilla búlgara')).toBe('Split_Squat_with_Dumbbells');
+    expect(top('glute drive')).toBe('Hip_Thrust_Machine');
+    expect(top('patada de burro')).toBe('Glute_Kickback');
+    expect(top('peso muerto sumo')).toBe('Sumo_Deadlift');
+    expect(top('flexiones de rodillas')).toBe('Knee_Push-Up');
   });
 });

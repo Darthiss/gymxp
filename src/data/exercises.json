@@ -1520,6 +1520,186 @@
   "pattern": "hinge"
  },
  {
+  "id": "Hip_Thrust_Machine",
+  "name": "Hip Thrust Machine",
+  "aliases": [
+   "Glute Drive",
+   "Glute Bridge Machine",
+   "Hip Thrust (machine)",
+   "Máquina de hip thrust",
+   "Empuje de cadera en máquina"
+  ],
+  "group": "Glutes",
+  "equipment": "Machine",
+  "primaryMuscles": [
+   "Glutes"
+  ],
+  "secondaryMuscles": [
+   "Hamstrings"
+  ],
+  "look": "You sit low with your upper back against a pad and a padded belt or bar across your hips, feet flat in front of you, and drive your hips up until your body is flat from knees to shoulders. Often sold as a Glute Drive. The weight is plates on horns or a pin stack.",
+  "instructions": [
+   "Set the back pad just below your shoulder blades, and put the belt or pad across the crease of your hips, not your belly.",
+   "Feet flat and about hip-width apart, far enough forward that your shins are vertical at the top.",
+   "Tuck your chin and keep your ribs down. Drive through your heels and squeeze your glutes to lift your hips until your body is flat from knees to shoulders.",
+   "Pause for a second at the top without arching your lower back, then lower under control until your hips nearly touch down.",
+   "Feel it in your hamstrings more than your glutes? Bring your feet a little closer. In the front of your thighs? Move them a little further away."
+  ],
+  "images": [],
+  "pattern": "hinge"
+ },
+ {
+  "id": "Glute_Kickback_Machine",
+  "name": "Glute Kickback Machine",
+  "aliases": [
+   "Glute Machine",
+   "Rear Kick Machine",
+   "Glute Isolator",
+   "Máquina de patada de glúteo",
+   "Patada de glúteo en máquina"
+  ],
+  "group": "Glutes",
+  "equipment": "Machine",
+  "primaryMuscles": [
+   "Glutes"
+  ],
+  "secondaryMuscles": [
+   "Hamstrings"
+  ],
+  "look": "You lean onto a chest pad (kneeling or standing) and push a foot plate or leg pad back and up with one leg, against a pin stack. Log the weight and the reps for one leg.",
+  "instructions": [
+   "Set the chest pad so you can lean on it with a flat back, hands on the handles.",
+   "Put one foot on the plate, or the back of your knee under the pad. The other leg stays on the platform.",
+   "Push the working leg back and up by squeezing your glute, until your hip is straight. Keep your lower back still: the movement comes from the hip, not from arching.",
+   "Return slowly until your knee is under your hip. Do all the reps on one leg, then switch."
+  ],
+  "images": []
+ },
+ {
+  "id": "Butt_Lift_Bridge",
+  "name": "Glute Bridge",
+  "aliases": [
+   "Floor Bridge",
+   "Hip Bridge",
+   "Butt Lift",
+   "Puente de glúteo",
+   "Puente de glúteos"
+  ],
+  "group": "Glutes",
+  "equipment": "Bodyweight",
+  "primaryMuscles": [
+   "Glutes"
+  ],
+  "secondaryMuscles": [
+   "Hamstrings"
+  ],
+  "look": "Lying on your back with knees bent and feet flat, you lift your hips until your body is straight from knees to shoulders. Log 0 kg for bodyweight, or the weight of a dumbbell or plate held on your hips.",
+  "instructions": [
+   "Lie flat on the floor on your back with the hands by your side and your knees bent. Your feet should be placed around shoulder width. This will be your starting position.",
+   "Pushing mainly with your heels, lift your hips off the floor while keeping your back straight. Breathe out as you perform this part of the motion and hold at the top for a second.",
+   "Slowly go back to the starting position as you breathe in."
+  ],
+  "images": [
+   "ex/Butt_Lift_Bridge/0.jpg",
+   "ex/Butt_Lift_Bridge/1.jpg"
+  ],
+  "bwFactor": 0.4,
+  "pattern": "hinge"
+ },
+ {
+  "id": "Single_Leg_Glute_Bridge",
+  "name": "Single-Leg Glute Bridge",
+  "aliases": [
+   "One-Leg Glute Bridge",
+   "Puente de glúteo a una pierna"
+  ],
+  "group": "Glutes",
+  "equipment": "Bodyweight",
+  "primaryMuscles": [
+   "Glutes"
+  ],
+  "secondaryMuscles": [
+   "Hamstrings"
+  ],
+  "look": "A glute bridge with one foot on the floor and the other leg lifted, so one glute does the work. Log the reps for one leg.",
+  "instructions": [
+   "Lay on the floor with your feet flat and knees bent.",
+   "Raise one leg off of the ground, pulling the knee to your chest. This will be your starting position.",
+   "Execute the movement by driving through the heel, extending your hip upward and raising your glutes off of the ground.",
+   "Extend as far as possible, pause and then return to the starting position."
+  ],
+  "images": [
+   "ex/Single_Leg_Glute_Bridge/0.jpg",
+   "ex/Single_Leg_Glute_Bridge/1.jpg"
+  ],
+  "bwFactor": 0.4,
+  "pattern": "hinge"
+ },
+ {
+  "id": "Glute_Kickback",
+  "name": "Donkey Kick",
+  "aliases": [
+   "Kneeling Glute Kickback",
+   "Quadruped Kickback",
+   "Patada de burro",
+   "Patada de glúteo en el suelo"
+  ],
+  "group": "Glutes",
+  "equipment": "Bodyweight",
+  "primaryMuscles": [
+   "Glutes"
+  ],
+  "secondaryMuscles": [
+   "Hamstrings"
+  ],
+  "look": "On all fours on a mat, you lift one bent leg back and up until your thigh is level with your back. Log the reps for one leg, and an ankle weight in + kg if you use one.",
+  "instructions": [
+   "Kneel on the floor or an exercise mat and bend at the waist with your arms extended in front of you (perpendicular to the torso) in order to get into a kneeling push-up position but with the arms spaced at shoulder width. Your head should be looking forward and the bend of the knees should create a 90-degree angle between the hamstrings and the calves. This will be your starting position.",
+   "As you exhale, lift up your right leg until the hamstrings are in line with the back while maintaining the 90-degree angle bend. Contract the glutes throughout this movement and hold the contraction at the top for a second. Tip: At the end of the movement the upper leg should be parallel to the floor while the calf should be perpendicular to it.",
+   "Go back to the initial position as you inhale and now repeat with the left leg.",
+   "Continue to alternate legs until all of the recommended repetitions have been performed."
+  ],
+  "images": [
+   "ex/Glute_Kickback/0.jpg",
+   "ex/Glute_Kickback/1.jpg"
+  ],
+  "bwFactor": 0.15
+ },
+ {
+  "id": "One-Arm_Kettlebell_Swings",
+  "name": "Kettlebell Swing",
+  "aliases": [
+   "KB Swing",
+   "Russian Swing",
+   "Two-Hand Swing",
+   "Swing con pesa rusa",
+   "Balanceo con kettlebell"
+  ],
+  "group": "Glutes",
+  "equipment": "Kettlebell",
+  "primaryMuscles": [
+   "Glutes",
+   "Hamstrings"
+  ],
+  "secondaryMuscles": [
+   "Lower Back",
+   "Abdominals"
+  ],
+  "look": "Holding one kettlebell (with two hands, or one), you hinge and swing it back between your legs, then snap your hips forward so it floats to chest height. A hip hinge powered by the glutes, not a squat or a front raise. Log the kettlebell.",
+  "instructions": [
+   "Stand with your feet a little wider than your hips and the kettlebell on the floor a foot in front of you.",
+   "Hinge at the hips with a flat back, grab the handle and hike it back between your legs like a football snap.",
+   "Drive your hips forward hard and squeeze your glutes to stand tall. Your arms stay loose: the hips send the bell up to about chest height.",
+   "Let it fall back between your legs, hinging at the hips again as it passes your thighs, and go straight into the next rep.",
+   "Keep your back flat and your heels down the whole time. Stop the set when the hinge turns into a squat or your back starts to round."
+  ],
+  "images": [
+   "ex/One-Arm_Kettlebell_Swings/0.jpg",
+   "ex/One-Arm_Kettlebell_Swings/1.jpg"
+  ],
+  "pattern": "hinge"
+ },
+ {
   "id": "Dumbbell_Bicep_Curl",
   "name": "Standing Dumbbell Curl",
   "aliases": [
@@ -2077,6 +2257,169 @@
   "pattern": "squat"
  },
  {
+  "id": "Split_Squat_with_Dumbbells",
+  "name": "Bulgarian Split Squat",
+  "aliases": [
+   "Rear-Foot-Elevated Split Squat",
+   "RFESS",
+   "Split Squat",
+   "Sentadilla búlgara",
+   "Búlgara"
+  ],
+  "group": "Legs",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Quadriceps",
+   "Glutes"
+  ],
+  "secondaryMuscles": [
+   "Adductors"
+  ],
+  "look": "One foot forward, the top of your other foot resting on a bench behind you, a dumbbell in each hand. You drop straight down on the front leg, then stand. Log one dumbbell and the reps for one leg.",
+  "instructions": [
+   "Stand about a long stride in front of a flat bench, facing away from it, a dumbbell in each hand. Rest the top of one foot on the bench behind you.",
+   "Lower straight down until your back knee nearly touches the floor, keeping your front heel down and the front knee in line with your foot.",
+   "Drive through your whole front foot to stand back up. Do all the reps on one leg, then switch.",
+   "A longer stance and a slight forward lean put more of the work on your glutes; a shorter stance and an upright torso, more on your quads."
+  ],
+  "images": [
+   "ex/Split_Squat_with_Dumbbells/0.jpg",
+   "ex/Split_Squat_with_Dumbbells/1.jpg"
+  ],
+  "loadFactor": 2,
+  "pattern": "lunge"
+ },
+ {
+  "id": "Dumbbell_Rear_Lunge",
+  "name": "Dumbbell Reverse Lunge",
+  "aliases": [
+   "Reverse Lunge",
+   "Rear Lunge",
+   "Back Lunge",
+   "Zancada hacia atrás",
+   "Estocada atrás"
+  ],
+  "group": "Legs",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Quadriceps",
+   "Glutes"
+  ],
+  "secondaryMuscles": [
+   "Adductors"
+  ],
+  "look": "Standing with a dumbbell in each hand, you step one foot back and lower until both knees are bent, then step back up. Easier on the knees than a forward lunge. Log one dumbbell and the reps for one leg.",
+  "instructions": [
+   "Stand tall with a dumbbell in each hand at your sides, feet about hip-width apart.",
+   "Step one foot back about two feet and lower until your back knee nearly touches the floor. Keep your torso upright and your front heel down.",
+   "Push through your front foot to bring the back foot forward and stand up again.",
+   "Do all the reps on one leg, then switch, or alternate legs. A slight forward lean puts more of the work on your glutes."
+  ],
+  "images": [
+   "ex/Dumbbell_Rear_Lunge/0.jpg",
+   "ex/Dumbbell_Rear_Lunge/1.jpg"
+  ],
+  "loadFactor": 2,
+  "pattern": "lunge"
+ },
+ {
+  "id": "Dumbbell_Step_Ups",
+  "name": "Dumbbell Step-Up",
+  "aliases": [
+   "Step-Up",
+   "Box Step-Up",
+   "Bench Step-Up",
+   "Subida al cajón",
+   "Subidas al banco"
+  ],
+  "group": "Legs",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Quadriceps",
+   "Glutes"
+  ],
+  "secondaryMuscles": [
+   "Adductors"
+  ],
+  "look": "With a dumbbell in each hand, you step up onto a box or bench with one foot and stand up on it, then step back down. Log one dumbbell and the reps for one leg.",
+  "instructions": [
+   "Stand facing a sturdy box or bench about knee height, a dumbbell in each hand.",
+   "Put one whole foot on the box. Lean slightly forward and drive through that foot to stand up on the box, without pushing off the back foot.",
+   "Step down slowly with the other leg, keeping the working foot on the box.",
+   "Do all the reps on one leg, then switch. A higher box and more forward lean work the glutes more."
+  ],
+  "images": [
+   "ex/Dumbbell_Step_Ups/0.jpg",
+   "ex/Dumbbell_Step_Ups/1.jpg"
+  ],
+  "loadFactor": 2,
+  "pattern": "lunge"
+ },
+ {
+  "id": "Plie_Dumbbell_Squat",
+  "name": "Dumbbell Sumo Squat",
+  "aliases": [
+   "Sumo Squat",
+   "Plié Squat",
+   "Plie Squat",
+   "Sentadilla sumo",
+   "Sentadilla plié"
+  ],
+  "group": "Legs",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Quadriceps",
+   "Glutes",
+   "Adductors"
+  ],
+  "secondaryMuscles": [],
+  "look": "Feet wide and toes turned out, one heavy dumbbell hanging straight down between your legs, held by one end. You squat straight down and stand. Works the inner thighs and glutes more than a regular squat. Log the one dumbbell.",
+  "instructions": [
+   "Hold a dumbbell at the base with both hands and stand straight up. Move your legs so that they are wider than shoulder width apart from each other with your knees slightly bent.",
+   "Your toes should be facing out. Note: Your arms should be stationary while performing the exercise. This is the starting position.",
+   "Slowly bend the knees and lower your legs until your thighs are parallel to the floor. Make sure to inhale as this is the eccentric part of the exercise.",
+   "Press mainly with the heel of the foot to bring the body back to the starting position while exhaling.",
+   "Repeat for the recommended amount of repetitions."
+  ],
+  "images": [
+   "ex/Plie_Dumbbell_Squat/0.jpg",
+   "ex/Plie_Dumbbell_Squat/1.jpg"
+  ],
+  "pattern": "squat"
+ },
+ {
+  "id": "Kettlebell_One-Legged_Deadlift",
+  "name": "Single-Leg Romanian Deadlift",
+  "aliases": [
+   "Single-Leg RDL",
+   "SL RDL",
+   "One-Leg Deadlift",
+   "Peso muerto a una pierna",
+   "Peso muerto rumano unilateral"
+  ],
+  "group": "Legs",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Hamstrings",
+   "Glutes"
+  ],
+  "secondaryMuscles": [
+   "Lower Back"
+  ],
+  "look": "Standing on one leg with a dumbbell or kettlebell in your hand, you hinge forward as your free leg rises behind you, then stand. Trains the glutes, hamstrings and balance. Log the weight in your hand and the reps for one leg.",
+  "instructions": [
+   "Stand on one leg with a slight bend in the knee, holding a dumbbell or kettlebell in the opposite hand.",
+   "Push your hips back and tip forward from the hips, letting your free leg rise straight behind you, until your torso is nearly level with the floor or your hamstrings stop you.",
+   "Keep your back flat and your hips square to the floor: the raised foot points down, not out to the side.",
+   "Squeeze the glute of your standing leg to come back up. Do all the reps on one leg, then switch. Touch a wall or rack with your free hand if you need help to balance."
+  ],
+  "images": [
+   "ex/Kettlebell_One-Legged_Deadlift/0.jpg",
+   "ex/Kettlebell_One-Legged_Deadlift/1.jpg"
+  ],
+  "pattern": "hinge"
+ },
+ {
   "id": "Stiff-Legged_Dumbbell_Deadlift",
   "name": "Dumbbell Romanian Deadlift",
   "aliases": [
@@ -2332,6 +2675,42 @@
   "images": [
    "ex/Romanian_Deadlift/0.jpg",
    "ex/Romanian_Deadlift/1.jpg"
+  ],
+  "barKg": 20,
+  "pattern": "hinge"
+ },
+ {
+  "id": "Sumo_Deadlift",
+  "name": "Sumo Deadlift",
+  "aliases": [
+   "Sumo Pull",
+   "Wide-Stance Deadlift",
+   "Peso muerto sumo"
+  ],
+  "group": "Legs",
+  "equipment": "Barbell",
+  "primaryMuscles": [
+   "Glutes",
+   "Quadriceps",
+   "Adductors"
+  ],
+  "secondaryMuscles": [
+   "Hamstrings",
+   "Lower Back",
+   "Traps",
+   "Forearms"
+  ],
+  "look": "A deadlift with a very wide stance, toes turned out and hands gripping the bar inside your knees. A shorter pull than a regular deadlift, with more work for the glutes, quads and inner thighs.",
+  "instructions": [
+   "Stand with your feet wide, toes turned out, and the bar over the middle of your feet, touching your shins.",
+   "Hinge down and grip the bar with your hands about shoulder-width apart, arms hanging straight inside your knees.",
+   "Push your knees out over your toes, chest up and back flat. Take a breath and brace.",
+   "Push the floor apart with your feet and stand up, keeping the bar close. Finish tall with your glutes squeezed; don't lean back.",
+   "Lower the bar the way it came up, hips back and knees out, under control."
+  ],
+  "images": [
+   "ex/Sumo_Deadlift/0.jpg",
+   "ex/Sumo_Deadlift/1.jpg"
   ],
   "barKg": 20,
   "pattern": "hinge"
@@ -2778,6 +3157,66 @@
    "ex/Pushups/1.jpg"
   ],
   "bwFactor": 0.64,
+  "pattern": "h-push"
+ },
+ {
+  "id": "Incline_Push-Up",
+  "name": "Incline Push-up",
+  "aliases": [
+   "Bench Push-up",
+   "Hands-Elevated Push-up",
+   "Flexiones inclinadas",
+   "Flexiones en banco"
+  ],
+  "group": "Chest",
+  "equipment": "Bodyweight",
+  "primaryMuscles": [
+   "Chest"
+  ],
+  "secondaryMuscles": [
+   "Front Delts",
+   "Triceps"
+  ],
+  "look": "A push-up with your hands on a bench or box, so you lift less of your weight. The higher the hands, the easier. A good way to build up to full push-ups.",
+  "instructions": [
+   "Stand facing bench or sturdy elevated platform. Place hands on edge of bench or platform, slightly wider than shoulder width.",
+   "Position forefoot back from bench or platform with arms and body straight. Arms should be perpendicular to body. Keeping body straight, lower chest to edge of box or platform by bending arms.",
+   "Push body up until arms are extended. Repeat."
+  ],
+  "images": [
+   "ex/Incline_Push-Up/0.jpg",
+   "ex/Incline_Push-Up/1.jpg"
+  ],
+  "bwFactor": 0.45,
+  "pattern": "h-push"
+ },
+ {
+  "id": "Knee_Push-Up",
+  "name": "Knee Push-up",
+  "aliases": [
+   "Kneeling Push-up",
+   "Modified Push-up",
+   "Flexiones de rodillas",
+   "Flexiones apoyando rodillas"
+  ],
+  "group": "Chest",
+  "equipment": "Bodyweight",
+  "primaryMuscles": [
+   "Chest"
+  ],
+  "secondaryMuscles": [
+   "Front Delts",
+   "Triceps"
+  ],
+  "look": "A push-up from your knees instead of your toes, body straight from knees to head. You lift about half your weight, against about two-thirds in a full push-up.",
+  "instructions": [
+   "Kneel on a mat and put your hands on the floor a little wider than your shoulders.",
+   "Walk your hands forward until your body is straight from your knees to your head. Cross your ankles if it helps.",
+   "Brace your abs and lower your chest to about a fist above the floor, elbows about 45° from your body.",
+   "Push back up to straight arms without letting your hips sag or pike. When 15 come easily, try incline or full push-ups."
+  ],
+  "images": [],
+  "bwFactor": 0.49,
   "pattern": "h-push"
  },
  {
