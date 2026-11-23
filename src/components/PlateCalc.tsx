@@ -30,8 +30,8 @@ function platesFor(total: number, bar: number): number[] {
 export function PlateCalc({ barKg, current, sets, onApply, onClose }: {
   barKg: number;
   current?: number;
-  sets: number;
-  onApply: (kg: number, setIndex: number | 'all') => void;
+  sets: string[]; // a label per set row: "Set 1", or "Warm-up"
+  onApply: (kg: number, setIndex: number | 'all') => void; // 'all' means every working set
   onClose: () => void;
 }) {
   const [bar, setBar] = useState(barKg);
@@ -90,10 +90,10 @@ export function PlateCalc({ barKg, current, sets, onApply, onClose }: {
 
         <div className="small muted">Put {fmt(total)} kg in:</div>
         <div className="row-wrap">
-          {Array.from({ length: sets }, (_, i) => (
-            <button key={i} className="btn sm" onClick={() => onApply(total, i)}>Set {i + 1}</button>
+          {sets.map((label, i) => (
+            <button key={i} className="btn sm" onClick={() => onApply(total, i)}>{label}</button>
           ))}
-          <button className="btn primary sm" onClick={() => onApply(total, 'all')}>All sets</button>
+          <button className="btn primary sm" onClick={() => onApply(total, 'all')}>All working sets</button>
         </div>
       </div>
     </Sheet>

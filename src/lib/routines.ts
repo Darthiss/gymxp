@@ -1,6 +1,6 @@
 // Routines: the coach's plan (exercises with target sets × reps), the gym-guide checklist
 // and which routine is up next in your rotation.
-import { sortSessions } from './engine';
+import { sortSessions, workingSets } from './engine';
 import type { AppData, Exercise, Routine, RoutineItem, SetEntry } from './types';
 
 /** Live routines, sorted by name so "Day A, Day B, Day C" read in order everywhere. */
@@ -33,13 +33,53 @@ export function fmtTarget(it: Pick<RoutineItem, 'sets' | 'reps'>): string {
   return reps ? `${it.sets} × ${reps}` : `${it.sets} ${it.sets === 1 ? 'set' : 'sets'}`;
 }
 
-/** True when `last` reached the top of the rep target on every planned set: time to add weight. */
+/** True when the working sets of `last` reached the top of the rep target on every planned set:
+ *  time to add weight. Warm-ups don't count either way. */
 export function hitTarget(it: RoutineItem, last: SetEntry[] | null): boolean {
-  if (!last || last.length < it.sets || !it.reps.trim()) return false;
+  const work = last ? workingSets(last) : [];
+  if (work.length < it.sets || !it.reps.trim()) return false;
   return Array.from({ length: it.sets }, (_, k) => {
     const nums = repsForSet(it.reps, k).match(/\d+/g);
-    return !!nums && last[k].reps >= Math.max(...nums.map(Number)); // "8-12" means 12
+    return !!nums && work[k].reps >= Math.max(...nums.map(Number)); // "8-12" means 12
   }).every(Boolean);
+}
+
+/** The smallest jump the equipment usually allows: 2.5 kg on a bar (1.25 a side), the next
+ *  dumbbell, the next pin on a stack. About 2.5–5% on most lifts, the usual step for double progression. */
+export function weightStep(ex: Pick<Exercise, 'barKg' | 'equipment'> | undefined, kg: number): number {
+  if (ex?.barKg !== undefined) return 2.5;
+  if (ex?.equipment === 'Dumbbell') return kg < 10 ? 1 : 2;
+  if (ex?.equipment === 'Cable') return 2.5;
+  return 5;
+}
+
+/** Assisted machines go up by taking a plate of help away. */
+export const ASSIST_STEP = 5;
+
+/** One set's weight after going up: heavier, or less assistance. */
+export const steppedUp = (ex: Exercise, kg: number) =>
+  ex.assisted ? Math.max(0, kg - ASSIST_STEP) : +(kg + weightStep(ex, kg)).toFixed(2);
+
+export interface GoUp { from: number; to: number } // the heaviest working set (least assistance), before and after
+
+/** "Go up": every working set reached the top of the routine's range last time, so it's time for the
+ *  next weight, and reps start again from the bottom of the range. null for timed, bodyweight and
+ *  benchmark work, where the next step isn't a weight, and for assisted machines already at zero. */
+export function goUp(ex: Exercise | undefined, it: RoutineItem | undefined, last: SetEntry[] | null): GoUp | null {
+  if (!ex || !it || ex.hold || ex.bwFactor || ex.benchmark || !hitTarget(it, last)) return null;
+  const kgs = workingSets(last!).map((s) => s.kg);
+  const from = ex.assisted ? Math.min(...kgs) : Math.max(...kgs);
+  if (from <= 0) return null;
+  return { from, to: steppedUp(ex, from) };
+}
+
+/** The plan for an exercise: from the given routine, else the first live routine that has it. */
+export function planFor(routines: Routine[], exerciseId: string, prefer?: Routine): RoutineItem | undefined {
+  for (const r of prefer ? [prefer, ...routines] : routines) {
+    const it = routineItems(r).find((x) => x.exerciseId === exerciseId);
+    if (it) return it;
+  }
+  return undefined;
 }
 
 export const REST_OPTIONS = [30, 45, 60, 90, 120, 180, 240];

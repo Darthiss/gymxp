@@ -1,16 +1,18 @@
 import { useMemo, useState } from 'react';
-import { getStore, useData } from '../lib/store';
+import { useData } from '../lib/store';
 import { fmtSet } from '../lib/exercises';
 import { useExerciseMap, useGame } from '../lib/game';
 import { medalOf, MEDALS, sortSessions } from '../lib/engine';
-import { addDays, fmtDate, fmtNum, num, plural, today, uid, weekKey } from '../lib/util';
+import { addDays, fmtDate, fmtNum, plural, today, weekKey } from '../lib/util';
 import { navigate, type Route } from '../lib/router';
 import { ColumnChart, LineChart } from '../components/charts';
 import { WorkoutRow } from '../components/WorkoutRow';
+import { LiftGoalCard, LiftGoalPrompt } from '../components/LiftGoal';
 import { Muscles } from './Muscles';
-import { ageOn, bmiApplies, bmiLabel, bmiOf, DISCLAIMER_SHORT, goalAllowed, trendKg, WHTR_MAX, WHTR_MIN, whtrLabel, whtrOf } from '../lib/body';
+import { Body } from './Body';
+import { currentKg } from '../lib/body';
 import { Icon } from '../components/Icon';
-import { Cell, CellIcon, Empty, ExerciseThumb, LargeTitle, PageHead, Ring, Segmented, toast, ProgressBar } from '../components/ui';
+import { Cell, CellIcon, Empty, ExerciseThumb, LargeTitle, PageHead, Ring, Segmented, ProgressBar } from '../components/ui';
 
 type Tab = 'workouts' | 'body' | 'lifts' | 'muscles';
 
@@ -122,38 +124,45 @@ function Workouts() {
 }
 
 function Lifts() {
+  const data = useData();
   const g = useGame();
   const exMap = useExerciseMap();
   const list = [...g.bests.entries()].sort((a, b) => b[1].lastDate.localeCompare(a[1].lastDate));
-  if (!list.length) return <Empty title="No lifts yet">Every exercise you log gets its own progress chart, records and medal.</Empty>;
+  const goal = data.profile.liftGoal;
+  const goalCard = goal ? <LiftGoalCard goal={goal} /> : <LiftGoalPrompt />;
+  if (!list.length) return <div className="stack-lg">{goalCard}<Empty title="No lifts yet">Every exercise you log gets its own progress chart, records and medal.</Empty></div>;
   return (
-    <div className="stack">
-      <p className="tiny dim" style={{ padding: '0 4px' }}>Machine medals: +1 point per workout, +3 when you beat your last time. {MEDALS.map((m) => `${m.icon} ${m.n}`).join(' · ')}</p>
-      <div className="group">
-        {list.map(([id, b]) => {
-          const ex = exMap.get(id);
-          const m = medalOf(b.points);
-          const reps = !!(ex?.bwFactor || ex?.benchmark);
-          return (
-            <a key={id} className="cell" href={`#/lift/${encodeURIComponent(id)}`} style={{ '--inset': '68px' } as React.CSSProperties}>
-              <ExerciseThumb ex={ex} className="thumb sm" />
-              <div className="grow">
-                <div className="cell-title ellipsis">{ex?.name ?? 'Unknown'}</div>
-                <div className="cell-sub">{m.current ? `${m.current.icon} ${m.current.name} · ` : ''}{plural(b.sessions, 'session')} · {fmtDate(b.lastDate, { day: 'numeric', month: 'short' })}</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div className="display" style={{ fontSize: '1.1rem' }}>{reps ? b.maxReps : fmtNum(b.maxKg, 1)}<span className="tiny dim" style={{ fontFamily: 'var(--font)', fontWeight: 600 }}> {reps ? (ex?.benchmark === 'ladder' ? 'rungs' : ex?.benchmark === 'cindy' ? 'rnds' : ex?.hold ? 'sec' : 'reps') : 'kg'}</span></div>
-                <div className="tiny muted">{ex?.assisted ? 'least assist' : 'best'}</div>
-              </div>
-            </a>
-          );
-        })}
+    <div className="stack-lg">
+      {goalCard}
+      <div className="stack">
+        <p className="tiny dim" style={{ padding: '0 4px' }}>Machine medals: +1 point per workout, +3 when you beat your last time. {MEDALS.map((m) => `${m.icon} ${m.n}`).join(' · ')}</p>
+        <div className="group">
+          {list.map(([id, b]) => {
+            const ex = exMap.get(id);
+            const m = medalOf(b.points);
+            const reps = !!(ex?.bwFactor || ex?.benchmark);
+            return (
+              <a key={id} className="cell" href={`#/lift/${encodeURIComponent(id)}`} style={{ '--inset': '68px' } as React.CSSProperties}>
+                <ExerciseThumb ex={ex} className="thumb sm" />
+                <div className="grow">
+                  <div className="cell-title ellipsis">{ex?.name ?? 'Unknown'}</div>
+                  <div className="cell-sub">{m.current ? `${m.current.icon} ${m.current.name} · ` : ''}{plural(b.sessions, 'session')} · {fmtDate(b.lastDate, { day: 'numeric', month: 'short' })}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div className="display" style={{ fontSize: '1.1rem' }}>{reps ? b.maxReps : fmtNum(b.maxKg, 1)}<span className="tiny dim" style={{ fontFamily: 'var(--font)', fontWeight: 600 }}> {reps ? (ex?.benchmark === 'ladder' ? 'rungs' : ex?.benchmark === 'cindy' ? 'rnds' : ex?.hold ? 'sec' : 'reps') : 'kg'}</span></div>
+                  <div className="tiny muted">{ex?.assisted ? 'least assist' : 'best'}</div>
+                </div>
+              </a>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
 }
 
 export function LiftDetail({ id }: { id: string }) {
+  const data = useData();
   const g = useGame();
   const exMap = useExerciseMap();
   const ex = exMap.get(id);
@@ -175,6 +184,9 @@ export function LiftDetail({ id }: { id: string }) {
   const lastPt = pts[pts.length - 1]?.y;
   const change = first !== undefined && lastPt !== undefined && pts.length > 1 && first ? (lastPt - first) / first : null;
   const unit = metric === 'reps' ? repUnit : 'kg';
+  // Relative strength for barbell lifts, where the usual standards (1.5× bodyweight and so on) apply.
+  const bw = currentKg(data.weights);
+  const rel = best && ex?.barKg !== undefined && !ex.assisted && !ex.hold && best.maxE1rm > 0 && bw > 0 ? best.maxE1rm / bw : null;
 
   return (
     <div className="stack-lg">
@@ -223,10 +235,13 @@ export function LiftDetail({ id }: { id: string }) {
           ) : (
             <div><div className="label">{ex?.hold ? 'Longest' : 'Most reps'}</div><div className="value">{best.maxReps}{ex?.hold && <small>s</small>}</div></div>
           )}
-          <div><div className="label">Sessions</div><div className="value">{best.sessions}</div></div>
+          {rel !== null
+            ? <div><div className="label">× Bodyweight</div><div className="value">{fmtNum(rel, 2)}<small>×</small></div></div>
+            : <div><div className="label">Sessions</div><div className="value">{best.sessions}</div></div>}
           <div><div className="label">Last</div><div className="value" style={{ fontSize: '1.05rem', paddingTop: 4 }}>{fmtDate(best.lastDate, { day: 'numeric', month: 'short' })}</div></div>
         </div>
       )}
+      {rel !== null && <p className="tiny muted" style={{ marginTop: -8, padding: '0 4px' }}>Relative strength: your estimated 1RM ÷ this week's average bodyweight ({fmtNum(bw, 1)} kg). It shows strength gained even while your weight changes.</p>}
 
       {best && <MedalCard points={best.points} gain={best.gain} />}
 
@@ -239,126 +254,6 @@ export function LiftDetail({ id }: { id: string }) {
           {hist.length === 0 && <Cell title="Not logged yet" sub="Your first time sets your baseline" />}
         </div>
       </div>
-    </div>
-  );
-}
-
-function Body() {
-  const data = useData();
-  const p = data.profile;
-  const entries = useMemo(() => data.weights.filter((w) => !w.deleted).sort((a, b) => a.date.localeCompare(b.date)), [data.weights]);
-  const [kg, setKg] = useState('');
-  const [waist, setWaist] = useState('');
-  const [date, setDate] = useState(today());
-  const latest = entries[entries.length - 1];
-  const first = entries[0];
-  // Progress is read from the trend where there is one: a single weigh-in swings with water and food.
-  const trend = trendKg(entries.map((e) => e.kg));
-  const now = trend ?? latest?.kg ?? 0;
-  const bmi = latest && p.heightCm && bmiApplies(ageOn(p.birthYear, today())) ? bmiOf(now, p.heightCm) : null;
-  const lastWaist = [...entries].reverse().find((e) => e.waistCm)?.waistCm;
-  // Rounded first, so the label always agrees with the two decimals on screen.
-  const whtr = lastWaist && p.heightCm ? Math.round(whtrOf(lastWaist, p.heightCm) * 100) / 100 : null;
-  const delta = first && latest && latest !== first ? now - first.kg : null;
-  const goal = p.goalWeightKg && goalAllowed(p.goalWeightKg, p.heightCm) ? p.goalWeightKg : null;
-  const toward = delta !== null && goal ? Math.sign(goal - first.kg) === Math.sign(delta) : null;
-
-  const add = () => {
-    const v = num(kg);
-    if (v < 20 || v > 400) return toast('Enter your weight in kg');
-    const wc = waist.trim() ? num(waist) : 0;
-    if (waist.trim() && (wc < 40 || wc > 250)) return toast('Enter your waist in cm');
-    getStore().update((d) => {
-      const same = d.weights.find((w) => w.date === date && !w.deleted);
-      if (same) { same.kg = v; if (wc) same.waistCm = wc; same.updatedAt = Date.now(); }
-      else d.weights.push({ id: uid(), date, kg: v, ...(wc ? { waistCm: wc } : {}), updatedAt: Date.now() });
-    }, `Weigh-in ${date}`);
-    setKg('');
-    setWaist('');
-    toast('⚖️ Weigh-in saved');
-  };
-
-  const del = (id: string) =>
-    getStore().update((d) => {
-      const w = d.weights.find((x) => x.id === id);
-      if (w) { w.deleted = true; w.updatedAt = Date.now(); }
-    }, 'Delete weigh-in');
-
-  return (
-    <div className="stack-lg">
-      {latest && (
-        <div className="card stack" style={{ gap: 14 }}>
-          <div className="row between" style={{ alignItems: 'flex-start' }}>
-            <div>
-              <div className="kicker">Bodyweight</div>
-              <div className="row" style={{ gap: 8, alignItems: 'baseline', marginTop: 2, flexWrap: 'wrap' }}>
-                <span className="display" style={{ fontSize: '2.4rem' }}>{fmtNum(latest.kg, 1)}</span>
-                <span className="dim bold">kg</span>
-                {delta !== null && <span className={`tag ${toward ? 'accent' : ''}`}>{delta > 0 ? '+' : ''}{fmtNum(delta, 1)} since {fmtDate(first.date, { day: 'numeric', month: 'short' })}</span>}
-              </div>
-              <div className="tiny dim">{fmtDate(latest.date, { weekday: 'long', day: 'numeric', month: 'short' })}{trend !== null && ` · trend ${fmtNum(trend, 1)} kg`}</div>
-            </div>
-            <div className="row" style={{ gap: 8 }}>
-              {whtr !== null && (
-                <Ring pct={Math.min(1, Math.max(0, (whtr - 0.3) / 0.4))} size={58} stroke={5} color={whtr >= WHTR_MIN && whtr < WHTR_MAX ? 'var(--accent)' : 'var(--fire)'}>
-                  <div style={{ lineHeight: 1 }}><div className="display" style={{ fontSize: '0.95rem' }}>{whtr.toFixed(2)}</div><div style={{ fontSize: '0.5rem', color: 'var(--text-2)', fontWeight: 700 }}>WAIST÷HT</div></div>
-                </Ring>
-              )}
-              {bmi !== null && (
-                <Ring pct={Math.min(1, Math.max(0, (bmi - 15) / 20))} size={58} stroke={5} color={bmi >= 18.5 && bmi < 25 ? 'var(--accent)' : 'var(--fire)'}>
-                  <div style={{ lineHeight: 1 }}><div className="display" style={{ fontSize: '0.95rem' }}>{fmtNum(bmi, 1)}</div><div style={{ fontSize: '0.55rem', color: 'var(--text-2)', fontWeight: 700 }}>BMI</div></div>
-                </Ring>
-              )}
-            </div>
-          </div>
-          {entries.length > 1 && (
-            <LineChart points={entries.map((e) => ({ date: e.date, y: e.kg }))} unit="kg" color="var(--info)" label="Bodyweight" refLine={goal ? { y: goal, label: `goal ${goal} kg` } : undefined} />
-          )}
-          <div className="stack tiny muted" style={{ gap: 6, lineHeight: 1.45 }}>
-            {trend !== null && <p>The trend is the average of your last 3 weigh-ins. Goals are judged on it, because one reading moves a kilo or two with water and food.</p>}
-            {whtr !== null && <p>Waist ÷ height {whtr.toFixed(2)}: {whtrLabel(whtr)}. Under 0.5 is the commonly used healthy cut-off, and muscle doesn't distort it.</p>}
-            {bmi !== null && <p>BMI {fmtNum(bmi, 1)}: {bmiLabel(bmi)}. BMI can't tell muscle from fat, so people who lift often read high{whtr === null ? '. Add your waist below for a better guide' : ''}.</p>}
-            {!p.heightCm && <p>Add your height in Settings to see BMI and waist ÷ height.</p>}
-            {p.goalWeightKg && !goal && <p>Your goal weight is under a healthy weight for your height, so it isn't tracked. You can change it in Settings.</p>}
-            <p>{DISCLAIMER_SHORT}</p>
-          </div>
-        </div>
-      )}
-
-      <div className="stack">
-        <div className="section-title">Log a weigh-in</div>
-        <div className="grid-2">
-          <div className="unit-input">
-            <input className="input" inputMode="decimal" placeholder={latest ? String(latest.kg) : '75.0'} value={kg} onChange={(e) => setKg(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} aria-label="Bodyweight in kg" />
-            <span>kg</span>
-          </div>
-          <div className="unit-input">
-            <input className="input" inputMode="decimal" placeholder="Waist" value={waist} onChange={(e) => setWaist(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} aria-label="Waist in cm, optional" />
-            <span>cm</span>
-          </div>
-        </div>
-        <div className="row">
-          <input className="input grow" type="date" value={date} max={today()} onChange={(e) => setDate(e.target.value)} aria-label="Date" />
-          <button className="btn primary" onClick={add}><Icon name="check" size={18} stroke={2.8} /> Save</button>
-        </div>
-        <p className="tiny muted" style={{ lineHeight: 1.45 }}>Waist is optional. Measure halfway between your lowest rib and the top of your hip bone, after breathing out.</p>
-      </div>
-
-      {entries.length > 0 ? (
-        <div className="stack">
-          <div className="section-title">History</div>
-          <div className="group">
-            {[...entries].reverse().map((w) => (
-              <Cell key={w.id} title={fmtDate(w.date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}>
-                <b className="num">{w.kg} kg{w.waistCm ? <span className="dim" style={{ fontWeight: 500 }}> · {w.waistCm} cm</span> : null}</b>
-                <button className="icon-btn plain" aria-label="Delete entry" onClick={() => del(w.id)}><Icon name="trash" size={16} /></button>
-              </Cell>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <Empty title="No weigh-ins yet">Weigh in about once a week, same time of day. It also makes assisted machines count correctly.</Empty>
-      )}
     </div>
   );
 }

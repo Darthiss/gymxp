@@ -3,6 +3,7 @@
 // so it takes plain { exerciseId, sets } entries, which both a logged session and a planned
 // routine can supply. (The engine's weekMuscle is a different thing: 5 coarse groups, for Hero.)
 import { routineItems } from './routines';
+import { workingSets } from './engine';
 import { addDays, parseDate, today, weekKey } from './util';
 import type { Exercise, MuscleGroup, Pattern, Routine, Session, SetEntry } from './types';
 
@@ -82,10 +83,11 @@ export function volumeOf(entries: VolumeEntry[], exMap: Map<string, Exercise>): 
 export const WARMUP_SHARE = 0.6;
 
 /** How many of an exercise's logged sets were hard ones. The 10–20 sets a week guidance means sets
- *  taken close to failure, so warm-ups are left out. Where the weight column isn't a plain load
- *  (assisted, bodyweight, timed and benchmark exercises), every set with reps counts. */
+ *  taken close to failure, so warm-ups are left out: the ones you marked, and for older logs any set
+ *  under 60% of the day's top weight. Where the weight column isn't a plain load (assisted,
+ *  bodyweight, timed and benchmark exercises), every set you didn't mark counts. */
 export function hardSets(ex: Exercise | undefined, sets: SetEntry[]): number {
-  const done = sets.filter((x) => x.reps > 0);
+  const done = workingSets(sets);
   if (!ex || ex.assisted || ex.bwFactor || ex.hold || ex.benchmark) return done.length;
   const top = Math.max(0, ...done.map((x) => x.kg));
   return top > 0 ? done.filter((x) => x.kg >= top * WARMUP_SHARE).length : done.length;

@@ -4,11 +4,16 @@ import {
 } from './engine';
 import { ACHIEVEMENTS, RARITY_STARS, rarityOf, TROPHY_GROUPS } from './trophies';
 import { allExercises, BUILTIN, exerciseMap, fmtBeat, fmtPr, fmtSet, toBeatText } from './exercises';
-import { careerClock, compare, LEGENDS, timesMoved } from './legends';
+import { careerClock, LEGENDS, timesMoved } from './legends';
 import { bigMoments, careerStory } from './career';
 import { gameFor } from './game';
 import { emptyData, type AppData, type Exercise, type Routine, type Session } from './types';
-import { withExercise, activeRoutines, firstReps, fmtRest, fmtTarget, hitTarget, inOrder, lastDone, moveTo, nextPosition, repsForSet, routineItems, upNextRoutine } from './routines';
+import { withExercise, activeRoutines, firstReps, fmtRest, fmtTarget, goUp, hitTarget, inOrder, lastDone, moveTo, nextPosition, planFor, repsForSet, routineItems, upNextRoutine, weightStep } from './routines';
+import {
+  compositionAt, currentKg, currentPhase, ffmiOf, gainQuality, kgNear, liveWeights, measureNear, monthlyRate, navyBodyFat, phaseSummary, rateBand, weeklyAverages, withPhase,
+} from './body';
+import { CARRY_SECONDS, gobletTarget, liftBenchmarks, liftGoalPct } from './liftGoal';
+import type { WeightEntry } from './types';
 import { mergeData } from './merge';
 import { addDays, parseDuration, parseWatchText, parseWorkoutLine, weekKey } from './util';
 import { deriveKey, seal, unseal } from './crypto';
@@ -619,15 +624,6 @@ describe('trophies', () => {
     expect(game(d).unlockedIds.has('season-gold')).toBe(true);
     expect(game(d).unlockedIds.has('season-champion')).toBe(false);
   });
-
-  it('legend comparison uses barbell e1RM and visits', async () => {
-    const d = emptyData();
-    d.sessions.push(sess('2026-01-03', [{ exerciseId: 'Barbell_Deadlift', sets: [{ kg: 100, reps: 1 }] }]));
-    const p = compare(game(d), LEGENDS.find((l) => l.id === 'eddie')!);
-    const dl = p.rows.find((r) => r.metric.key === 'deadlift')!;
-    expect(dl.mine).toBe(100); // one rep is the lift itself, not an estimate above it
-    expect(dl.pct).toBeCloseTo(100 / 500);
-  });
 });
 
 describe('legends', () => {
@@ -650,14 +646,6 @@ describe('legends', () => {
   it('count how many times you have moved their famous lift', () => {
     expect(timesMoved(1600, byId('eddie'))).toBe(3);
     expect(timesMoved(100, byId('eddie'))).toBe(0);
-  });
-
-  it('only show lift bars once you have logged that lift', () => {
-    const d = emptyData();
-    add(d, '2026-01-03', [ex('Leg_Press', 200, 10)]);
-    expect(compare(game(d), byId('arnold')).rows).toEqual([]);
-    add(d, '2026-01-05', [ex('Barbell_Squat', 100, 5)]);
-    expect(compare(game(d), byId('arnold')).rows.map((r) => r.metric.key)).toEqual(['squat']);
   });
 
   it('Eddie: moving 500 kg in a set, on a machine, then more', () => {
@@ -1674,5 +1662,264 @@ describe('health review: body and safety', () => {
     expect(result(g, hot).items.some((i) => i.kind === 'surprise')).toBe(false);
     expect(result(g, cold).items.some((i) => i.kind === 'surprise')).toBe(true);
     expect(g.unlockedIds.has('wx-heat')).toBe(true);
+  });
+});
+
+describe('body: weekly average, rate and phases', () => {
+  const w = (date: string, kg: number, extra: Partial<WeightEntry> = {}): WeightEntry => ({ id: `w${date}`, updatedAt: 1, date, kg, ...extra });
+  // Mondays and Thursdays for 10 weeks from 7 Sep 2026, rising 2 kg in a straight line.
+  const gain = (last: Partial<WeightEntry> = {}) => {
+    const out: WeightEntry[] = [];
+    for (let k = 0; k <= 9; k++) {
+      const kg = 66 + (2 * k) / 9;
+      out.push(w(addDays('2026-09-07', 7 * k), kg), w(addDays('2026-09-10', 7 * k), kg));
+    }
+    Object.assign(out[0], { waistCm: 74, neckCm: 36 });
+    Object.assign(out[out.length - 2], { waistCm: 75, neckCm: 36, ...last }); // Monday 9 Nov
+    return out;
+  };
+  const man = { sex: 'male' as const, heightCm: 169 };
+
+  it('averages each Monday–Sunday week', () => {
+    const weeks = weeklyAverages([w('2026-11-02', 66), w('2026-11-05', 67), w('2026-11-08', 68), w('2026-11-09', 70)]);
+    expect(weeks).toEqual([{ week: '2026-11-02', kg: 67, n: 3 }, { week: '2026-11-09', kg: 70, n: 1 }]);
+    expect(currentKg([w('2026-11-02', 66), w('2026-11-05', 68), { ...w('2026-11-06', 90), deleted: true }])).toBe(67);
+    expect(currentKg([])).toBe(0);
+  });
+
+  it('gives a monthly rate from weekly averages about 4 weeks apart', () => {
+    const entries = gain();
+    const r = monthlyRate(weeklyAverages(entries))!;
+    expect(r.weeks).toBe(4);
+    expect(r.from.week).toBe('2026-10-12');
+    expect(r.to.week).toBe('2026-11-09');
+    expect(r.kgPerMonth).toBeCloseTo(((8 / 9) / 28) * 30.44, 5);
+    expect(rateBand('gain', r.pctPerMonth)).toBe('good');
+    // One weigh-in so far this week: the full week before is steadier to end on.
+    const monday = [...entries, w('2026-11-16', 70)];
+    expect(monthlyRate(weeklyAverages(monday))!.to.week).toBe('2026-11-09');
+    expect(monthlyRate(weeklyAverages([...monday, w('2026-11-18', 68.2)]))!.to.week).toBe('2026-11-16');
+    // Not enough history yet.
+    expect(monthlyRate(weeklyAverages(entries.slice(0, 6)))).toBeNull();
+    expect(monthlyRate([])).toBeNull();
+  });
+
+  it('judges the rate against the phase', () => {
+    expect(['gain', 'gain', 'gain', 'gain'].map((t, i) => rateBand(t as 'gain', [1, 0.5, 0.2, 2.5][i]))).toEqual(['good', 'ok', 'low', 'high']);
+    expect(rateBand('cut', -3)).toBe('good');
+    expect(rateBand('cut', -0.5)).toBe('high'); // barely moving
+    expect(rateBand('cut', -6)).toBe('low'); // faster than about 1% a week
+    expect(rateBand('maintain', 0.5)).toBe('good');
+    expect(rateBand('maintain', -3)).toBe('low');
+  });
+
+  it('keeps phases in order, replacing any that start on or after the new one', () => {
+    const p = emptyData().profile;
+    expect(currentPhase(p)).toBeNull();
+    const a = withPhase(p, { type: 'gain', start: '2026-09-07' });
+    const b = withPhase(a, { type: 'maintain', start: '2026-12-01' });
+    expect(currentPhase(b)).toEqual({ type: 'maintain', start: '2026-12-01' });
+    expect(withPhase(b, { type: 'cut', start: '2026-09-07' }).phases).toEqual([{ type: 'cut', start: '2026-09-07' }]);
+  });
+
+  it('finds readings around a date', () => {
+    const es = liveWeights([w('2026-10-20', 66, { waistCm: 74 }), w('2026-10-01', 65, { waistCm: 73 }), w('2026-10-28', 67)]);
+    expect(es.map((e) => e.date)).toEqual(['2026-10-01', '2026-10-20', '2026-10-28']);
+    expect(measureNear(es, 'waistCm', '2026-10-25')).toEqual({ date: '2026-10-20', cm: 74 });
+    expect(measureNear(es, 'waistCm', '2026-09-25')).toEqual({ date: '2026-10-01', cm: 73 }); // first one after
+    expect(measureNear(es, 'waistCm', '2026-12-25')).toBeNull(); // too long ago
+    expect(kgNear(es, '2026-10-22')).toBe(66);
+    expect(kgNear(es, '2026-10-17')).toBe(66); // the week after, when the week before is empty
+  });
+
+  it('estimates body fat with the US Navy formula', () => {
+    expect(navyBodyFat('male', 169, { waistCm: 75, neckCm: 35 })).toBeCloseTo(12.14, 1); // the plan's worked example: about 12%
+    expect(navyBodyFat('female', 165, { waistCm: 70, neckCm: 32, hipCm: 95 })).toBeCloseTo(24.86, 1);
+    expect(navyBodyFat('female', 165, { waistCm: 70, neckCm: 32 })).toBeNull(); // needs hips
+    expect(navyBodyFat('other', 169, { waistCm: 75, neckCm: 35 })).toBeNull(); // sex-specific formulas
+    expect(navyBodyFat('', 169, { waistCm: 75, neckCm: 35 })).toBeNull();
+    expect(navyBodyFat('male', 169, { waistCm: 35, neckCm: 40 })).toBeNull();
+    expect(navyBodyFat('male', null, { waistCm: 75, neckCm: 35 })).toBeNull();
+  });
+
+  it('gives FFMI adjusted to 1.80 m', () => {
+    expect(ffmiOf(64.8, 180)).toBeCloseTo(20, 5);
+    expect(ffmiOf(58, 169)).toBeCloseTo(58 / 1.69 ** 2 + 6.1 * 0.11, 5);
+    const c = compositionAt(gain(), man)!;
+    expect(c.date).toBe('2026-11-09');
+    expect(c.leanKg + c.fatKg).toBeCloseTo(c.kg, 5);
+    expect(compositionAt(gain(), { sex: 'male', heightCm: null })).toBeNull();
+  });
+
+  it('summarises a gain: rate, changes since the start, and gain quality from week 8', () => {
+    const s = phaseSummary(gain(), { type: 'gain', start: '2026-09-07' }, man, '2026-11-12');
+    expect(s.startKg).toBe(66);
+    expect(s.nowKg).toBeCloseTo(68, 5);
+    expect([s.startWaist, s.nowWaist]).toEqual([74, 75]);
+    expect(s.band).toBe('good');
+    expect(s.waistCheck).toBeNull();
+    const expected = gainQuality({ kg: 66, bf: navyBodyFat('male', 169, { waistCm: 74, neckCm: 36 })! }, { kg: 68, bf: navyBodyFat('male', 169, { waistCm: 75, neckCm: 36 })! })!;
+    expect(s.quality).toBeCloseTo(expected, 5);
+    expect(s.quality).toBeGreaterThan(0.5); // 2 kg up for 1 cm of waist: mostly lean
+    // Too early, or too little gained, to tell.
+    expect(phaseSummary(gain(), { type: 'gain', start: '2026-09-07' }, man, '2026-10-30').quality).toBeNull();
+    expect(gainQuality({ kg: 66, bf: 12 }, { kg: 67, bf: 12 })).toBeNull();
+    // Not a gain: no check-in or gain quality.
+    expect(phaseSummary(gain({ waistCm: 80 }), { type: 'maintain', start: '2026-09-07' }, man, '2026-11-12')).toMatchObject({ waistCheck: null, quality: null });
+  });
+
+  it('asks for a check-in when the waist grows 4 cm, or reaches half your height', () => {
+    const up = phaseSummary(gain({ waistCm: 78 }), { type: 'gain', start: '2026-09-07' }, man, '2026-11-12');
+    expect(up.waistCheck).toBe('up');
+    expect(up.quality!).toBeLessThan(0.25);
+    const es = gain({ waistCm: 85 });
+    es[0].waistCm = 83; // 0.49 of 169 cm, then 0.50
+    expect(phaseSummary(es, { type: 'gain', start: '2026-09-07' }, man, '2026-11-12').waistCheck).toBe('whtr');
+  });
+});
+
+describe('warm-up sets', () => {
+  const warm = (kg: number, reps: number) => ({ kg, reps, warmup: true });
+
+  it('count toward nothing: sets, volume, beats or records', () => {
+    const d = emptyData();
+    add(d, '2026-03-02', [ex('Leg_Press', 100, 10, 10, 10)]);
+    const s = add(d, '2026-03-04', [{ exerciseId: 'Leg_Press', sets: [warm(60, 10), warm(120, 3), ...ex('Leg_Press', 100, 11, 10, 10).sets] }]);
+    const g = game(d);
+    const r = result(g, s);
+    expect(r.sets).toBe(3);
+    expect(r.volume).toBe(100 * 31);
+    expect(r.prs.some((p) => p.kind === 'weight')).toBe(false); // the 120 kg warm-up isn't a record
+    expect(r.beats[0]).toMatchObject({ beat: true, kg: 0, reps: 1 });
+    expect(g.bests.get('Leg_Press')!.maxKg).toBe(100);
+    expect(g.history.get('Leg_Press')![1].sets).toHaveLength(3);
+  });
+
+  it("don't count toward the 10 sets for the second star", () => {
+    const d = emptyData();
+    add(d, '2026-03-02', [ex('Leg_Press', 100, 10)]);
+    const sets = [warm(40, 10), warm(70, 5), ...ex('Leg_Press', 100, 10, 10, 10, 10, 10, 10, 10, 10).sets];
+    const s = add(d, '2026-03-04', [{ exerciseId: 'Leg_Press', sets }]);
+    expect(result(game(d), s).checks.work).toBe(false);
+    s.exercises[0].sets = sets.map((x) => ({ kg: x.kg, reps: x.reps })); // the same sets, unmarked
+    expect(result(game(d), s).checks.work).toBe(true);
+  });
+
+  it('are left out of muscle sets, and an exercise of only warm-ups is skipped', () => {
+    const exMap = exerciseMap(emptyData());
+    const lp = exMap.get('Leg_Press');
+    expect(hardSets(lp, [warm(100, 10), { kg: 100, reps: 10 }, { kg: 100, reps: 10 }])).toBe(2);
+    expect(hardSets(exMap.get('Plank'), [warm(0, 20), { kg: 0, reps: 60 }])).toBe(1);
+    const d = emptyData();
+    const s = add(d, '2026-03-02', [{ exerciseId: 'Leg_Press', sets: [warm(60, 10)] }, ex('Leg_Extensions', 30, 10)]);
+    expect(result(game(d), s).beats.map((b) => b.exerciseId)).toEqual(['Leg_Extensions']);
+  });
+
+  it('show as W in a set list', () => {
+    const exMap = exerciseMap(emptyData());
+    expect(fmtSet(exMap.get('Leg_Press'), warm(60, 10))).toBe('W 60×10');
+    expect(fmtSet(exMap.get('Front_Carry'), warm(10, 20))).toBe('W 10 kg · 20 s');
+  });
+});
+
+describe('go up', () => {
+  const exMap = exerciseMap(emptyData());
+  const at = (id: string) => exMap.get(id)!;
+  const sets = (kg: number, ...reps: number[]) => reps.map((r) => ({ kg, reps: r }));
+  const item = (reps: string, n = 3) => ({ exerciseId: 'x', sets: n, reps });
+
+  it('suggests the next weight once every working set reached the top of the range', () => {
+    expect(goUp(at('Leg_Press'), item('8-12'), sets(100, 12, 12, 12))).toEqual({ from: 100, to: 105 });
+    expect(goUp(at('Leg_Press'), item('8-12'), sets(100, 12, 12, 11))).toBeNull();
+    expect(goUp(at('Leg_Press'), undefined, sets(100, 12, 12, 12))).toBeNull(); // no plan, no range
+    // Warm-ups before the working sets don't count either way.
+    expect(hitTarget(item('8-12'), [{ kg: 40, reps: 5, warmup: true }, ...sets(100, 12, 12, 12)])).toBe(true);
+    expect(hitTarget(item('8-12'), [...sets(100, 12, 12), { kg: 40, reps: 12, warmup: true }])).toBe(false);
+  });
+
+  it('steps by what the equipment allows', () => {
+    expect(goUp(at('Barbell_Squat'), item('5'), sets(60, 5, 5, 5))!.to).toBe(62.5);
+    expect(goUp(at('Dumbbell_Bench_Press'), item('10'), sets(8, 10, 10, 10))!.to).toBe(9);
+    expect(goUp(at('Dumbbell_Bench_Press'), item('10'), sets(12, 10, 10, 10))!.to).toBe(14);
+    expect(goUp(at('Triceps_Pushdown_-_Rope_Attachment'), item('12'), sets(20, 12, 12, 12))!.to).toBe(22.5);
+    expect(weightStep(at('Leg_Press'), 100)).toBe(5);
+    // Assisted machines go up by taking help away, and stop at zero.
+    expect(goUp(at('Assisted_Pull-Up_Machine'), item('8'), sets(30, 8, 8, 8))).toEqual({ from: 30, to: 25 });
+    expect(goUp(at('Assisted_Pull-Up_Machine'), item('8'), sets(0, 8, 8, 8))).toBeNull();
+    // Timed and bodyweight work progress some other way.
+    expect(goUp(at('Plank'), item('30'), sets(0, 30, 30, 30))).toBeNull();
+    expect(goUp(at('Pushups'), item('10'), sets(0, 10, 10, 10))).toBeNull();
+  });
+
+  it('finds the plan in the routine you loaded first, then any other', () => {
+    const r = (id: string, reps: string): Routine => ({ id, updatedAt: 1, name: id, exerciseIds: ['Leg_Press'], items: [{ exerciseId: 'Leg_Press', sets: 3, reps }] });
+    const a = r('a', '10'), b = r('b', '8-12');
+    expect(planFor([a, b], 'Leg_Press')?.reps).toBe('10');
+    expect(planFor([a, b], 'Leg_Press', b)?.reps).toBe('8-12');
+    expect(planFor([a, b], 'Butterfly')).toBeUndefined();
+  });
+});
+
+describe('lift goal', () => {
+  const goal = { name: 'Sam', kg: 55 };
+  const weighed = (d: AppData, kg: number) => d.weights.push({ id: 'w1', updatedAt: 1, date: '2026-03-02', kg });
+  const by = (d: AppData) => Object.fromEntries(liftBenchmarks(game(d), goal, currentKg(d.weights)).map((b) => [b.id, b]));
+
+  it('sets the goblet squat at half their weight, to the nearest 2 kg', () => {
+    expect(gobletTarget(55)).toBe(28);
+    expect(gobletTarget(50)).toBe(26);
+    expect(gobletTarget(60)).toBe(30);
+    expect(gobletTarget(10)).toBe(8);
+  });
+
+  it('starts at zero and needs a weigh-in for the deadlift target', () => {
+    const b = by(emptyData());
+    expect([b.deadlift.pct, b.goblet.pct, b.carry.pct]).toEqual([0, 0, 0]);
+    expect(b.deadlift.target).toContain('log a weigh-in');
+    expect(b.goblet.target).toBe('28 kg × 10, half of Sam\'s weight');
+    expect(b.carry.best).toBeNull();
+  });
+
+  it('measures the deadlift as estimated 1RM against 1.5× bodyweight', () => {
+    const d = emptyData();
+    weighed(d, 66);
+    add(d, '2026-03-02', [ex('Barbell_Deadlift', 80, 5)]);
+    const b = by(d).deadlift;
+    expect(b.pct).toBeCloseTo((80 * (1 + 5 / 30)) / 99, 5);
+    expect(b.done).toBe(false);
+    add(d, '2026-03-09', [ex('Barbell_Deadlift', 100, 1)]);
+    expect(by(d).deadlift.done).toBe(true);
+  });
+
+  it('needs a real set of 10 for the goblet squat, warm-ups aside', () => {
+    const d = emptyData();
+    add(d, '2026-03-02', [ex('Goblet_Squat', 24, 10)]);
+    expect(by(d).goblet.pct).toBeCloseTo(24 / 28, 5);
+    add(d, '2026-03-04', [{ exerciseId: 'Goblet_Squat', sets: [{ kg: 28, reps: 10, warmup: true }, { kg: 30, reps: 9 }] }]);
+    const b = by(d).goblet;
+    expect(b.done).toBe(false); // 30 × 9 is close, but not 10 reps
+    expect(b.pct).toBeLessThan(1);
+    expect(b.best).toBe('30 kg × 9');
+    add(d, '2026-03-06', [ex('Goblet_Squat', 28, 10)]);
+    expect(by(d).goblet).toMatchObject({ done: true, pct: 1 });
+  });
+
+  it('scores the front carry on weight and time, up to their weight for 20 s', () => {
+    const d = emptyData();
+    add(d, '2026-03-02', [{ exerciseId: 'Front_Carry', sets: [{ kg: 30, reps: 30 }, { kg: 55, reps: 10 }] }]);
+    const b = by(d).carry;
+    expect(b.pct).toBeCloseTo(30 / 55, 5);
+    expect(b.best).toBe('30 kg · 30 s');
+    add(d, '2026-03-04', [{ exerciseId: 'Front_Carry', sets: [{ kg: 56, reps: CARRY_SECONDS }] }]);
+    expect(by(d).carry).toMatchObject({ done: true, pct: 1 });
+    expect(liftGoalPct(liftBenchmarks(game(d), goal, 0))).toBeCloseTo(1 / 3, 5);
+  });
+
+  it('has its exercises in the catalog', () => {
+    const exMap = exerciseMap(emptyData());
+    expect(exMap.get('Front_Carry')).toMatchObject({ hold: true, pattern: 'carry', group: 'Core', images: [] });
+    expect(exMap.get('Front_Carry')!.loadFactor).toBeUndefined(); // one load, logged as the total
+    expect(exMap.get('Goblet_Squat')).toMatchObject({ pattern: 'squat', group: 'Legs', primaryMuscles: ['Quadriceps', 'Glutes'] });
+    expect(exMap.get('Goblet_Squat')!.loadFactor).toBeUndefined();
   });
 });

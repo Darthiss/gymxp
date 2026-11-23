@@ -6,12 +6,13 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 
 ## Where things stand
 
-*As of 11 November 2026.* Phases 1, 2, 3 and 5 are live: the star system, the new end screen, trophies, legends, a full balance review and training insights. The app is now called Bro, with a new look and mascot. Phase 5 went before Phase 4 at the owner's request. **Next:** the checks below, then Phase 4.
+*As of 23 November 2026.* Phases 1, 2, 3 and 5 are live: the star system, the new end screen, trophies, legends, a full balance review and training insights. The app is now called Bro, with a new look and mascot. Phase 5 went before Phase 4 at the owner's request, and so did body and strength goals. **Next:** the checks below, then Phase 4.
 
 **Open checks, all for the owner:**
 - [ ] **On an iPhone,** log a workout afterwards and confirm "Add time" shows and opens the picker (step 1.1).
 - [ ] **Playtest for 2–4 weeks** and tune Phases 2 and 3 together (step 2.5).
 - [ ] **From March 2027,** run the calibration again, when it has enough history to judge the third star (step 2.3).
+- [ ] **Body and strength goals:** after a month of use, check whether "Go up" filling in the heavier weight feels right at the gym, and whether the rate bands match how the gain actually looks in the photos.
 
 ## Status
 
@@ -126,6 +127,8 @@ Shipped before Phase 4, at the owner's request.
 ### Also shipped
 
 - **Health review.** Every piece of training and body content was checked for accuracy: [what changed and why](docs/GAME_DESIGN.md#health-review-november-2026). In short: corrected muscle data with shoulders split in three, warm-ups left out of set counts, estimated 1RM capped at 12 reps, heavier lifts needing half the reps to count as a beat, session titles by split, a goal-weight floor and trend, waist ÷ height beside BMI, no star for heat, an age-based heart-rate trophy, fixed instruction cues and a "not medical advice" line. It re-scores history slightly, so recheck the third star at the next calibration.
+
+- **Body and strength goals.** A coach's plan, reviewed and adjusted: [what was built and why](docs/GAME_DESIGN.md#body-and-strength-review-november-2026). The Body tab reads weight as a weekly average with a monthly rate judged against a phase (lean gain, cut or maintain), adds tape measurements (waist, neck, arm, chest, and hips for women) to the weigh-in they're taken with, and estimates body fat, lean mass and FFMI. A gain gets a check-in when the waist is up 4 cm, and a gain-quality number after 8 weeks. Strength has a "Lift someone" goal with three benchmarks, barbell lifts show estimated 1RM ÷ bodyweight, sets can be marked as warm-ups, and the logger fills in the next weight ("Go up") once every working set reaches the top of the routine's range. Goblet Squat and a new Front Carry joined the catalog. The legends no longer compare your lifts with their records.
 
 - **Farmer's Walk,** logged as weight per hand and seconds walked. Adding it made time records work on any timed exercise, and exercise pages show the longest time in place of an estimated 1RM.
 

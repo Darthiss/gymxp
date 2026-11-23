@@ -3,6 +3,7 @@
 // would need a new CSP host, an API key in a client-only app and your training data sent away.
 import { averageVolume, familyOf, fmtSets, MAJOR_MUSCLES, patternOf, routineEntries, volumeOf, type Muscle } from './muscles';
 import { lastDone, routineItems, totalSets } from './routines';
+import { workingSets } from './engine';
 import { addDays, parseDate, plural, today } from './util';
 import type { AppData, Exercise, Pattern, Routine } from './types';
 
@@ -115,7 +116,7 @@ export function checkRotation({ data, routines, weekGoal, exMap, pickable, date 
   const from = addDays(date, -27);
   const done = lastDone(data, live);
   const recent = new Set<string>();
-  for (const s of data.sessions) if (!s.deleted && s.date >= from && s.date <= date) for (const e of s.exercises) if (e.sets.some((x) => x.reps > 0)) recent.add(e.exerciseId);
+  for (const s of data.sessions) if (!s.deleted && s.date >= from && s.date <= date) for (const e of s.exercises) if (workingSets(e.sets).length) recent.add(e.exerciseId);
   if (averageVolume(data.sessions, exMap, 4, date).weeks >= 2) {
     for (const r of live) {
       const last = done.get(r.id);

@@ -2,14 +2,14 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { getStore, useData } from '../lib/store';
 import { fmtBeat, fmtSet, toBeatText } from '../lib/exercises';
 import { gameFor, settingFor, useExerciseMap } from '../lib/game';
-import { beatsNeeded, computeGame, RULES, sortSessions, type GameState, type PR, type SessionResult } from '../lib/engine';
+import { beatsNeeded, computeGame, RULES, sortSessions, workingSets, type GameState, type PR, type SessionResult } from '../lib/engine';
 import { holidayOn } from '../lib/holidays';
 import { setLogMode, type LogMode } from '../lib/today';
 import { WeatherField } from '../components/WeatherField';
 import { back, navigate, type Route } from '../lib/router';
 import { fmtDate, num, nowTime, parseWatchText, plural, today, uid, type WatchImport } from '../lib/util';
 import type { AppData, Exercise, Routine, RoutineItem, Session, SetEntry } from '../lib/types';
-import { activeRoutines, fmtTarget, inOrder, loadOrder, moveTo, nextPosition, repsForSet, routineItems } from '../lib/routines';
+import { activeRoutines, fmtTarget, goUp, inOrder, loadOrder, moveTo, nextPosition, planFor, repsForSet, routineItems, steppedUp, type GoUp } from '../lib/routines';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { PlateCalc } from '../components/PlateCalc';
 import { ExerciseInfo } from '../components/ExerciseInfo';
@@ -18,8 +18,10 @@ import { Celebration } from '../components/Celebration';
 import { Cell, CellIcon, ExerciseThumb, PageHead, PickerField, Sheet, StarRating, toast } from '../components/ui';
 import { Icon } from '../components/Icon';
 
-interface DraftSet { kg: string; reps: string }
-interface DraftEx { exerciseId: string; sets: DraftSet[]; note?: string; target?: Pick<RoutineItem, 'sets' | 'reps'> } // target: from the routine it was loaded with
+interface DraftSet { kg: string; reps: string; w?: boolean } // w: a warm-up, left out of every stat
+/** "Go up" filled in heavier weights: what each working set had (`prev`) and got (`next`), so it can be undone. */
+interface DraftUp extends GoUp { prev: string[]; next: string[]; undone?: boolean }
+interface DraftEx { exerciseId: string; sets: DraftSet[]; note?: string; target?: Pick<RoutineItem, 'sets' | 'reps'>; up?: DraftUp } // target: from the routine it was loaded with
 interface Draft {
   id: string;
   date: string;
@@ -57,13 +59,13 @@ function fromSession(s: Session): Draft {
     id: s.id, date: s.date, startTime: s.startTime ?? '', createdAt: s.createdAt, note: s.note ?? '',
     durationMin: str(s.watch?.durationMin), kcal: str(s.watch?.kcal), avgHr: str(s.watch?.avgHr),
     tempC: s.weather?.tempC !== undefined ? String(s.weather.tempC) : '', rain: !!s.weather?.rain,
-    exercises: s.exercises.map((e) => ({ exerciseId: e.exerciseId, note: e.note, sets: e.sets.map((x) => ({ kg: String(x.kg), reps: String(x.reps) })) })),
+    exercises: s.exercises.map((e) => ({ exerciseId: e.exerciseId, note: e.note, sets: e.sets.map((x) => ({ kg: String(x.kg), reps: String(x.reps), ...(x.warmup ? { w: true } : {}) })) })),
   };
 }
 
 function toSession(d: Draft, prev?: Session): Session {
   const sets = (xs: DraftSet[]): SetEntry[] =>
-    xs.map((x) => ({ kg: Math.max(0, num(x.kg)), reps: Math.max(0, Math.round(num(x.reps))) })).filter((x) => x.reps > 0);
+    xs.map((x) => ({ kg: Math.max(0, num(x.kg)), reps: Math.max(0, Math.round(num(x.reps))), ...(x.w ? { warmup: true } : {}) })).filter((x) => x.reps > 0);
   const watch = { durationMin: num(d.durationMin) || undefined, kcal: num(d.kcal) || undefined, avgHr: num(d.avgHr) || undefined };
   const hasTemp = (d.tempC ?? '').trim() !== '' && Number.isFinite(parseFloat((d.tempC ?? '').replace(',', '.')));
   const weather = { ...(hasTemp ? { tempC: Math.round(num(d.tempC ?? '')) } : {}), ...(d.rain ? { rain: true } : {}) };
@@ -113,16 +115,19 @@ function cols(ex?: Exercise) {
   return { kg: 'Weight', reps: 'Reps', kgUnit: 'kg', repsUnit: 'reps' };
 }
 
-/** Sets from the most recent session (before `date`) that included this exercise. */
+/** Sets from the most recent session (before `date`) with working sets of this exercise, warm-ups included. */
 export function lastTime(data: AppData, exerciseId: string, date: string, excludeId: string): SetEntry[] | null {
   const ss = sortSessions(data.sessions).reverse();
   for (const s of ss) {
     if (s.id === excludeId || s.date > date) continue;
     const e = s.exercises.find((x) => x.exerciseId === exerciseId);
-    if (e?.sets.length) return e.sets;
+    if (e && workingSets(e.sets).length) return e.sets;
   }
   return null;
 }
+
+const WARMUP_HINT = 'gymxp:wuhint'; // per device: once you've marked a warm-up, the hint goes away
+const hintSeen = () => { try { return !!localStorage.getItem(WARMUP_HINT); } catch { return true; } };
 
 function withSession(data: AppData, s: Session): AppData {
   return { ...data, sessions: [...data.sessions.filter((x) => x.id !== s.id), s] };
@@ -176,11 +181,17 @@ export function Log({ route }: { route: Route }) {
   }, [draft, editing]);
 
   const newEx = (exerciseId: string, d: Draft, plan?: RoutineItem): DraftEx => {
+    const ex = exMap.get(exerciseId);
     const last = lastTime(data, exerciseId, d.date, d.id);
-    const n = exMap.get(exerciseId)?.benchmark ? 1 : (plan?.sets ?? last?.length ?? 3);
-    const kgAt = (i: number) => (last?.length ? String(last[Math.min(i, last.length - 1)].kg) : ''); // extra planned sets repeat the last weight
-    const sets = Array.from({ length: n }, (_, i) => ({ kg: kgAt(i), reps: '' }));
-    return { exerciseId, sets, ...(plan ? { target: { sets: plan.sets, reps: plan.reps } } : {}) };
+    const work = last ? workingSets(last) : [];
+    const warm = (last ?? []).filter((s) => s.warmup && s.reps > 0); // last time's warm-ups come back as warm-ups
+    const n = ex?.benchmark ? 1 : (plan?.sets ?? (work.length || 3));
+    const prev = Array.from({ length: n }, (_, i) => (work.length ? String(work[Math.min(i, work.length - 1)].kg) : '')); // extra planned sets repeat the last weight
+    // Every working set hit the top of the range last time: the next weight is filled in, and can be undone.
+    const up = ex ? goUp(ex, plan ?? planFor(activeRoutines(data), exerciseId), last) : null;
+    const next = up && ex ? prev.map((kg) => (kg ? String(steppedUp(ex, num(kg))) : kg)) : prev;
+    const sets: DraftSet[] = [...warm.map((s) => ({ kg: String(s.kg), reps: '', w: true })), ...next.map((kg) => ({ kg, reps: '' }))];
+    return { exerciseId, sets, ...(plan ? { target: { sets: plan.sets, reps: plan.reps } } : {}), ...(up ? { up: { ...up, prev, next } } : {}) };
   };
 
   /** Add exercises not already in the draft; from a routine they get its planned sets and rep target. */
@@ -203,6 +214,25 @@ export function Log({ route }: { route: Route }) {
 
   const set = (fn: (d: Draft) => Draft) => setDraft((d) => (d ? fn(d) : d));
   const setEx = (i: number, fn: (e: DraftEx) => DraftEx) => set((d) => ({ ...d, exercises: d.exercises.map((e, j) => (j === i ? fn(e) : e)) }));
+
+  /** Put back the weights "Go up" replaced, on every set you haven't changed since. */
+  const keepWeight = (i: number) =>
+    setEx(i, (x) => {
+      if (!x.up) return x;
+      const up = x.up;
+      let j = 0;
+      const sets = x.sets.map((y) => {
+        if (y.w) return y;
+        const k = j++;
+        return y.kg === up.next[k] && up.prev[k] !== undefined ? { ...y, kg: up.prev[k] } : y;
+      });
+      return { ...x, sets, up: { ...up, undone: true } };
+    });
+
+  const toggleWarmup = (i: number, k: number) => {
+    setEx(i, (x) => ({ ...x, sets: x.sets.map((y, m) => (m === k ? { ...y, w: !y.w } : y)) }));
+    try { localStorage.setItem(WARMUP_HINT, '1'); } catch { /* private mode */ }
+  };
 
   const addExercise = (ids: string[], routine?: Routine) => {
     set((d) => withRoutine(d, ids, routine));
@@ -256,7 +286,8 @@ export function Log({ route }: { route: Route }) {
   const infoEx = info ? exMap.get(info) : undefined;
   const after = !editing && draft.mode === 'after';
   const live = !editing && !after && draft.date === today() && !!draft.startTime;
-  const doneSets = draft.exercises.reduce((n, e) => n + e.sets.filter((x) => num(x.reps) > 0).length, 0);
+  const doneSets = draft.exercises.reduce((n, e) => n + e.sets.filter((x) => num(x.reps) > 0 && !x.w).length, 0);
+  const showWarmupHint = !hintSeen() && !draft.exercises.some((e) => e.sets.some((x) => x.w));
   // Live stars count every exercise in the draft, so the third star can't light up after the first one.
   const beaten = preview ? preview.beats.filter((b) => b.beat).length : 0;
   const toBeat = Math.max(0, beatsNeeded(draft.exercises.length) - beaten);
@@ -348,7 +379,7 @@ export function Log({ route }: { route: Route }) {
                 <ExerciseThumb ex={ex} className="thumb sm" />
                 <div className="grow">
                   <div className="name">{ex?.name ?? 'Unknown exercise'}</div>
-                  <div className="last ellipsis">{last ? `Last: ${last.map((s) => fmtSet(ex, s)).join(' · ')}` : 'First time · sets your baseline'}</div>
+                  <div className="last ellipsis">{last ? `Last: ${workingSets(last).map((s) => fmtSet(ex, s)).join(' · ')}` : 'First time · sets your baseline'}</div>
                 </div>
               </button>
               {e.target && <span className="tag accent num" title="Your routine's target">{fmtTarget(e.target)}</span>}
@@ -357,7 +388,14 @@ export function Log({ route }: { route: Route }) {
 
             {beat?.beat ? (
               <span className="beaten"><Icon name="bolt" size={13} fill stroke={0} /> {beat.first ? 'New exercise: this sets your baseline' : `Beaten ${fmtBeat(ex, beat)}`}</span>
-            ) : last ? <span className="to-beat">{toBeatText(ex, last)}</span> : null}
+            ) : last ? <span className="to-beat">{toBeatText(ex, workingSets(last))}</span> : null}
+
+            {e.up && !e.up.undone && (
+              <div className="go-up">
+                <span><b>⬆ {ex?.assisted ? `Less help: ${e.up.to} kg assist` : `Go up: ${e.up.to} kg`}</b> · You hit the top of your rep range on every set last time, so it's filled in. Start again from the bottom of the range.</span>
+                <button type="button" onClick={() => keepWeight(i)}>Keep {e.up.from} kg</button>
+              </div>
+            )}
 
             {prs.length > 0 && (
               <div className="pr-flash">
@@ -377,26 +415,36 @@ export function Log({ route }: { route: Route }) {
               <span className="center">{c.reps}</span>
               <span />
             </div>
-            {e.sets.map((st, k) => (
-              <div key={k} className="set-row">
-                <span className={`idx${num(st.reps) > 0 ? ' done' : ''}`}>{num(st.reps) > 0 ? <Icon name="check" size={13} stroke={3.4} /> : k + 1}</span>
-                <div className="unit-input">
-                  <input className="input" inputMode="decimal" value={st.kg} placeholder={last?.[k] ? String(last[k].kg) : '0'} aria-label={`Set ${k + 1} ${c.kg}`}
-                    onChange={(ev) => setEx(i, (x) => ({ ...x, sets: x.sets.map((y, m) => (m === k ? { ...y, kg: ev.target.value } : y)) }))} />
-                  <span>{c.kgUnit}</span>
+            {e.sets.map((st, k) => {
+              const done = num(st.reps) > 0;
+              const no = e.sets.slice(0, k + 1).filter((y) => !y.w).length; // warm-ups aren't numbered
+              const name = st.w ? 'Warm-up' : `Set ${no}`;
+              const planned = !st.w && e.target?.reps ? repsForSet(e.target.reps, no - 1) : '';
+              return (
+                <div key={k} className={`set-row${st.w ? ' warm' : ''}`}>
+                  <button type="button" className={`idx${st.w ? ' warm' : ''}${done ? ' done' : ''}`} aria-pressed={!!st.w}
+                    aria-label={st.w ? `${name}: tap to make it a working set` : `${name}: tap to mark it as a warm-up`} onClick={() => toggleWarmup(i, k)}>
+                    {st.w ? 'W' : done ? <Icon name="check" size={13} stroke={3.4} /> : no}
+                  </button>
+                  <div className="unit-input">
+                    <input className="input" inputMode="decimal" value={st.kg} placeholder={last?.[k] ? String(last[k].kg) : '0'} aria-label={`${name} ${c.kg}`}
+                      onChange={(ev) => setEx(i, (x) => ({ ...x, sets: x.sets.map((y, m) => (m === k ? { ...y, kg: ev.target.value } : y)) }))} />
+                    <span>{c.kgUnit}</span>
+                  </div>
+                  <div className="unit-input">
+                    <input className="input" inputMode="numeric" value={st.reps} placeholder={planned || (last?.[k] ? String(last[k].reps) : '—')} aria-label={`${name} ${c.reps}`}
+                      onChange={(ev) => setEx(i, (x) => ({ ...x, sets: x.sets.map((y, m) => (m === k ? { ...y, reps: ev.target.value } : y)) }))} />
+                    <span>{c.repsUnit}</span>
+                  </div>
+                  <button className="icon-btn plain" aria-label={`Remove ${name.toLowerCase()}`} onClick={() => setEx(i, (x) => ({ ...x, sets: x.sets.filter((_, m) => m !== k) }))}><Icon name="minus" size={16} stroke={2.6} /></button>
                 </div>
-                <div className="unit-input">
-                  <input className="input" inputMode="numeric" value={st.reps} placeholder={e.target?.reps ? repsForSet(e.target.reps, k) : last?.[k] ? String(last[k].reps) : '—'} aria-label={`Set ${k + 1} ${c.reps}`}
-                    onChange={(ev) => setEx(i, (x) => ({ ...x, sets: x.sets.map((y, m) => (m === k ? { ...y, reps: ev.target.value } : y)) }))} />
-                  <span>{c.repsUnit}</span>
-                </div>
-                <button className="icon-btn plain" aria-label={`Remove set ${k + 1}`} onClick={() => setEx(i, (x) => ({ ...x, sets: x.sets.filter((_, m) => m !== k) }))}><Icon name="minus" size={16} stroke={2.6} /></button>
-              </div>
-            ))}
+              );
+            })}
+            {showWarmupHint && i === 0 && <p className="tiny muted" style={{ margin: 0 }}>Tap a set's number to mark it as a warm-up. Warm-ups don't count toward stars, records or volume.</p>}
             <div className="row" style={{ gap: 8 }}>
               <button className="btn sm tint grow" onClick={() => setEx(i, (x) => ({ ...x, sets: [...x.sets, { kg: x.sets[x.sets.length - 1]?.kg ?? '', reps: '' }] }))}><Icon name="plus" size={15} stroke={2.6} /> Set</button>
               {last && (
-                <button className="btn sm grow" onClick={() => setEx(i, (x) => ({ ...x, sets: last.map((s) => ({ kg: String(s.kg), reps: String(s.reps) })) }))}>
+                <button className="btn sm grow" onClick={() => setEx(i, (x) => ({ ...x, up: x.up && { ...x.up, undone: true }, sets: last.map((s) => ({ kg: String(s.kg), reps: String(s.reps), ...(s.warmup ? { w: true } : {}) })) }))}>
                   <Icon name="repeat" size={15} /> Same as last
                 </button>
               )}
@@ -475,11 +523,11 @@ export function Log({ route }: { route: Route }) {
       {plates !== null && draft.exercises[plates] && (
         <PlateCalc
           barKg={exMap.get(draft.exercises[plates].exerciseId)?.barKg ?? 20}
-          current={num(draft.exercises[plates].sets.find((x) => x.kg)?.kg ?? '')}
-          sets={draft.exercises[plates].sets.length}
+          current={num(draft.exercises[plates].sets.find((x) => x.kg && !x.w)?.kg ?? '')}
+          sets={draft.exercises[plates].sets.map((x, k, all) => (x.w ? 'Warm-up' : `Set ${all.slice(0, k + 1).filter((y) => !y.w).length}`))}
           onClose={() => setPlates(null)}
           onApply={(kg, which) => {
-            setEx(plates, (x) => ({ ...x, sets: x.sets.map((y, m) => (which === 'all' || which === m ? { ...y, kg: String(kg) } : y)) }));
+            setEx(plates, (x) => ({ ...x, sets: x.sets.map((y, m) => ((which === 'all' ? !y.w : which === m) ? { ...y, kg: String(kg) } : y)) }));
             setPlates(null);
           }}
         />
@@ -514,7 +562,7 @@ function Elapsed({ since }: { since: string }) {
 
 /** Per-machine settings memo ("seat 4, back pad 2"), synced with your data. */
 export function SettingNote({ exerciseId, value, equipment }: { exerciseId: string; value: string; equipment?: string }) {
-  const freeWeight = ['Dumbbell', 'Barbell', 'EZ bar', 'Bodyweight', 'Benchmark'].includes(equipment ?? '');
+  const freeWeight = ['Dumbbell', 'Barbell', 'EZ bar', 'Bodyweight', 'Benchmark', 'Free weight'].includes(equipment ?? '');
   const [edit, setEdit] = useState(false);
   const [v, setV] = useState(value);
   if (!edit)

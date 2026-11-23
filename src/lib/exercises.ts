@@ -70,10 +70,11 @@ export const EQUIPMENT_CHIPS: Record<string, (e: Exercise) => boolean> = {
   Machines: (e) => ['Machine', 'Plate-loaded', 'Cable', 'Smith machine'].includes(e.equipment),
 };
 
-/** One logged set: "40×10", or "60 s" / "5 kg · 60 s" for a timed hold. */
+/** One logged set: "40×10", or "60 s" / "5 kg · 60 s" for a timed hold. A warm-up starts with "W". */
 export function fmtSet(ex: Exercise | undefined, s: SetEntry): string {
-  if (ex?.hold) return s.kg ? `${s.kg} kg · ${s.reps} s` : `${s.reps} s`;
-  return `${s.kg}×${s.reps}`;
+  const w = s.warmup ? 'W ' : '';
+  if (ex?.hold) return w + (s.kg ? `${s.kg} kg · ${s.reps} s` : `${s.reps} s`);
+  return `${w}${s.kg}×${s.reps}`;
 }
 
 const trim = (n: number) => +n.toFixed(2);

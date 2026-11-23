@@ -5,7 +5,7 @@ import { settingFor, useExerciseMap, useGame } from '../lib/game';
 import { navigate } from '../lib/router';
 import { logHref } from '../lib/today';
 import {
-  activeRoutines, fmtRest, fmtTarget, hitTarget, inOrder, lastDone, loadOrder, loadTicks, moveTo, nextPosition, repsForSet, REST_OPTIONS, routineItems, saveOrder, saveTicks, totalSets, upNextRoutine, withExercise, type Ticks,
+  activeRoutines, fmtRest, fmtTarget, goUp, hitTarget, inOrder, lastDone, loadOrder, loadTicks, moveTo, nextPosition, repsForSet, REST_OPTIONS, routineItems, saveOrder, saveTicks, totalSets, upNextRoutine, withExercise, type Ticks,
 } from '../lib/routines';
 import { fmtDate, plural, today, uid } from '../lib/util';
 import type { Routine, RoutineItem } from '../lib/types';
@@ -166,7 +166,11 @@ export function RoutineGuide({ id }: { id: string }) {
             {it.note && <div className="coach-note">“{it.note}”</div>}
             <SettingNote exerciseId={it.exerciseId} value={settingFor(data, it.exerciseId)} equipment={ex?.equipment} />
             <div className="small dim num">{last ? `Last time: ${last.map((s) => fmtSet(ex, s)).join(' · ')}` : ex?.hold ? 'First time · go as long as your form stays solid' : 'First time · pick a weight you can do with good form'}</div>
-            {hitTarget(it, last) && <span className="tag gold" style={{ alignSelf: 'flex-start' }}>⬆ You hit every target last time · try {ex?.hold ? 'going longer' : ex?.assisted ? 'less assistance' : 'a bit heavier'}</span>}
+            {hitTarget(it, last) && (() => {
+              const up = goUp(ex, it, last);
+              const next = up ? (ex?.assisted ? `${up.to} kg assist` : `${up.to} kg`) : ex?.hold ? 'going longer' : ex?.bwFactor ? 'adding weight' : 'a bit heavier';
+              return <span className="tag gold" style={{ alignSelf: 'flex-start' }}>⬆ Go up: you hit every target last time · try {next}</span>;
+            })()}
             <div className="set-dots" role="group" aria-label={`${ex?.name ?? 'Exercise'} sets`}>
               {Array.from({ length: it.sets }, (_, k) => {
                 const reps = repsForSet(it.reps, k);

@@ -511,6 +511,33 @@ The app is for information and motivation, not medical advice, and it says so on
 
 These changes re-score history slightly: fewer estimated-1RM records, a few third stars lost where the only "beat" was a heavy single, and no heat stars. The simulations below were not rerun for them, so check the third-star rate again at the next calibration.
 
+## Body and strength review (November 2026)
+
+The owner brought a coach's plan for a lean gain: four tape measurements, weight as a trend, body fat, FFMI, gain quality, relative strength, a personal strength goal, warm-up flags and a "go up" nudge. It was reviewed as a coach would and built with these adjustments. Like everything else here, it's information, not medical advice.
+
+**Weight.**
+- Weight is read as the Monday–Sunday average of 3–4 morning weigh-ins, and its rate as the change between two weekly averages about 4 weeks apart, per month. If the latest week has a single weigh-in and the full week before it is there, the full week is used.
+- **Adjusted:** the healthy rate is set in % of bodyweight, not kg, so it works for anyone, and it depends on the phase. A lean gain is 0.75–1.5% a month (Helms, *The Muscle and Strength Pyramid*; Iraki et al. 2019), a cut 2–4% a month, which is 0.5–1% a week (Helms et al. 2014; Garthe et al. 2011), and maintaining is within 1%. For a lifter of about 66 kg, the gain band lands on the plan's 0.5–1 kg a month. A wider "close" band sits around each before anything turns amber.
+- Phases (gain, cut, maintain) are stored on the profile with a start date. **Adjusted:** the start weight and waist are read from the log around that date, not stored, so editing an old weigh-in can't leave them stale. The rate only uses weeks inside the phase, so a new gain isn't judged on the end of a cut.
+
+**Measurements.**
+- Waist every 2 weeks; neck, flexed arm and chest monthly. **Adjusted:** chest is in as well as photos, not instead of them, and photos stay on the phone, because body photos are sensitive and would otherwise sit in a GitHub repo. Hips are asked of women only, since their body-fat formula needs them.
+- **Adjusted:** the waist is measured at the belly button. That's the US Navy formula's site, and NICE's midpoint sits roughly level with it, so one measurement serves both waist ÷ height and body fat. The old copy said "halfway between rib and hip bone".
+- **Adjusted:** measurements are optional fields on the weigh-in, not a new collection. A new top-level collection is dropped by any device still on an older build, and measuring on a weigh-in morning keeps conditions the same.
+
+**Body composition.**
+- Body fat uses the US Navy formula (Hodgdon and Beckett 1984): ±3–4% against lab methods, so the app shows the change over months and labels the number an estimate. The plan's men-only formula gained the women's version.
+- **Adjusted:** FFMI is height-adjusted to 1.80 m, as Kouri et al. (1995) did, because their 25 "natural ceiling" was measured that way. The bar runs to 22, a visibly trained natural physique, not to 25: a ceiling makes a poor target. Kouri studied men, so women see their FFMI without those marks.
+- **Adjusted:** gain quality (lean gained ÷ weight gained) needs 8 weeks *and* 1.5 kg gained. A 1 cm slip of the tape moves the estimate about 1% body fat, which would swamp a smaller gain. About 0.5 or more is a good lean gain.
+- A gain gets a check-in when the waist is up 4 cm, roughly 3–4% more body fat on most men. **Added:** also when the waist reaches half the height, the usual health cut-off. The copy suggests comparing photos and a few weeks at maintenance or a short cut. It never says stop.
+
+**Strength.**
+- Estimated 1RM was already Epley, capped at 12 reps. Relative strength (1RM ÷ the week's average bodyweight) shows on barbell lifts only, where the usual standards apply. A leg press at 3× bodyweight isn't comparable.
+- **Warm-up flag.** A set can be marked as a warm-up and then counts for nothing: stars, records, beats, volume, set counts or muscle sets. This changes scoring in one way: the second star needs 10 *working* sets. Nothing changes for history, because no old set has the flag. The 60% rule still catches unmarked warm-ups in muscle volume.
+- **Go up.** Double progression: once every working set reaches the top of the routine's range, the logger fills in the next weight (2.5 kg on a bar, the next dumbbell, the next pin on a stack, or a plate less help on an assisted machine) and says to start again from the bottom of the range. One tap keeps the old weight. The beat rule already rewards this: more weight counts with half of last time's reps.
+- **The personal goal.** The plan named a person. **Adjusted:** the app is public, so it's a "Lift someone" goal with the name and weight kept in the user's own data. The benchmarks scale from their weight: deadlift 1.5× your bodyweight (lifting from the floor), goblet squat with half their weight for 10 (getting down and up with a load in front; about 24–30 kg for a typical adult), and a front carry with their full weight for 20 seconds (holding someone in your arms). The catalog gained Goblet Squat and a hand-written Front Carry, since the dataset has neither.
+- **Legends.** Bars measuring your lifts against world-record holders are gone; their challenges and fun facts stay. Hero Physique was already shelved behind its flag, and is unchanged.
+
 ## How we'll know it works
 
 1. **Calibrate on a real log.** Export a backup from Settings and run `npm run calibrate -- path/to/backup.json`, which compares the rates with these targets. It holds its verdict on the third star until there are 6 months and 30 gym days of history. The first pass was in November 2026, and the next useful run is from March 2027.

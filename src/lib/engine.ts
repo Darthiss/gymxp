@@ -145,6 +145,10 @@ export function compareToLast(ex: Exercise | undefined, exerciseId: string, sets
   return { exerciseId, beat: (kg > 0 && now >= repsToCount(before)) || (kg === 0 && reps > 0), first: false, kg, reps };
 }
 
+/** The sets that count: done (reps logged) and not marked as a warm-up. Warm-ups stay in the log
+ *  for your reference, but no star, record, volume or set count ever sees them. */
+export const workingSets = (sets: SetEntry[]) => sets.filter((s) => s.reps > 0 && !s.warmup);
+
 /** The reps a heavier day needs for the extra weight to count: half of last time's, rounded up. */
 export const repsToCount = (lastReps: number) => Math.ceil(lastReps / 2);
 
@@ -641,7 +645,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     const strengthHits: { ex: string; kg: number }[] = [];
     for (const log of s.exercises) {
       const ex = exMap.get(log.exerciseId);
-      const done = log.sets.filter((x) => x.reps > 0);
+      const done = workingSets(log.sets);
       if (!done.length) continue;
       const cmp = compareToLast(ex, log.exerciseId, done, lastSets.get(log.exerciseId));
       lastSets.set(log.exerciseId, done);
@@ -844,7 +848,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     week.prs += prs.length;
     week.newEx += newExercises.length;
     week.maxMinutes = Math.max(week.maxMinutes, minutes);
-    week.maxExInSession = Math.max(week.maxExInSession, s.exercises.filter((e) => e.sets.some((x) => x.reps > 0)).length);
+    week.maxExInSession = Math.max(week.maxExInSession, s.exercises.filter((e) => workingSets(e.sets).length).length);
     for (const g of groups) week.groups.add(g);
     if (groups.has('Legs')) week.legs = 1;
     weekVolume.set(wk, (weekVolume.get(wk) ?? 0) + volume);
@@ -901,7 +905,7 @@ export function computeGame(data: AppData, exMap: Map<string, Exercise>): GameSt
     bestLegStreak = Math.max(bestLegStreak, legStreak);
     if (legStreak >= 8) A('hab-legs');
     if ((['Chest', 'Back', 'Shoulders', 'Arms', 'Legs'] as MuscleGroup[]).every((g) => groups.has(g))) A('hab-fullbody');
-    if (s.exercises.filter((e) => e.sets.some((x) => x.reps > 0)).length >= 8) A('hab-variety');
+    if (s.exercises.filter((e) => workingSets(e.sets).length).length >= 8) A('hab-variety');
     if (reps >= 500) A('hab-reps');
     if ((s.watch?.avgHr ?? 0) >= hardHeartRate(ageOn(data.profile.birthYear, s.date)) && minutes >= 45) A('hab-heart');
     if (firstVisit && s.date >= addDays(firstVisit, 365)) A('hab-anniversary');

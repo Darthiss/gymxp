@@ -11,6 +11,8 @@ import { fmtDate, plural, today } from '../lib/util';
 import { Icon } from '../components/Icon';
 import { SectionHead, SyncBadge } from '../components/ui';
 import { Bro } from '../components/Bro';
+import { LiftGoalRow } from '../components/LiftGoal';
+import { currentPhase, liveWeights, phaseSummary, WAIST_CHECK_CM } from '../lib/body';
 
 interface DraftPeek { date: string; startTime: string; exercises: unknown[] }
 
@@ -28,6 +30,10 @@ export function Home() {
   const trainedToday = data.sessions.some((s) => !s.deleted && s.date === today());
   const feriado = holidayOn(today());
   const closest = useMemo(() => upNext(g).slice(0, 1), [g]);
+  const checkIn = useMemo(() => {
+    const phase = currentPhase(data.profile);
+    return phase ? phaseSummary(liveWeights(data.weights), phase, data.profile).waistCheck : null;
+  }, [data.profile, data.weights]);
 
   // An unfinished workout on this device turns the main button into "Resume".
   const [draft, setDraft] = useState<DraftPeek | null>(null);
@@ -65,6 +71,11 @@ export function Home() {
         {feriado && !trainedToday && (
           <div className="banner">🧉 <span><b>{feriado}</b>: train today for a bonus star</span></div>
         )}
+        {checkIn && (
+          <a className="banner" href="#/progress?tab=body" style={{ color: '#ffd3a1', background: 'var(--fire-soft)', textDecoration: 'none' }}>
+            📏 <span><b>Gain check-in:</b> {checkIn === 'up' ? `your waist is up ${WAIST_CHECK_CM}+ cm since the gain began` : 'your waist has reached half your height'}. See Body.</span>
+          </a>
+        )}
         <a href={draft ? '#/log' : logHref(mode)} className="cta">
           <span className="cta-ico"><Icon name={draft ? 'play' : after ? 'pencil' : 'dumbbell'} size={24} stroke={2.4} fill={!!draft} /></span>
           <span className="grow">
@@ -93,6 +104,8 @@ export function Home() {
       </div>
 
       <LevelCard g={g} href="#/awards" />
+
+      {data.profile.liftGoal && <LiftGoalRow goal={data.profile.liftGoal} />}
 
       {g.challenge && <ChallengeRow c={g.challenge} />}
 

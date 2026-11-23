@@ -10,8 +10,9 @@ const PLANS: Record<string, [string, number, number][]> = {
   // exercise id, start kg, end kg
   Push: [['Machine_Bench_Press', 30, 45], ['Leverage_Shoulder_Press', 20, 30], ['Butterfly', 25, 40], ['Triceps_Pushdown_-_Rope_Attachment', 15, 22.5], ['Side_Lateral_Raise', 5, 8]],
   Pull: [['Wide-Grip_Lat_Pulldown', 35, 50], ['Seated_Cable_Rows', 30, 45], ['Assisted_Pull-Up_Machine', 45, 32], ['Face_Pull', 15, 20], ['Machine_Bicep_Curl', 15, 25]],
-  Legs: [['Leg_Press', 80, 130], ['Leg_Extensions', 30, 45], ['Seated_Leg_Curl', 25, 40], ['Standing_Calf_Raises', 40, 60], ['Hanging_Leg_Raise', 0, 0]],
+  Legs: [['Barbell_Deadlift', 60, 85], ['Goblet_Squat', 14, 22], ['Leg_Press', 80, 130], ['Seated_Leg_Curl', 25, 40], ['Front_Carry', 16, 28], ['Hanging_Leg_Raise', 0, 0]],
 };
+const WARM_UP = new Set(['Barbell_Deadlift', 'Machine_Bench_Press']); // demo warm-ups: one set at half the weight first
 
 function rng(seed: number) {
   return () => ((seed = (seed * 1664525 + 1013904223) >>> 0), seed / 2 ** 32);
@@ -21,7 +22,10 @@ function sampleData(): AppData {
   const d = emptyData();
   const r = rng(42);
   const t = today();
-  d.profile = { ...d.profile, name: 'Lucas', sex: 'male', heightCm: 173, birthYear: 1995, weeklyGoal: 3, goalWeightKg: 70, updatedAt: 1 };
+  d.profile = {
+    ...d.profile, name: 'Lucas', sex: 'male', heightCm: 173, birthYear: 1995, weeklyGoal: 3, goalWeightKg: 73, updatedAt: 1,
+    phases: [{ type: 'gain', start: addDays(t, -70) }], liftGoal: { name: 'Sam', kg: 55 },
+  };
   const names = Object.keys(PLANS);
   const start = addDays(t, -76);
   const days: string[] = [];
@@ -36,16 +40,26 @@ function sampleData(): AppData {
     const s: Session = {
       id: uid(), updatedAt: 1, createdAt: 1, date, startTime: `${18 + Math.floor(r() * 2)}:${String(Math.floor(r() * 6) * 10).padStart(2, '0')}`,
       exercises: plan.map(([exerciseId, a, b]) => {
-        const kg = Math.round((a + (b - a) * prog + (r() - 0.5) * 2.5) / 2.5) * 2.5;
-        return { exerciseId, sets: Array.from({ length: 3 }, (_, k) => ({ kg: Math.max(0, kg), reps: exerciseId === 'Hanging_Leg_Raise' ? 6 + Math.round(prog * 6) : 12 - k - (r() > 0.6 ? 1 : 0) })) };
+        const step = exerciseId === 'Goblet_Squat' || exerciseId === 'Front_Carry' ? 2 : 2.5;
+        const kg = Math.max(0, Math.round((a + (b - a) * prog + (r() - 0.5) * 2.5) / step) * step);
+        const reps = (k: number) => exerciseId === 'Hanging_Leg_Raise' ? 6 + Math.round(prog * 6) : exerciseId === 'Front_Carry' ? 25 + Math.round(prog * 10) : 12 - k - (r() > 0.6 ? 1 : 0);
+        const warm = WARM_UP.has(exerciseId) ? [{ kg: Math.round(kg / 5) * 2.5, reps: 8, warmup: true }] : [];
+        return { exerciseId, sets: [...warm, ...Array.from({ length: 3 }, (_, k) => ({ kg, reps: reps(k) }))] };
       }),
       watch: { durationMin: 55 + Math.round(r() * 25), kcal: 320 + Math.round(r() * 160), avgHr: 115 + Math.round(r() * 20) },
       ...(r() > 0.7 ? { weather: { tempC: 8 + Math.round(r() * 14), rain: r() > 0.6 } } : {}),
     };
     d.sessions.push(s);
   });
-  for (let i = 0; i < 10; i++) d.weights.push({ id: uid(), updatedAt: 1, date: addDays(t, -70 + i * 7), kg: Math.round((72.4 - i * 0.25 + (r() - 0.5) * 0.6) * 10) / 10 });
-  const reps = ['12/10/8', '10', '10', '12', '15'];
+  // A lean gain: three mornings a week, about +0.9 kg a month, the waist every 2 weeks and the rest monthly.
+  for (let day = -70; day <= -1; day++) {
+    const dow = new Date(addDays(t, day) + 'T12:00').getDay();
+    if (dow !== 1 && dow !== 3 && dow !== 6) continue;
+    const week = Math.floor((day + 70) / 7);
+    const tape = dow === 1 && week % 2 === 0 ? { waistCm: Math.round((76 + week * 0.12) * 10) / 10, ...(week % 4 === 0 ? { neckCm: 37.5, armCm: Math.round((33 + week * 0.06) * 10) / 10, chestCm: Math.round((97 + week * 0.1) * 10) / 10 } : {}) } : {};
+    d.weights.push({ id: uid(), updatedAt: 1, date: addDays(t, day), kg: Math.round((70 + (day + 70) * 0.03 + (r() - 0.5) * 0.9) * 10) / 10, ...tape });
+  }
+  const reps = ['12/10/8', '10', '10', '12', '15', '10'];
   d.routines = names.map((n, i) => ({
     id: `r${i}`, updatedAt: 1, name: `Day ${'ABC'[i]} · ${n}`, exerciseIds: PLANS[n].map((x) => x[0]),
     items: PLANS[n].map(([exerciseId], k) => ({ exerciseId, sets: k === 0 ? 4 : 3, reps: reps[k], ...(k < 3 ? { restSec: k === 0 ? 120 : 90 } : {}), ...(k === 1 ? { note: 'Slow on the way down' } : {}) })),

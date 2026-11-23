@@ -4,7 +4,7 @@ import { FLAMES, MEDALS, RANKS, RULES, SEASON_TIERS, starsForLevel } from '../li
 import { ACHIEVEMENTS, RARITY_STARS, rarityOf, TROPHY_GROUPS, type AchievementDef, type Rarity, type UnlockedAchievement } from '../lib/trophies';
 import { FEATURES } from '../lib/features';
 import { LevelCard, SeasonCard } from '../components/Progression';
-import { careerClock, compare, LEGENDS, timesMoved, type Legend } from '../lib/legends';
+import { careerClock, LEGENDS, timesMoved, type Legend } from '../lib/legends';
 import { careerStory } from '../lib/career';
 import { fmtProgress } from '../lib/today';
 import { fmtDate, fmtKg, fmtNum, plural } from '../lib/util';
@@ -306,7 +306,6 @@ function LegendCard({ legend }: { legend: Legend }) {
   const unlocked = new Map(g.unlocked.map((a) => [a.id, a]));
   const done = challenges.filter((a) => unlocked.has(a.id)).length;
   const moved = timesMoved(g.totalVolume, legend);
-  const lifts = compare(g, legend).rows;
   return (
     <div className="card stack legend">
       <div className="row" style={{ gap: 12 }}>
@@ -336,15 +335,6 @@ function LegendCard({ legend }: { legend: Legend }) {
           );
         })}
       </div>
-      {lifts.map((r) => (
-        <div key={r.metric.key} className="stack" style={{ gap: 5 }}>
-          <div className="row between small">
-            <span className="dim">{r.metric.label}</span>
-            <span className="num bold">{fmtNum(r.mine, 1)} <span className="muted">/ {fmtNum(r.metric.target)} {r.metric.unit}</span></span>
-          </div>
-          <ProgressBar thin pct={r.pct} gold />
-        </div>
-      ))}
       {legend.note && (
         <button className="btn ghost sm" style={{ alignSelf: 'flex-start', minHeight: 0, padding: 0 }} onClick={() => setMore((v) => !v)} aria-expanded={more}>{more ? 'Hide the numbers' : 'Where the numbers come from'}</button>
       )}
@@ -357,7 +347,7 @@ function Legends() {
   return (
     <div className="stack">
       <p className="small dim" style={{ lineHeight: 1.5, padding: '0 4px' }}>
-        You won't out-lift them yet, but you can take on their challenges. Machines count, and each one pays bonus stars.
+        Take on their challenges: machines count, and each one pays bonus stars. For a strength goal of your own, see Progress → Strength.
       </p>
       {LEGENDS.map((l) => <LegendCard key={l.id} legend={l} />)}
       <p className="tiny muted" style={{ padding: '0 4px' }}>Lift numbers are commonly reported bests, and training days are rough estimates, just for fun.</p>

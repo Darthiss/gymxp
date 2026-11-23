@@ -13,10 +13,10 @@ Records, 136 trophies, quarterly season medals, weekly challenges and legend cha
 
 ## What's in the app
 
-- **Workout logger:** log live at the gym or afterwards. It shows your stars as you go and what it takes to beat your last time, and you can change the exercise order when a machine is taken.
+- **Workout logger:** log live at the gym or afterwards. It shows your stars as you go and what it takes to beat your last time, fills in the next weight once you've hit the top of your rep range, keeps warm-ups out of your stats, and lets you change the exercise order when a machine is taken.
 - **Routines:** save your coach's plan with sets and reps, and use it as a checklist at the gym.
-- **Exercise guide:** 117 exercises with photos and a description of how to recognize each machine, plus your own machines with your own photos.
-- **Progress:** history, charts for each exercise, machine medals and bodyweight.
+- **Exercise guide:** 119 exercises with a description of how to recognize each machine, almost all with photos, plus your own machines with your own photos.
+- **Progress:** history, charts for each exercise, machine medals, a "lift someone" strength goal, and your body: weekly-average weight against a lean-gain, cut or maintain pace, tape measurements, and estimated body fat, lean mass and FFMI.
 - **Career:** your level and rank, season medals, your story so far, trophies and legends.
 - **Extras:** import past workouts from memory, a bar and plates calculator, per-machine settings, and optional weather and Apple Watch data.
 

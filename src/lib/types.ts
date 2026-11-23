@@ -18,11 +18,27 @@ export interface Profile extends Rec {
   goalWeightKg: number | null;
   weatherLat?: number | null; // rounded to 0.1° (~10 km), only used for weather lookups
   weatherLon?: number | null;
+  phases?: Phase[]; // gain, cut or maintain, oldest first: the last one is current
+  liftGoal?: LiftGoal; // "Lift <name>": someone you're training to pick up and carry
+}
+
+/** What you're doing with your bodyweight, from a date. Changes since `start` are read from the log. */
+export type PhaseType = 'gain' | 'cut' | 'maintain';
+export interface Phase {
+  type: PhaseType;
+  start: string; // YYYY-MM-DD
+}
+
+/** A person to lift. Kept in your private data, never in the app's code. */
+export interface LiftGoal {
+  name: string;
+  kg: number; // roughly what they weigh
 }
 
 export interface SetEntry {
   kg: number;
   reps: number;
+  warmup?: boolean; // left out of every stat: stars, records, volume and muscle sets
 }
 
 export interface ExerciseLog {
@@ -53,10 +69,16 @@ export interface Session extends Rec {
   estimated?: boolean; // back-filled from memory via Import past workouts
 }
 
+/** A morning weigh-in, with any tape measurements taken that morning. Measurements ride on the
+ *  weigh-in so they're taken under the same conditions, and so older app versions keep them. */
 export interface WeightEntry extends Rec {
   date: string;
   kg: number;
-  waistCm?: number; // optional: measured halfway between the lowest rib and the hip bone
+  waistCm?: number; // at the belly button, relaxed, after a normal breath out
+  neckCm?: number; // just below the Adam's apple
+  armCm?: number; // flexed, at the widest point, same arm every time
+  chestCm?: number; // at nipple height, after a normal breath out
+  hipCm?: number; // widest point of the glutes; only the women's body-fat formula uses it
 }
 
 export interface CustomExercise extends Rec {

@@ -118,7 +118,8 @@ export function sessionTitle(s: Session, exMap: Map<string, Exercise>): string {
   let arms = 0, shoulders = 0, benchmark = 0;
   for (const e of s.exercises) {
     const ex = exMap.get(e.exerciseId);
-    const sets = e.sets.filter((x) => x.reps > 0).length || e.sets.length;
+    const real = e.sets.filter((x) => !x.warmup);
+    const sets = real.filter((x) => x.reps > 0).length || real.length;
     if (ex?.benchmark) { benchmark += sets; continue; }
     const fam = familyOf(ex);
     if (!ex || !fam) continue;

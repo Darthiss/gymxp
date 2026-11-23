@@ -264,6 +264,17 @@ const CURATED = [
   { src: 'Dumbbell_Lunges', primary: ['Quadriceps', 'Glutes'], secondary: ['Adductors'], pattern: 'lunge', name: 'Dumbbell Lunge', group: 'Legs', equipment: 'Dumbbell', loadFactor: 2,
     aliases: ['Lunges', 'DB Lunge'],
     look: 'Standing with a dumbbell in each hand at your sides. Step forward and lower until both knees are bent ~90°, then push back up.' },
+  // One weight held at the chest, so no loadFactor: log the dumbbell or kettlebell itself.
+  { src: 'Goblet_Squat', primary: ['Quadriceps', 'Glutes'], secondary: ['Adductors', 'Abdominals'], pattern: 'squat', name: 'Goblet Squat', group: 'Legs', equipment: 'Dumbbell',
+    aliases: ['Dumbbell Goblet Squat', 'Kettlebell Goblet Squat', 'Sentadilla goblet', 'Sentadilla copa'],
+    look: 'Standing with one dumbbell held upright against your chest, hands cupped under the top end (or a kettlebell by its horns). You squat down between your knees with your chest up, then stand. Log the weight of the one dumbbell.',
+    instructions: [
+      'Hold one dumbbell upright against your chest, both hands cupped under the top end, elbows pointing down. A kettlebell held by the horns works the same way.',
+      'Stand with your feet a little wider than your hips, toes turned slightly out.',
+      'Sit down between your knees, keeping your chest up and the weight touching your chest. Let your knees travel forward over your toes and push them out in line with your feet.',
+      'Go as deep as you can with a flat back and your heels down, then drive through your whole foot to stand up.',
+      'Breathe in and brace before each rep, and breathe out as you stand.',
+    ] },
   { src: 'Stiff-Legged_Dumbbell_Deadlift', primary: ['Hamstrings', 'Glutes'], secondary: ['Lower Back'], pattern: 'hinge', name: 'Dumbbell Romanian Deadlift', group: 'Legs', equipment: 'Dumbbell', loadFactor: 2,
     aliases: ['Dumbbell RDL', 'Stiff-Leg Deadlift', 'DB Deadlift'],
     look: 'Standing with dumbbells in front of your thighs. Push your hips back and lower the dumbbells along your legs with a flat back, then stand up squeezing your glutes.' },
@@ -424,6 +435,18 @@ const CURATED = [
       'Stop before your grip gives out, then set the weights down the way you picked them up: knees bent, back straight.',
       'In Bro, log the weight of one dumbbell and how many seconds you walked. To progress, walk longer or go heavier.',
     ] },
+  // Not in the dataset, so it's written here in full and has no photos. The load is in front of you,
+  // like carrying a person, which a farmer's walk doesn't train.
+  { src: null, id: 'Front_Carry', primary: ['Abdominals', 'Middle Back'], secondary: ['Biceps', 'Front Delts', 'Traps'], pattern: 'carry', name: 'Front Carry', group: 'Core', equipment: 'Free weight', hold: true,
+    aliases: ['Bear Hug Carry', 'Sandbag Carry', 'Goblet Carry', 'Front Rack Carry', 'Zercher Carry', 'Plate Hug Carry', 'Caminata con peso al frente'],
+    look: 'You hold one heavy load in front of your chest, hugged in both arms, and walk tall: a sandbag in a bear hug, one dumbbell held upright at your chest, or a weight plate hugged against you. It trains your upper back, arms and core to hold a load in front, the way you would carry a person. Log the total weight and the seconds you walked.',
+    instructions: [
+      'Pick the load up the safe way: feet close to it, knees bent, back flat, then stand up with it hugged against your chest.',
+      'Keep it high and close, with your elbows tucked. A sandbag or a bag in a bear hug is closest to carrying a person; a dumbbell held upright at your chest is the easiest to find.',
+      "Stand tall without leaning back, brace your abs, and walk with short, steady steps. Breathe behind the brace; don't hold your breath for the whole walk.",
+      'Stop while your posture is still good, and set it down the way you picked it up: knees bent, back flat.',
+      'In Bro, log the total weight you carried and how many seconds you walked. To progress, walk longer, then go heavier.',
+    ] },
   { src: 'Crunches', pattern: 'core', name: 'Crunch', group: 'Core', equipment: 'Bodyweight', bwFactor: 0.2,
     aliases: ['Crunches', 'Abdominal Crunch', 'Floor Crunch'],
     look: 'Lying on your back, knees bent and feet flat. You curl just your head and shoulders up off the floor toward your knees, then lower. Smaller than a sit-up: your lower back stays down.' },
@@ -472,8 +495,10 @@ function edited(steps, edits, id) {
 }
 const out = [];
 for (const c of CURATED) {
-  const src = byId.get(c.src);
+  // `src: null` is an exercise written here in full, with its own id, muscles and instructions, and no photos.
+  const src = c.src === null ? { images: [], primaryMuscles: [], secondaryMuscles: [], instructions: [] } : byId.get(c.src);
   if (!src) throw new Error(`Missing dataset id ${c.src}`);
+  if (c.src === null && !(c.id && c.primary && c.secondary && c.instructions)) throw new Error(`${c.name}: an exercise without src needs id, primary, secondary and instructions`);
   const id = c.id ?? c.src;
   const images = [];
   for (let i = 0; i < src.images.length && i < 2; i++) {
