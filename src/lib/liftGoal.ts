@@ -2,13 +2,15 @@
 // name and weight live in your private data (Profile.liftGoal), never in the app's code.
 // - Deadlift 1.5× your bodyweight: lifting from the floor with a flat back.
 // - Goblet squat with half their weight for 10: squatting down and standing up with a load in front.
-// - Front carry with their full weight for 20 seconds: holding someone in your arms and walking.
+// - Front carry with their full weight for 20 seconds: holding someone in your arms and walking. A
+//   goblet carry (one dumbbell at the chest) is the same pattern, so it counts too.
 import { e1rm, workingSets, type GameState } from './engine';
 import { DEADLIFT } from './trophies';
 import type { LiftGoal } from './types';
 
 export const GOBLET = 'Goblet_Squat';
 export const FRONT_CARRY = 'Front_Carry';
+export const GOBLET_CARRY = 'Goblet_Carry';
 
 export const DEADLIFT_XBW = 1.5;
 export const GOBLET_SHARE = 0.5; // of their weight
@@ -58,14 +60,15 @@ export function liftBenchmarks(g: GameState, goal: LiftGoal, bodyweight: number)
     done: gDone,
   };
 
-  // Front carry: weight and time both count, up to their weight for 20 s.
-  const cSets = (g.history.get(FRONT_CARRY) ?? []).flatMap((h) => workingSets(h.sets));
+  // Front carry: weight and time both count, up to their weight for 20 s. Front and goblet carries both count.
+  type CarrySet = { kg: number; reps: number; id: string };
+  const cSets: CarrySet[] = [FRONT_CARRY, GOBLET_CARRY].flatMap((id) => (g.history.get(id) ?? []).flatMap((h) => workingSets(h.sets).map((s) => ({ ...s, id }))));
   const score = (s: { kg: number; reps: number }) => Math.min(1, s.kg / goal.kg) * Math.min(1, s.reps / CARRY_SECONDS);
-  const cTop = cSets.reduce<{ kg: number; reps: number } | null>((a, s) => (!a || score(s) > score(a) ? s : a), null);
+  const cTop = cSets.reduce<CarrySet | null>((a, s) => (!a || score(s) > score(a) ? s : a), null);
   const carry: Benchmark = {
-    id: 'carry', exerciseId: FRONT_CARRY, icon: '🤲', title: 'Front carry',
+    id: 'carry', exerciseId: cTop?.id ?? FRONT_CARRY, icon: '🤲', title: 'Front carry',
     target: `${r1(goal.kg)} kg for ${CARRY_SECONDS} s, ${goal.name}'s weight`,
-    best: cTop ? `${cTop.kg} kg · ${cTop.reps} s` : null,
+    best: cTop ? `${cTop.kg} kg · ${cTop.reps} s${cTop.id === GOBLET_CARRY ? ' (goblet carry)' : ''}` : null,
     pct: cTop ? score(cTop) : 0,
     done: !!cTop && score(cTop) >= 1,
   };

@@ -3,7 +3,7 @@ import {
   beatsNeeded, compareToLast, computeGame, flameFor, goalAt, levelForStars, levelInfo, medalOf, perfectWeekStars, rankFor, RANKS, RULES, seasonOf, starsForLevel, withWeeklyGoal,
 } from './engine';
 import { ACHIEVEMENTS, RARITY_STARS, rarityOf, TROPHY_GROUPS } from './trophies';
-import { allExercises, BUILTIN, exerciseMap, fmtBeat, fmtPr, fmtSet, toBeatText } from './exercises';
+import { allExercises, BUILTIN, exerciseMap, fmtBeat, fmtPr, fmtSet, searchExercises, toBeatText } from './exercises';
 import { careerClock, LEGENDS, timesMoved } from './legends';
 import { bigMoments, careerStory } from './career';
 import { gameFor } from './game';
@@ -1915,11 +1915,25 @@ describe('lift goal', () => {
     expect(liftGoalPct(liftBenchmarks(game(d), goal, 0))).toBeCloseTo(1 / 3, 5);
   });
 
+  it('counts a goblet carry toward the front carry, whichever is better', () => {
+    const d = emptyData();
+    add(d, '2026-03-02', [{ exerciseId: 'Front_Carry', sets: [{ kg: 20, reps: 30 }] }]);
+    add(d, '2026-03-04', [{ exerciseId: 'Goblet_Carry', sets: [{ kg: 40, reps: 10, warmup: true }, { kg: 32, reps: 40 }] }]);
+    const b = by(d).carry;
+    expect(b.pct).toBeCloseTo(32 / 55, 5); // the warm-up doesn't count
+    expect(b.best).toBe('32 kg · 40 s (goblet carry)');
+    expect(b.exerciseId).toBe('Goblet_Carry');
+  });
+
   it('has its exercises in the catalog', () => {
     const exMap = exerciseMap(emptyData());
     expect(exMap.get('Front_Carry')).toMatchObject({ hold: true, pattern: 'carry', group: 'Core', images: [] });
     expect(exMap.get('Front_Carry')!.loadFactor).toBeUndefined(); // one load, logged as the total
     expect(exMap.get('Goblet_Squat')).toMatchObject({ pattern: 'squat', group: 'Legs', primaryMuscles: ['Quadriceps', 'Glutes'] });
     expect(exMap.get('Goblet_Squat')!.loadFactor).toBeUndefined();
+    expect(exMap.get('Goblet_Carry')).toMatchObject({ hold: true, pattern: 'carry', group: 'Core', equipment: 'Dumbbell', images: [] });
+    expect(exMap.get('Goblet_Carry')!.loadFactor).toBeUndefined(); // one dumbbell, logged as itself
+    expect(searchExercises(allExercises(emptyData()), 'mancuerna al pecho')[0].id).toBe('Goblet_Carry');
+    expect(searchExercises(allExercises(emptyData()), 'goblet carry')[0].id).toBe('Goblet_Carry');
   });
 });

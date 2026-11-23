@@ -3203,11 +3203,11 @@
   "aliases": [
    "Bear Hug Carry",
    "Sandbag Carry",
-   "Goblet Carry",
    "Front Rack Carry",
    "Zercher Carry",
    "Plate Hug Carry",
-   "Caminata con peso al frente"
+   "Caminata con peso al frente",
+   "Caminata abrazando la bolsa"
   ],
   "group": "Core",
   "equipment": "Free weight",
@@ -3220,13 +3220,46 @@
    "Front Delts",
    "Traps"
   ],
-  "look": "You hold one heavy load in front of your chest, hugged in both arms, and walk tall: a sandbag in a bear hug, one dumbbell held upright at your chest, or a weight plate hugged against you. It trains your upper back, arms and core to hold a load in front, the way you would carry a person. Log the total weight and the seconds you walked.",
+  "look": "You hold one heavy load in front of your chest, hugged in both arms, and walk tall: a sandbag in a bear hug, a weight plate hugged against you, or two kettlebells resting on your forearms. It trains your upper back, arms and core to hold a load in front, the way you would carry a person. Log the total weight and the seconds you walked. With one dumbbell at your chest, log a Goblet Carry instead.",
   "instructions": [
    "Pick the load up the safe way: feet close to it, knees bent, back flat, then stand up with it hugged against your chest.",
-   "Keep it high and close, with your elbows tucked. A sandbag or a bag in a bear hug is closest to carrying a person; a dumbbell held upright at your chest is the easiest to find.",
+   "Keep it high and close, with your elbows tucked. A sandbag or a bag in a bear hug is closest to carrying a person.",
    "Stand tall without leaning back, brace your abs, and walk with short, steady steps. Breathe behind the brace; don't hold your breath for the whole walk.",
    "Stop while your posture is still good, and set it down the way you picked it up: knees bent, back flat.",
    "In Bro, log the total weight you carried and how many seconds you walked. To progress, walk longer, then go heavier."
+  ],
+  "images": [],
+  "hold": true,
+  "pattern": "carry"
+ },
+ {
+  "id": "Goblet_Carry",
+  "name": "Goblet Carry",
+  "aliases": [
+   "Goblet Walk",
+   "Dumbbell Goblet Carry",
+   "Kettlebell Goblet Carry",
+   "Caminata con mancuerna al pecho",
+   "Caminata goblet",
+   "Paseo goblet"
+  ],
+  "group": "Core",
+  "equipment": "Dumbbell",
+  "primaryMuscles": [
+   "Abdominals"
+  ],
+  "secondaryMuscles": [
+   "Middle Back",
+   "Front Delts",
+   "Biceps"
+  ],
+  "look": "You walk tall holding one dumbbell upright against your chest, hands cupped under the top end: the same hold as a goblet squat (or a kettlebell by its horns). It trains your core and upper back to stay upright with a load in front of you. Log the weight of the one dumbbell and the seconds you walked.",
+  "instructions": [
+   "Pick the dumbbell up from the floor with your knees bent and back flat, or take it from the rack, and stand it upright against your chest.",
+   "Cup both hands under the top end, elbows pointing down and close to your body. Keep the dumbbell touching your chest the whole walk.",
+   "Stand tall without leaning back, ribs down and abs braced, and walk with short, steady steps. Breathe behind the brace; don't hold your breath for the whole walk.",
+   "Stop while your posture is still good, then set the dumbbell down with your knees bent and back flat.",
+   "In Bro, log the weight of the dumbbell and how many seconds you walked. To progress, walk longer, then pick the next dumbbell."
   ],
   "images": [],
   "hold": true,
