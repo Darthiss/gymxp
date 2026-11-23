@@ -39,7 +39,7 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 **Phase A: Private accounts** (next)
 - [x] **A.1** Owner: create the two Supabase projects · S · *[owner's guide](docs/ACCOUNTS.md)*
 - [x] **A.2** A seam for sync, with GitHub still behind it · M
-- [ ] **A.3** End-to-end encryption and the recovery key · M
+- [x] **A.3** End-to-end encryption and the recovery key · M
 - [ ] **A.4** Sign-up, sign-in, sync and photos on Supabase · L
 - [ ] **A.5** Nightly backup, privacy page and account deletion · S
 - [ ] **A.6** Move the owner over, then retire the GitHub path · S
@@ -184,8 +184,8 @@ Put a `Remote` interface between `Store` and the network: load the data with its
 - **The data key:** one random AES-256-GCM key per person seals everything uploaded, the data and photos alike.
 - **From the password,** PBKDF2 (salted with the email, as Bitwarden does, so it's known before sign-in) and then HKDF derive two separate things: the login secret Supabase checks, and the key that wraps the data key. Supabase never receives anything that can open the data.
 - **The recovery key** is random, shown once at sign-up to save in iPhone's Passwords app, and wraps the data key a second time. Both wrapped copies are stored with the account.
-- **On the phone,** the data key is kept as a non-extractable key in IndexedDB, so the app opens straight away without typing anything. Signing out deletes it and the cache.
-- **Changes:** a new password or email, while signed in, rewraps the key. A forgotten password takes an emailed code plus the recovery key. Without both, nobody can open the data, and sign-up says so plainly.
+- **On the phone,** the data key is kept as a non-extractable key in IndexedDB (wired up in A.4), so the app opens straight away without typing anything. Signing out deletes it and the cache.
+- **Changes:** a new password or email rewraps the key, after typing the current password, since the key on the phone can never be read back out. A forgotten password takes an emailed code plus the recovery key. Without both, nobody can open the data, and sign-up says so plainly.
 - **The PIN vault goes.** An optional app lock can come back later if anyone wants it.
 
 ### A.4 Sign-up, sign-in, sync and photos on Supabase · L

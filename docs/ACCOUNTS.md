@@ -32,7 +32,17 @@ Only **Forgot password** needs this. The reset email has to carry a code typed i
    - **Sender email:** the new Gmail. **Sender name:** Bro.
    - **Host:** `smtp.gmail.com`. **Port:** `465`.
    - **Username:** the new Gmail. **Password:** the app password.
-4. Still in **Emails**, open the **Reset password** template and paste the text that comes with A.4. It shows the code instead of a link.
+4. Still in **Emails**, open the **Reset password** template. It shows a code instead of a link:
+   - **Subject:** `Your Bro reset code`
+   - **Body:**
+     ```html
+     <h2>Reset your Bro password</h2>
+     <p>Type this code in the app:</p>
+     <p style="font-size:28px;font-weight:700;letter-spacing:4px">{{ .Token }}</p>
+     <p>You'll also need your recovery key. The code works for one hour.</p>
+     <p>If you didn't ask for this, ignore this email. Your account is safe.</p>
+     ```
+5. Save. There's nothing to test yet: the reset screen arrives with A.4, and it gets tried on `Bro test` first.
 
 ## 3. With A.4: database setup and the guest list
 

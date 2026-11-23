@@ -26,7 +26,8 @@ import { checkRotation, planVolume } from './routineCheck';
 import { bmiApplies, goalAllowed, goalReached, hardHeartRate, minGoalKg, trendKg, whtrLabel, whtrOf } from './body';
 import { e1rm } from './engine';
 import { Store } from './store';
-import { AuthError, memoryRemote } from './remote';
+import { AuthError, ConflictError, memoryRemote } from './remote';
+import { createAccountKeys, isRecoveryKey, newRecoveryKey, openBytes, openWithPassword, openWithRecovery, passwordKeys, replaceRecoveryKey, rewrapPassword, sealBytes, sealedRemote, WrongKeyError } from './e2e';
 
 let n = 0;
 const sess = (date: string, exercises: Session['exercises'], extra: Partial<Session> = {}): Session => ({
@@ -2172,6 +2173,25 @@ describe('sync through a Remote', () => {
     store.dispose();
   });
 
+  it('syncs and merges the same way when everything is sealed', async () => {
+    const { dataKey } = await createAccountKeys('sam@example.com', 'a long passphrase', 1000);
+    const inner = memoryRemote();
+    const store = await opened(sealedRemote(inner, dataKey) as ReturnType<typeof memoryRemote>);
+    store.update((d) => void d.weights.push(weighIn('a', 80)), 'Weigh-in');
+    await store.syncNow();
+    expect(inner.text).not.toContain('weights');
+    // Another device, with the same key, saves in between.
+    const other = sealedRemote(inner, dataKey);
+    const now = await other.load();
+    const theirs = JSON.parse(now!.text);
+    theirs.weights.push(weighIn('phone', 79));
+    await other.save(JSON.stringify(theirs), now!.version, 'Weigh-in');
+    store.update((d) => void d.weights.push(weighIn('laptop', 82)), 'Weigh-in');
+    await store.syncNow();
+    expect(kgs((await other.load())!.text)).toEqual([79, 80, 82]);
+    store.dispose();
+  });
+
   it('reads photos through the remote', async () => {
     const remote = memoryRemote(withWeights());
     const store = await opened(remote);
@@ -2179,5 +2199,109 @@ describe('sync through a Remote', () => {
     expect(await store.photoUrl('photos/a.jpg')).toMatch(/^blob:/);
     await expect(store.photoUrl('photos/none.jpg')).rejects.toThrow('Photo not found');
     store.dispose();
+  });
+});
+
+describe('end-to-end encryption', () => {
+  const IT = 1000; // PBKDF2 rounds: the real 600,000 would make these slow
+  const email = 'sam@example.com';
+  const pw = 'a long passphrase';
+  const bytes = (t: string) => new TextEncoder().encode(t);
+  const text = (b: Uint8Array) => new TextDecoder().decode(b);
+  async function opens(key: CryptoKey, sealed: Uint8Array<ArrayBuffer>) {
+    return text(await openBytes(key, sealed, 'data'));
+  }
+
+  it('turns a password into a login and a wrap key, salted by the email', async () => {
+    const a = await passwordKeys(' Sam@Example.com', pw, IT);
+    const b = await passwordKeys('sam@example.com', pw, IT);
+    const c = await passwordKeys('alex@example.com', pw, IT);
+    expect(a.login).toBe(b.login);
+    expect(a.login).not.toBe(c.login);
+    expect(a.login).not.toBe((await passwordKeys(email, pw + '!', IT)).login);
+    expect(a.wrap.extractable).toBe(false);
+  });
+
+  it('opens the data key with the password or the recovery key, and nothing else', async () => {
+    const acc = await createAccountKeys(email, pw, IT);
+    expect(acc.dataKey.extractable).toBe(false);
+    expect(acc.login).toBe((await passwordKeys(email, pw, IT)).login);
+    const sealed = await sealBytes(acc.dataKey, bytes('80 kg'), 'data');
+    expect(await opens(await openWithPassword(acc.bundle, email, pw), sealed)).toBe('80 kg');
+    expect(await opens(await openWithRecovery(acc.bundle, acc.recoveryKey), sealed)).toBe('80 kg');
+    await expect(openWithPassword(acc.bundle, email, 'a long passphrasE')).rejects.toThrow(WrongKeyError);
+    await expect(openWithPassword(acc.bundle, 'alex@example.com', pw)).rejects.toThrow(WrongKeyError);
+    await expect(openWithRecovery(acc.bundle, newRecoveryKey())).rejects.toThrow(WrongKeyError);
+    expect(JSON.stringify(acc.bundle)).not.toContain(acc.login);
+  });
+
+  it('formats recovery keys and reads them back however they were saved', async () => {
+    const key = newRecoveryKey();
+    expect(key).toMatch(/^([0-9A-HJKMNP-TV-Z]{4}-){7}[0-9A-HJKMNP-TV-Z]{4}$/);
+    expect(newRecoveryKey()).not.toBe(key);
+    expect(isRecoveryKey(key.toLowerCase().replace(/-/g, ' '))).toBe(true);
+    expect(isRecoveryKey(key.replace(/0/g, 'O').replace(/1/g, 'l'))).toBe(true);
+    expect(isRecoveryKey('ABCD-EFGH')).toBe(false);
+    expect(isRecoveryKey(key.replace(/.$/, 'U'))).toBe(false);
+    const acc = await createAccountKeys(email, pw, IT);
+    const typed = acc.recoveryKey.toLowerCase().replace(/-/g, '').replace(/0/g, 'o');
+    await expect(openWithRecovery(acc.bundle, typed)).resolves.toBeDefined();
+  });
+
+  it('a new password keeps the data and the recovery key', async () => {
+    const acc = await createAccountKeys(email, pw, IT);
+    const sealed = await sealBytes(acc.dataKey, bytes('80 kg'), 'data');
+    const next = await rewrapPassword(acc.bundle, { email, password: pw }, { email, password: 'another passphrase' }, IT);
+    expect(next.login).toBe((await passwordKeys(email, 'another passphrase', IT)).login);
+    await expect(openWithPassword(next.bundle, email, pw)).rejects.toThrow(WrongKeyError);
+    expect(await opens(await openWithPassword(next.bundle, email, 'another passphrase'), sealed)).toBe('80 kg');
+    expect(await opens(await openWithRecovery(next.bundle, acc.recoveryKey), sealed)).toBe('80 kg');
+    await expect(rewrapPassword(acc.bundle, { email, password: 'guess' }, { email, password: 'x' }, IT)).rejects.toThrow(WrongKeyError);
+  });
+
+  it('a new email wraps the key again under the new salt', async () => {
+    const acc = await createAccountKeys(email, pw, IT);
+    const next = await rewrapPassword(acc.bundle, { email, password: pw }, { email: 'sam@new.com', password: pw }, IT);
+    await expect(openWithPassword(next.bundle, 'sam@new.com', pw)).resolves.toBeDefined();
+    await expect(openWithPassword(next.bundle, email, pw)).rejects.toThrow(WrongKeyError);
+  });
+
+  it('a forgotten password is reset with the recovery key', async () => {
+    const acc = await createAccountKeys(email, pw, IT);
+    const sealed = await sealBytes(acc.dataKey, bytes('80 kg'), 'data');
+    const next = await rewrapPassword(acc.bundle, { recoveryKey: acc.recoveryKey }, { email, password: 'a fresh passphrase' }, IT);
+    expect(await opens(await openWithPassword(next.bundle, email, 'a fresh passphrase'), sealed)).toBe('80 kg');
+    await expect(rewrapPassword(acc.bundle, { recoveryKey: newRecoveryKey() }, { email, password: 'x' }, IT)).rejects.toThrow(WrongKeyError);
+  });
+
+  it('a new recovery key retires the old one', async () => {
+    const acc = await createAccountKeys(email, pw, IT);
+    const next = await replaceRecoveryKey(acc.bundle, email, pw);
+    expect(next.recoveryKey).not.toBe(acc.recoveryKey);
+    await expect(openWithRecovery(next.bundle, acc.recoveryKey)).rejects.toThrow(WrongKeyError);
+    await expect(openWithRecovery(next.bundle, next.recoveryKey)).resolves.toBeDefined();
+    await expect(openWithPassword(next.bundle, email, pw)).resolves.toBeDefined();
+  });
+
+  it('a sealed remote stores nothing readable, and refuses the wrong key or a swapped file', async () => {
+    const { dataKey } = await createAccountKeys(email, pw, IT);
+    const inner = memoryRemote();
+    const remote = sealedRemote(inner, dataKey);
+    const v1 = await remote.save('{"bodyweight":"80 kg"}', undefined, 'Sync');
+    expect(inner.text).not.toContain('80 kg');
+    expect((await remote.load())!.text).toBe('{"bodyweight":"80 kg"}');
+    await expect(remote.save('{}', undefined, 'Sync')).rejects.toThrow(ConflictError);
+    await remote.save('{"bodyweight":"81 kg"}', v1, 'Sync');
+
+    await remote.putFile('photos/a.jpg', new Blob(['a photo of the machine']));
+    const stored = new Uint8Array(await (await inner.getFile('photos/a.jpg'))!.arrayBuffer());
+    expect(text(stored)).not.toContain('machine');
+    expect(await (await remote.getFile('photos/a.jpg'))!.text()).toBe('a photo of the machine');
+    expect(await remote.getFile('photos/none.jpg')).toBeNull();
+
+    const other = (await createAccountKeys('alex@example.com', pw, IT)).dataKey;
+    await expect(sealedRemote(inner, other).load()).rejects.toThrow(WrongKeyError);
+    await inner.putFile('photos/b.jpg', (await inner.getFile('photos/a.jpg'))!);
+    await expect(remote.getFile('photos/b.jpg')).rejects.toThrow(WrongKeyError);
   });
 });
