@@ -46,11 +46,14 @@ export function LiftGoalCard({ goal }: { goal: LiftGoal }) {
           </div>
           <span className="num bold small" style={{ textAlign: 'right' }}>{pctText(b.pct)}</span>
           <ProgressBar thin pct={b.pct} gold={b.done} />
-          <div className="tiny muted" style={{ gridColumn: '2 / 4' }}>{b.best ? `Best: ${b.best}` : 'Not logged yet · tap for how to do it'}</div>
+          <div className="tiny muted" style={{ gridColumn: '2 / 4' }}>
+            {b.best ? `Best: ${b.best}` : 'Not logged yet · tap for how to do it'}
+            {!b.done && b.also.length > 0 && ` · also counts: ${b.also.join(', ')}`}
+          </div>
         </a>
       ))}
       <p className="tiny muted" style={{ lineHeight: 1.45 }}>
-        The deadlift builds lifting from the floor with a flat back, the goblet squat getting down and up with weight in front of you, and the front carry holding someone in your arms. When you lift a person for real, bend your knees, keep them close and stand up with your legs.
+        The deadlift builds lifting from the floor with a flat back, the squat getting down and up with weight in front of you, and the front carry holding someone in your arms. Each counts whichever of its exercises is closest. The leg press, farmer's walk and kettlebell deadlift help, but don't count: the machine balances for you, the farmer's walk hangs the weight at your sides, and kettlebells stop short of the target. When you lift a person for real, bend your knees, keep them close and stand up with your legs.
       </p>
       {edit && <LiftGoalSheet goal={goal} onClose={() => setEdit(false)} />}
     </div>

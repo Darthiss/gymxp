@@ -357,6 +357,17 @@ const CURATED = [
   { src: 'Stiff-Legged_Dumbbell_Deadlift', primary: ['Hamstrings', 'Glutes'], secondary: ['Lower Back'], pattern: 'hinge', name: 'Dumbbell Romanian Deadlift', group: 'Legs', equipment: 'Dumbbell', loadFactor: 2,
     aliases: ['Dumbbell RDL', 'Stiff-Leg Deadlift', 'DB Deadlift'],
     look: 'Standing with dumbbells in front of your thighs. Push your hips back and lower the dumbbells along your legs with a flat back, then stand up squeezing your glutes.' },
+  // Not in the dataset (it only has the one-legged and clean versions), so written here in full.
+  { src: null, id: 'Kettlebell_Deadlift', primary: ['Glutes', 'Hamstrings'], secondary: ['Quadriceps', 'Lower Back', 'Forearms'], pattern: 'hinge', name: 'Kettlebell Deadlift', group: 'Legs', equipment: 'Kettlebell',
+    aliases: ['Single Kettlebell Deadlift', 'KB Deadlift', 'Kettlebell Sumo Deadlift', 'Peso muerto con kettlebell', 'Peso muerto con pesa rusa'],
+    look: 'One kettlebell on the floor between your feet, held by the handle with both hands. You push your hips back to reach it with a flat back, then stand up tall. The first deadlift most people learn. Log the one kettlebell.',
+    instructions: [
+      'Stand with your feet about hip-width apart, the kettlebell on the floor between them, its handle in line with your ankles.',
+      'Push your hips back and bend your knees just enough to grip the handle with both hands. Shins close to vertical, back flat, chest proud, eyes a little ahead on the floor.',
+      'Pull your shoulders down and back, as if bending the handle, and take a breath into your belly.',
+      'Drive through your whole foot and stand up by bringing your hips forward, until you are tall with your glutes squeezed. Don\'t lean back at the top.',
+      'Lower it the same way, hips first, keeping your back flat, and set it down between your feet. Touch the floor lightly each rep.',
+    ] },
 
   // ---------- Barbells (free bar + plates) ----------
   // Weight is the TOTAL: bar + all plates. barKg = typical empty bar, used by the plate calculator.

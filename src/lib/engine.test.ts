@@ -14,7 +14,7 @@ import {
   bodyFatBand, compositionAt, currentKg, currentPhase, ffmiLabel, FFMI_MARKS, ffmiOf, gainQuality, kgNear, liveWeights, measureNear, measuresFor, monthlyRate,
   navyBodyFat, phaseSummary, rateBand, weeklyAverages, withPhase,
 } from './body';
-import { CARRY_SECONDS, gobletTarget, liftBenchmarks, liftGoalPct } from './liftGoal';
+import { CARRY_SECONDS, gobletTarget, liftBenchmarks, liftGoalPct, squatTarget } from './liftGoal';
 import type { WeightEntry } from './types';
 import { mergeData } from './merge';
 import { addDays, parseDuration, parseWatchText, parseWorkoutLine, weekKey } from './util';
@@ -1931,13 +1931,18 @@ describe('lift goal', () => {
     expect(gobletTarget(50)).toBe(26);
     expect(gobletTarget(60)).toBe(30);
     expect(gobletTarget(10)).toBe(8);
+    expect(squatTarget(55)).toBe(55);
+    expect(squatTarget(57)).toBe(57.5);
+    expect(squatTarget(51)).toBe(50);
   });
 
   it('starts at zero and needs a weigh-in for the deadlift target', () => {
     const b = by(emptyData());
     expect([b.deadlift.pct, b.goblet.pct, b.carry.pct]).toEqual([0, 0, 0]);
     expect(b.deadlift.target).toContain('log a weigh-in');
-    expect(b.goblet.target).toBe('28 kg × 10, half of Sam\'s weight');
+    expect(b.goblet.target).toBe('Goblet squat 28 kg × 10, half of Sam\'s weight');
+    expect(b.goblet.also).toEqual(['back squat']);
+    expect(b.deadlift.also).toEqual(['sumo deadlift', 'Romanian deadlift']);
     expect(b.carry.best).toBeNull();
   });
 
@@ -1976,14 +1981,59 @@ describe('lift goal', () => {
     expect(liftGoalPct(liftBenchmarks(game(d), goal, 0))).toBeCloseTo(1 / 3, 5);
   });
 
-  it('counts a goblet carry toward the front carry, whichever is better', () => {
+  it('counts a goblet carry with half their weight for 40 s, whichever is closer', () => {
     const d = emptyData();
     add(d, '2026-03-02', [{ exerciseId: 'Front_Carry', sets: [{ kg: 20, reps: 30 }] }]);
-    add(d, '2026-03-04', [{ exerciseId: 'Goblet_Carry', sets: [{ kg: 40, reps: 10, warmup: true }, { kg: 32, reps: 40 }] }]);
+    add(d, '2026-03-04', [{ exerciseId: 'Goblet_Carry', sets: [{ kg: 40, reps: 10, warmup: true }, { kg: 20, reps: 40 }] }]);
     const b = by(d).carry;
-    expect(b.pct).toBeCloseTo(32 / 55, 5); // the warm-up doesn't count
-    expect(b.best).toBe('32 kg · 40 s (goblet carry)');
+    expect(b.pct).toBeCloseTo(20 / 28, 5); // the warm-up doesn't count; the front carry is only 20/55
+    expect(b.best).toBe('20 kg · 40 s (goblet carry)');
+    expect(b.target).toBe('Goblet carry 28 kg for 40 s, half of Sam\'s weight');
     expect(b.exerciseId).toBe('Goblet_Carry');
+    add(d, '2026-03-06', [{ exerciseId: 'Goblet_Carry', sets: [{ kg: 28, reps: 45 }] }]);
+    expect(by(d).carry).toMatchObject({ done: true, pct: 1 });
+  });
+
+  it('counts a Romanian deadlift at 1.1× bodyweight, and a sumo deadlift like a deadlift', () => {
+    const d = emptyData();
+    weighed(d, 66); // deadlift target 99 kg, RDL 72.6 kg
+    add(d, '2026-03-02', [ex('Barbell_Deadlift', 60, 5), ex('Romanian_Deadlift', 50, 10)]);
+    let b = by(d).deadlift;
+    expect(b.exerciseId).toBe('Romanian_Deadlift'); // 66.7 of 72.6 beats 70 of 99
+    expect(b.pct).toBeCloseTo((50 * (1 + 10 / 30)) / 72.6, 5);
+    expect(b.target).toBe('Romanian deadlift 72.6 kg, 1.1× your bodyweight');
+    expect(b.best).toBe('66.7 kg estimated 1RM (Romanian deadlift)');
+    expect(b.also).toEqual(['deadlift', 'sumo deadlift']);
+    add(d, '2026-03-09', [ex('Romanian_Deadlift', 55, 10)]);
+    expect(by(d).deadlift).toMatchObject({ done: true, pct: 1 });
+    const e = emptyData();
+    weighed(e, 66);
+    add(e, '2026-03-02', [ex('Sumo_Deadlift', 100, 1)]);
+    expect(by(e).deadlift).toMatchObject({ done: true, exerciseId: 'Sumo_Deadlift' });
+  });
+
+  it('counts a back squat with their weight for 5', () => {
+    const d = emptyData();
+    add(d, '2026-03-02', [ex('Barbell_Squat', 50, 5)]);
+    let b = by(d).goblet;
+    expect(b.title).toBe('Squat');
+    expect(b.exerciseId).toBe('Barbell_Squat');
+    expect(b.target).toBe('Back squat 55 kg × 5, Sam\'s weight');
+    expect(b.pct).toBeCloseTo(50 / 55, 5);
+    expect(b.best).toBe('50 kg × 5 (back squat)');
+    add(d, '2026-03-04', [ex('Barbell_Squat', 60, 4)]);
+    expect(by(d).goblet.done).toBe(false); // heavier, but not 5 reps
+    add(d, '2026-03-06', [ex('Barbell_Squat', 55, 5)]);
+    expect(by(d).goblet).toMatchObject({ done: true, pct: 1 });
+  });
+
+  it("doesn't count the leg press, farmer's walk or kettlebell deadlift", () => {
+    const d = emptyData();
+    weighed(d, 66);
+    add(d, '2026-03-02', [ex('Leg_Press', 200, 10), { exerciseId: 'Farmers_Walk', sets: [{ kg: 40, reps: 60 }] }, ex('Kettlebell_Deadlift', 48, 10)]);
+    const b = by(d);
+    expect([b.deadlift.pct, b.goblet.pct, b.carry.pct]).toEqual([0, 0, 0]);
+    expect([b.deadlift.best, b.goblet.best, b.carry.best]).toEqual([null, null, null]);
   });
 
   it('has its exercises in the catalog', () => {
@@ -1996,6 +2046,11 @@ describe('lift goal', () => {
     expect(exMap.get('Goblet_Carry')!.loadFactor).toBeUndefined(); // one dumbbell, logged as itself
     expect(searchExercises(allExercises(emptyData()), 'mancuerna al pecho')[0].id).toBe('Goblet_Carry');
     expect(searchExercises(allExercises(emptyData()), 'goblet carry')[0].id).toBe('Goblet_Carry');
+    expect(exMap.get('Kettlebell_Deadlift')).toMatchObject({ pattern: 'hinge', group: 'Legs', equipment: 'Kettlebell', primaryMuscles: ['Glutes', 'Hamstrings'], images: [] });
+    expect(exMap.get('Kettlebell_Deadlift')!.loadFactor).toBeUndefined(); // one kettlebell, logged as itself
+    for (const q of ['kettlebell deadlift', 'single kettlebell deadlift', 'peso muerto con kettlebell', 'peso muerto con pesa rusa']) {
+      expect(searchExercises(allExercises(emptyData()), q)[0].id).toBe('Kettlebell_Deadlift');
+    }
   });
 });
 

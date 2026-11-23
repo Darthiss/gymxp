@@ -2452,6 +2452,38 @@
   "pattern": "hinge"
  },
  {
+  "id": "Kettlebell_Deadlift",
+  "name": "Kettlebell Deadlift",
+  "aliases": [
+   "Single Kettlebell Deadlift",
+   "KB Deadlift",
+   "Kettlebell Sumo Deadlift",
+   "Peso muerto con kettlebell",
+   "Peso muerto con pesa rusa"
+  ],
+  "group": "Legs",
+  "equipment": "Kettlebell",
+  "primaryMuscles": [
+   "Glutes",
+   "Hamstrings"
+  ],
+  "secondaryMuscles": [
+   "Quadriceps",
+   "Lower Back",
+   "Forearms"
+  ],
+  "look": "One kettlebell on the floor between your feet, held by the handle with both hands. You push your hips back to reach it with a flat back, then stand up tall. The first deadlift most people learn. Log the one kettlebell.",
+  "instructions": [
+   "Stand with your feet about hip-width apart, the kettlebell on the floor between them, its handle in line with your ankles.",
+   "Push your hips back and bend your knees just enough to grip the handle with both hands. Shins close to vertical, back flat, chest proud, eyes a little ahead on the floor.",
+   "Pull your shoulders down and back, as if bending the handle, and take a breath into your belly.",
+   "Drive through your whole foot and stand up by bringing your hips forward, until you are tall with your glutes squeezed. Don't lean back at the top.",
+   "Lower it the same way, hips first, keeping your back flat, and set it down between your feet. Touch the floor lightly each rep."
+  ],
+  "images": [],
+  "pattern": "hinge"
+ },
+ {
   "id": "Barbell_Bench_Press_-_Medium_Grip",
   "name": "Barbell Bench Press",
   "aliases": [
