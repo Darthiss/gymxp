@@ -143,7 +143,7 @@ export function Log({ route }: { route: Route }) {
   const [info, setInfo] = useState<string | null>(null);
   const [plates, setPlates] = useState<number | null>(null); // index of exercise whose plate calculator is open
   const [celebrate, setCelebrate] = useState<{ result: SessionResult; session: Session; before: GameState; after: GameState; edited: boolean } | null>(null);
-  const [reordering, setReordering] = useState(false);
+  const [reordering, setReordering] = useState<string | false>(false); // '' from the top, or the exercise whose card opened it
   const [showWatch, setShowWatch] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const loaded = useRef(!!editing);
@@ -360,7 +360,7 @@ export function Log({ route }: { route: Route }) {
 
       {draft.exercises.length > 1 && (
         <div className="row" style={{ justifyContent: 'flex-end', marginBottom: -6 }}>
-          <button className="btn ghost sm" style={{ minHeight: 0, padding: '2px 4px' }} onClick={() => setReordering(true)}><Icon name="sliders" size={14} /> Reorder</button>
+          <button className="chip" onClick={() => setReordering('')}><Icon name="updown" size={14} /> Change order</button>
         </div>
       )}
 
@@ -383,6 +383,9 @@ export function Log({ route }: { route: Route }) {
                 </div>
               </button>
               {e.target && <span className="tag accent num" title="Your routine's target">{fmtTarget(e.target)}</span>}
+              {draft.exercises.length > 1 && (
+                <button className="icon-btn plain" aria-label={`Change the order of ${ex?.name ?? 'this exercise'}`} onClick={() => setReordering(e.exerciseId)}><Icon name="updown" size={17} /></button>
+              )}
               <button className="icon-btn plain" aria-label="Remove exercise" onClick={() => set((d) => ({ ...d, exercises: d.exercises.filter((_, j) => j !== i) }))}><Icon name="x" size={17} stroke={2.4} /></button>
             </div>
 
@@ -538,7 +541,7 @@ export function Log({ route }: { route: Route }) {
           <ExerciseInfo ex={infoEx} />
         </Sheet>
       )}
-      {reordering && <ReorderSheet ids={draft.exercises.map((e) => e.exerciseId)} exMap={exMap} onMove={(from, to) => set((d) => ({ ...d, exercises: moveTo(d.exercises, from, to) }))} onClose={() => setReordering(false)} />}
+      {reordering !== false && <ReorderSheet ids={draft.exercises.map((e) => e.exerciseId)} exMap={exMap} focus={reordering || undefined} onMove={(from, to) => set((d) => ({ ...d, exercises: moveTo(d.exercises, from, to) }))} onClose={() => setReordering(false)} />}
       {celebrate && <Celebration {...celebrate} exMap={exMap} onClose={() => navigate(`session/${celebrate.session.id}`, true)} />}
     </div>
   );

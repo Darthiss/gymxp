@@ -3,14 +3,15 @@ import { Icon } from './Icon';
 import { ExerciseThumb, Sheet } from './ui';
 
 /** A compact list for changing the order of exercises, since the full cards are too tall to shuffle. */
-export function ReorderSheet({ ids, exMap, onMove, onClose }: { ids: string[]; exMap: Map<string, Exercise>; onMove: (from: number, to: number) => void; onClose: () => void }) {
+/** `focus` highlights the exercise whose card opened the sheet. */
+export function ReorderSheet({ ids, exMap, onMove, onClose, focus }: { ids: string[]; exMap: Map<string, Exercise>; onMove: (from: number, to: number) => void; onClose: () => void; focus?: string }) {
   return (
-    <Sheet onClose={onClose} title="Reorder exercises">
+    <Sheet onClose={onClose} title="Change the order">
       <div className="group">
         {ids.map((id, i) => {
           const ex = exMap.get(id);
           return (
-            <div key={id} className="cell static" style={{ '--inset': '68px' } as React.CSSProperties}>
+            <div key={id} className="cell static" style={{ '--inset': '68px', ...(id === focus ? { background: 'var(--accent-soft)' } : {}) } as React.CSSProperties}>
               <ExerciseThumb ex={ex} className="thumb sm" />
               <span className="grow bold small">{ex?.name ?? 'Unknown'}</span>
               <button className="icon-btn plain" disabled={i === 0} style={{ opacity: i === 0 ? 0.25 : 1 }} onClick={() => onMove(i, i - 1)} aria-label={`Move ${ex?.name ?? 'exercise'} up`}><Icon name="arrowUp" size={18} /></button>

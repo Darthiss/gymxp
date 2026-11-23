@@ -119,7 +119,7 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 ### Phase 1: Fix daily friction
 
 - **1.1 Start time on iOS.** "Log it afterwards" leaves the start time blank on purpose, and iOS Safari draws nothing for an empty time input, so the row looked empty until you tapped the right spot. `PickerField` shows "Add time" with the real input stretched invisibly over it, for date inputs too. The code path matches the report, but it's still unconfirmed on a device.
-- **1.2 Reordering.** "Do next" moves an exercise right after the last one you started, and a Reorder sheet handles anything else, in both the logger and the gym checklist. It affects today only: the saved routine changes only in the editor. It uses arrows because HTML5 drag doesn't work on iOS touch; add pointer-based drag only if arrows feel slow.
+- **1.2 Reordering.** "Do next" moves an exercise right after the last one you started, and a Reorder sheet handles anything else, in both the logger and the gym checklist. It affects today only: the saved routine changes only in the editor. It uses arrows because HTML5 drag doesn't work on iOS touch; add pointer-based drag only if arrows feel slow. Since November 2026 each exercise card also has a ↕ button that opens the sheet with that exercise highlighted, and the top button reads "Change order" with its own icon: the old grey "Reorder" shared the machine-settings icon and went unnoticed, including when editing a saved workout.
 - **1.3 Engine speed.** Recomputing 2 years of workouts went from about 100 ms to under 10 ms on a desktop, by caching the week count behind `seasonOf` and sharing one result across components (`gameFor()`).
 
 ### Phase 2: New progression system
