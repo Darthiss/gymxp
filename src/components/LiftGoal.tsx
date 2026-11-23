@@ -53,7 +53,7 @@ export function LiftGoalCard({ goal }: { goal: LiftGoal }) {
         </a>
       ))}
       <p className="tiny muted" style={{ lineHeight: 1.45 }}>
-        The deadlift builds lifting from the floor with a flat back, the squat getting down and up with weight in front of you, and the front carry holding someone in your arms. Each counts whichever of its exercises is closest. The leg press, farmer's walk and kettlebell deadlift help, but don't count: the machine balances for you, the farmer's walk hangs the weight at your sides, and kettlebells stop short of the target. When you lift a person for real, bend your knees, keep them close and stand up with your legs.
+        The deadlift builds lifting from the floor with a flat back, the squat getting down and up with weight in front of you, and the front carry holding someone in your arms. Each counts whichever of its exercises is closest. The kettlebell deadlift counts as a deadlift, but gym kettlebells top out well before the target: once the heaviest one feels easy for 3 × 10 with a flat back, move to a Romanian or barbell deadlift. The leg press and farmer's walk help, but don't count: the machine balances for you, and the farmer's walk hangs the weight at your sides. When you lift a person for real, bend your knees, keep them close and stand up with your legs.
       </p>
       {edit && <LiftGoalSheet goal={goal} onClose={() => setEdit(false)} />}
     </div>

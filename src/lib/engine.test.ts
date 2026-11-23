@@ -1942,7 +1942,7 @@ describe('lift goal', () => {
     expect(b.deadlift.target).toContain('log a weigh-in');
     expect(b.goblet.target).toBe('Goblet squat 28 kg × 10, half of Sam\'s weight');
     expect(b.goblet.also).toEqual(['back squat']);
-    expect(b.deadlift.also).toEqual(['sumo deadlift', 'Romanian deadlift']);
+    expect(b.deadlift.also).toEqual(['sumo deadlift', 'Romanian deadlift', 'kettlebell deadlift']);
     expect(b.carry.best).toBeNull();
   });
 
@@ -2003,7 +2003,7 @@ describe('lift goal', () => {
     expect(b.pct).toBeCloseTo((50 * (1 + 10 / 30)) / 72.6, 5);
     expect(b.target).toBe('Romanian deadlift 72.6 kg, 1.1× your bodyweight');
     expect(b.best).toBe('66.7 kg estimated 1RM (Romanian deadlift)');
-    expect(b.also).toEqual(['deadlift', 'sumo deadlift']);
+    expect(b.also).toEqual(['deadlift', 'sumo deadlift', 'kettlebell deadlift']);
     add(d, '2026-03-09', [ex('Romanian_Deadlift', 55, 10)]);
     expect(by(d).deadlift).toMatchObject({ done: true, pct: 1 });
     const e = emptyData();
@@ -2027,10 +2027,25 @@ describe('lift goal', () => {
     expect(by(d).goblet).toMatchObject({ done: true, pct: 1 });
   });
 
-  it("doesn't count the leg press, farmer's walk or kettlebell deadlift", () => {
+  it('counts a kettlebell deadlift as a deadlift, which tops out with the kettlebells', () => {
+    const d = emptyData();
+    weighed(d, 66); // target 99 kg
+    add(d, '2026-03-02', [ex('Kettlebell_Deadlift', 24, 10)]);
+    const b = by(d).deadlift;
+    expect(b.exerciseId).toBe('Kettlebell_Deadlift');
+    expect(b.pct).toBeCloseTo((24 * (1 + 10 / 30)) / 99, 5);
+    expect(b.best).toBe('32 kg estimated 1RM (kettlebell deadlift)');
+    expect(b.target).toBe('Kettlebell deadlift, counted as a deadlift: 99 kg, 1.5× your bodyweight');
+    add(d, '2026-03-04', [ex('Kettlebell_Deadlift', 32, 20)]);
+    expect(by(d).deadlift.pct).toBeCloseTo((32 * (1 + 12 / 30)) / 99, 5); // reps past 12 don't inflate it
+    add(d, '2026-03-06', [ex('Romanian_Deadlift', 60, 8)]);
+    expect(by(d).deadlift.exerciseId).toBe('Romanian_Deadlift'); // 76 of 72.6 beats 44.8 of 99
+  });
+
+  it("doesn't count the leg press or farmer's walk", () => {
     const d = emptyData();
     weighed(d, 66);
-    add(d, '2026-03-02', [ex('Leg_Press', 200, 10), { exerciseId: 'Farmers_Walk', sets: [{ kg: 40, reps: 60 }] }, ex('Kettlebell_Deadlift', 48, 10)]);
+    add(d, '2026-03-02', [ex('Leg_Press', 200, 10), { exerciseId: 'Farmers_Walk', sets: [{ kg: 40, reps: 60 }] }]);
     const b = by(d);
     expect([b.deadlift.pct, b.goblet.pct, b.carry.pct]).toEqual([0, 0, 0]);
     expect([b.deadlift.best, b.goblet.best, b.carry.best]).toEqual([null, null, null]);

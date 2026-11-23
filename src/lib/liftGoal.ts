@@ -3,23 +3,25 @@
 //
 // Each benchmark accepts the exercises that train the same thing, each with its own target, and
 // counts whichever is closest to done:
-// - Deadlift, for lifting from the floor with a flat back: a deadlift or sumo deadlift at 1.5× your
-//   bodyweight (estimated 1RM), or a Romanian deadlift at 1.1×. An RDL starts from the top and stops
-//   at mid-shin, so most people handle about three quarters of their deadlift on it.
+// - Deadlift, for lifting from the floor with a flat back: a deadlift, sumo deadlift or kettlebell
+//   deadlift at 1.5× your bodyweight (estimated 1RM), or a Romanian deadlift at 1.1×. An RDL starts
+//   from the top and stops at mid-shin, so most people handle about three quarters of their deadlift
+//   on it. The kettlebell deadlift is the same lift from the floor, so it counts as one; it just tops
+//   out when the gym's heaviest kettlebell does, which is the cue to move to a barbell.
 // - Squat, for getting down and up with weight in front of you: a goblet squat with half their
 //   weight for 10, or a back squat with their weight for 5. Real sets, not estimates.
 // - Front carry, for holding someone in your arms and walking: a front carry with their weight for
 //   20 seconds, or a goblet carry with half their weight for 40. The person is twice the load of the
 //   dumbbell, so the dumbbell is held twice as long.
 // Left out on purpose: the leg press (the machine does the balancing, and numbers differ between
-// machines), the farmer's walk (the weight hangs at your sides, not in your arms) and the kettlebell
-// deadlift (gym kettlebells stop far short of the target; it's how you learn the hinge).
+// machines) and the farmer's walk (the weight hangs at your sides, not in your arms).
 import { e1rm, workingSets, type GameState } from './engine';
 import { DEADLIFT } from './trophies';
 import type { LiftGoal } from './types';
 
 export const SUMO = 'Sumo_Deadlift';
 export const RDL = 'Romanian_Deadlift';
+export const KB_DEADLIFT = 'Kettlebell_Deadlift';
 export const GOBLET = 'Goblet_Squat';
 export const BACK_SQUAT = 'Barbell_Squat';
 export const FRONT_CARRY = 'Front_Carry';
@@ -124,6 +126,7 @@ export function liftBenchmarks(g: GameState, goal: LiftGoal, bodyweight: number)
       { exerciseId: DEADLIFT, name: 'deadlift', kind: 'e1rm', kg: xbw(DEADLIFT_XBW), reps: 1, target: bwText(DEADLIFT_XBW) },
       { exerciseId: SUMO, name: 'sumo deadlift', kind: 'e1rm', kg: xbw(DEADLIFT_XBW), reps: 1, target: `Sumo deadlift ${bwText(DEADLIFT_XBW)}` },
       { exerciseId: RDL, name: 'Romanian deadlift', kind: 'e1rm', kg: xbw(RDL_XBW), reps: 1, target: `Romanian deadlift ${bwText(RDL_XBW)}` },
+      { exerciseId: KB_DEADLIFT, name: 'kettlebell deadlift', kind: 'e1rm', kg: xbw(DEADLIFT_XBW), reps: 1, target: `Kettlebell deadlift, counted as a deadlift: ${bwText(DEADLIFT_XBW)}` },
     ]),
     benchmark(g, 'goblet', '🦵', 'Squat', [
       { exerciseId: GOBLET, name: 'goblet squat', kind: 'set', kg: gkg, reps: GOBLET_REPS, target: `Goblet squat ${gkg} kg × ${GOBLET_REPS}, half of ${goal.name}'s weight` },
