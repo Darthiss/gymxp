@@ -169,6 +169,11 @@ export async function openWithPassword(bundle: KeyBundle, email: string, passwor
   return unwrap(bundle.byPassword, by, false);
 }
 
+/** The same, when sign-in already derived the password keys (saves a second slow PBKDF2). */
+export function openWithPasswordKeys(bundle: KeyBundle, keys: PasswordKeys): Promise<CryptoKey> {
+  return unwrap(bundle.byPassword, keys.wrap, false);
+}
+
 export async function openWithRecovery(bundle: KeyBundle, recoveryKey: string): Promise<CryptoKey> {
   return unwrap(bundle.byRecovery, await recoveryWrapKey(recoveryKey), false);
 }

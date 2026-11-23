@@ -2305,3 +2305,12 @@ describe('end-to-end encryption', () => {
     await expect(remote.getFile('photos/b.jpg')).rejects.toThrow(WrongKeyError);
   });
 });
+
+describe('account passwords', () => {
+  it('asks for 12+ characters and not the email', async () => {
+    const { passwordProblem } = await import('./account');
+    expect(passwordProblem('short one')).toMatch(/12 characters/);
+    expect(passwordProblem('sam@example.com', 'Sam@Example.com')).toMatch(/email/);
+    expect(passwordProblem('a long passphrase', 'sam@example.com')).toBeNull();
+  });
+});

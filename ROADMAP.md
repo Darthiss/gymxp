@@ -40,7 +40,7 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 - [x] **A.1** Owner: create the two Supabase projects · S · *[owner's guide](docs/ACCOUNTS.md)*
 - [x] **A.2** A seam for sync, with GitHub still behind it · M
 - [x] **A.3** End-to-end encryption and the recovery key · M
-- [ ] **A.4** Sign-up, sign-in, sync and photos on Supabase · L
+- [x] **A.4** Sign-up, sign-in, sync and photos on Supabase · L
 - [ ] **A.5** Nightly backup, privacy page and account deletion · S
 - [ ] **A.6** Move the owner over, then retire the GitHub path · S
 

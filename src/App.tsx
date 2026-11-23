@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { hasVault, forgetKey, tryResume, type Unlocked } from './lib/vault';
 import { setCurrentStore, Store, useStore } from './lib/store';
 import { githubRemote } from './lib/github';
-import { Session } from './lib/session';
+import { Session, type SessionCtx } from './lib/session';
+import type { Account } from './lib/account';
 import { useRoute } from './lib/router';
 import { Setup, Unlock } from './screens/Auth';
 import { Home } from './screens/Home';
@@ -21,7 +22,15 @@ import { Bro } from './components/Bro';
 import { logHref } from './lib/today';
 import { FEATURES } from './lib/features';
 
-type Phase = { kind: 'boot' } | { kind: 'setup' } | { kind: 'locked' } | { kind: 'open'; unlocked: Unlocked; store: Store };
+const AccountGate = lazy(() => import('./screens/Account'));
+
+type Phase =
+  | { kind: 'boot' }
+  | { kind: 'welcome' } // no GitHub vault on this phone: sign in to or create an account
+  | { kind: 'setup' }
+  | { kind: 'locked' }
+  | { kind: 'open'; unlocked: Unlocked; store: Store }
+  | { kind: 'account'; account: Account; store: Store };
 
 export function App() {
   const [phase, setPhase] = useState<Phase>({ kind: 'boot' });
@@ -30,6 +39,14 @@ export function App() {
     const store = new Store(u.key, githubRemote(u.cfg));
     setCurrentStore(store);
     setPhase({ kind: 'open', unlocked: u, store });
+    await store.open();
+  }, []);
+
+  const openAccount = useCallback(async (a: Account) => {
+    const { remoteFor } = await import('./lib/account');
+    const store = new Store(a.dataKey, remoteFor(a));
+    setCurrentStore(store);
+    setPhase({ kind: 'account', account: a, store });
     await store.open();
   }, []);
 
@@ -42,18 +59,23 @@ export function App() {
         const { openDemo, demoData } = await import('./dev/demo');
         const { unlocked, store } = await openDemo();
         setCurrentStore(store);
-        setPhase({ kind: 'open', unlocked, store });
+        // ?demo&account previews the account version of Settings (its buttons talk to the test project).
+        if (location.search.includes('account')) setPhase({ kind: 'account', account: { userId: 'demo', email: 'you@example.com', dataKey: unlocked.key }, store });
+        else setPhase({ kind: 'open', unlocked, store });
         await store.open();
         store.update((d) => Object.assign(d, demoData()), 'Demo data');
         (store as unknown as { set: (p: object) => void }).set({ status: 'synced', dirty: false });
         return;
       }
-      if (!hasVault()) return setPhase({ kind: 'setup' });
+      if (!hasVault()) {
+        const a = await (await import('./lib/account')).resume();
+        return a ? openAccount(a) : setPhase({ kind: 'welcome' });
+      }
       const u = await tryResume();
       if (u) await open(u);
       else setPhase({ kind: 'locked' });
     })();
-  }, [open]);
+  }, [open, openAccount]);
 
   const lock = useCallback(() => {
     if (phase.kind === 'open') phase.store.dispose();
@@ -62,10 +84,26 @@ export function App() {
     setPhase({ kind: 'locked' });
   }, [phase]);
 
-  const ctx = useMemo(
-    () =>
-      phase.kind === 'open'
+  const ctx = useMemo((): SessionCtx | null => {
+    if (phase.kind === 'account') {
+      const a = phase.account;
+      const lib = () => import('./lib/account');
+      return {
+        kind: 'account',
+        email: a.email,
+        changePassword: async (current, next) => (await lib()).changePassword(a, current, next),
+        newRecoveryKey: async (password) => (await lib()).newRecoveryKey(a, password),
+        signOut: async () => {
+          phase.store.dispose();
+          setCurrentStore(null);
+          await (await lib()).signOut();
+          setPhase({ kind: 'welcome' });
+        },
+      };
+    }
+    return phase.kind === 'open'
         ? {
+            kind: 'github',
             unlocked: phase.unlocked,
             lock,
             setUnlocked: async (u: Unlocked) => {
@@ -73,11 +111,16 @@ export function App() {
               setPhase({ ...phase, unlocked: u });
             },
           }
-        : null,
-    [phase, lock],
-  );
+        : null;
+  }, [phase, lock]);
 
   if (phase.kind === 'boot') return <div className="auth-wrap"><Bro size={84} alive /></div>;
+  if (phase.kind === 'welcome')
+    return (
+      <Suspense fallback={<div className="auth-wrap"><Bro size={84} alive /></div>}>
+        <AccountGate onOpen={(a) => void openAccount(a)} onGithub={() => setPhase({ kind: 'setup' })} />
+      </Suspense>
+    );
   if (phase.kind === 'setup') return <Setup onDone={open} />;
   if (phase.kind === 'locked') return <Unlock onDone={open} />;
   return (

@@ -3,14 +3,15 @@ import react from '@vitejs/plugin-react';
 
 // Content-Security-Policy for the production build only (Vite's dev server injects
 // inline scripts that a strict CSP would block). The app may only talk to the
-// GitHub API (your data) and Open-Meteo (weather lookups), which limits what an
-// injected script could exfiltrate.
+// GitHub API and Supabase (your data) and Open-Meteo (weather lookups), which limits
+// what an injected script could exfiltrate. The Supabase host is the live project in
+// lib/supabaseConfig.ts.
 const CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
-  "connect-src 'self' https://api.github.com https://api.open-meteo.com",
+  "connect-src 'self' https://api.github.com https://hfoeqdrcqwkpwuegajzg.supabase.co https://api.open-meteo.com",
   "font-src 'self'",
   "object-src 'none'",
   "base-uri 'self'",

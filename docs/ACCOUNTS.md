@@ -46,12 +46,14 @@ Only **Forgot password** needs this. The reset email has to carry a code typed i
 
 ## 3. With A.4: database setup and the guest list
 
-1. In each project, open the **SQL Editor**, start a new query, paste the setup file that comes with A.4 and press **Run**.
-2. Open **Authentication**, then **Hooks**, and add a **Before User Created** hook of type Postgres, pointing at the function the setup file names.
-3. Add yourself to the guest list: **Table Editor**, the `guests` table, **Insert row**, your email.
+Do `Bro test` first. `Bro` follows once the rehearsal works.
+
+1. Open the **SQL Editor**, start a new query, paste all of [`supabase/setup.sql`](../supabase/setup.sql) and press **Run**. It should end with "Success. No rows returned". It's safe to run again later.
+2. Open **Authentication**, then **Hooks**, and add a **Before User Created** hook. Choose **Postgres**, schema `public`, function `check_guest_list`, and save.
+3. Add yourself to the guest list: **Table Editor**, the `guests` table, **Insert row**, your email in `email`, then save.
 4. Turn **Allow new users to sign up** back on.
 
-To check it: creating an account with an email that isn't on the list should fail.
+To check it: creating an account with an email that isn't on the list should fail with "This email isn't on the guest list yet".
 
 ## 4. With A.5: the nightly backup
 

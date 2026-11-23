@@ -5,7 +5,7 @@ import { DISCLAIMER } from '../lib/body';
 import { createVault, failedAttempts, MAX_FAILS, unlock, wipeDevice, WrongPinError, type Unlocked } from '../lib/vault';
 
 /** App mark: Bro and the wordmark. Bro naps while the app is locked. */
-function LogoMark({ locked }: { locked?: boolean }) {
+export function LogoMark({ locked }: { locked?: boolean }) {
   return (
     <>
       <Bro mood={locked ? 'sleep' : 'happy'} size={132} arms alive style={{ alignSelf: 'center' }} />

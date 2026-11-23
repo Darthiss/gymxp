@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { getStore, useData, useStore } from '../lib/store';
-import { useSession } from '../lib/session';
+import { useSession, type AccountSession, type GithubSession } from '../lib/session';
 import { checkRepo } from '../lib/github';
 import { AUTOLOCK_OPTIONS, changePin, getAutolockMin, setAutolockMin, touchKey, updateConfig, wipeDevice } from '../lib/vault';
 import { mergeData, normalizeData } from '../lib/merge';
@@ -10,14 +10,16 @@ import type { Profile, Sex } from '../lib/types';
 import { BMI_MAX, DISCLAIMER, goalAllowed, kgAtBmi, minGoalKg } from '../lib/body';
 import { CellIcon, PageHead, SyncBadge, toast } from '../components/ui';
 import { Icon } from '../components/Icon';
+import { RecoveryKeyBox } from '../components/RecoveryKey';
 
 export function Settings() {
+  const session = useSession();
   return (
     <div className="stack-lg">
       <PageHead title="Settings" backTo="" />
       <ProfileCard />
       <WatchCard />
-      <SecurityCard />
+      {session.kind === 'github' ? <SecurityCard session={session} /> : <AccountCard session={session} />}
       <DataCard />
       <p className="tiny muted center" style={{ lineHeight: 1.5 }}>{DISCLAIMER}</p>
       <p className="tiny muted center">Bro · exercise photos & instructions from free-exercise-db (public domain)</p>
@@ -124,8 +126,86 @@ function WatchCard() {
   );
 }
 
-function SecurityCard() {
-  const session = useSession();
+function AccountCard({ session }: { session: AccountSession }) {
+  const [mode, setMode] = useState<'none' | 'password' | 'recovery' | 'signout'>('none');
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [newKey, setNewKey] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  const open = (m: typeof mode) => {
+    setMode(mode === m ? 'none' : m);
+    setCurrent('');
+    setNext('');
+    setNewKey('');
+    setErr('');
+  };
+  const run = async (fn: () => Promise<void>) => {
+    setBusy(true);
+    setErr('');
+    try {
+      await fn();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  // Lets iPhone's Passwords app match the change to the right account.
+  const username = <input type="email" value={session.email} autoComplete="username" readOnly hidden />;
+
+  return (
+    <div className="card stack">
+      <h2 className="row" style={{ gap: 10 }}><CellIcon name="shield" color="#8e8e93" />Account</h2>
+      <p className="small dim">
+        Signed in as <b>{session.email}</b>. Your log is locked on this phone before it's uploaded, and only your password or recovery key can open it.
+      </p>
+      <div className="row-wrap">
+        <button className="btn sm grow" onClick={() => open('password')}>Change password</button>
+        <button className="btn sm grow" onClick={() => open('recovery')}>New recovery key</button>
+      </div>
+      {mode === 'password' && (
+        <form className="stack" onSubmit={(e) => { e.preventDefault(); void run(async () => { await session.changePassword(current, next); open('none'); toast('🔐 Password changed. Other devices are signed out.'); }); }}>
+          {username}
+          <input className="input" type="password" placeholder="Current password" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" required />
+          <input className="input" type="password" placeholder="New password" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" required />
+          {err && <div className="notice bad small">{err}</div>}
+          <button className="btn primary" disabled={busy}>{busy ? <span className="spinner" /> : 'Save new password'}</button>
+        </form>
+      )}
+      {mode === 'recovery' && !newKey && (
+        <form className="stack" onSubmit={(e) => { e.preventDefault(); void run(async () => setNewKey(await session.newRecoveryKey(current))); }}>
+          <p className="small dim">Makes a new key and retires the old one. Do this if you lost it or someone else saw it.</p>
+          {username}
+          <input className="input" type="password" placeholder="Your password" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" required />
+          {err && <div className="notice bad small">{err}</div>}
+          <button className="btn primary" disabled={busy}>{busy ? <span className="spinner" /> : 'Make a new key'}</button>
+        </form>
+      )}
+      {mode === 'recovery' && newKey && (
+        <div className="stack">
+          <RecoveryKeyBox value={newKey} />
+          <p className="small">Your old key no longer works.</p>
+          <button className="btn" onClick={() => open('none')}>Done</button>
+        </div>
+      )}
+      {mode !== 'signout' ? (
+        <button className="btn danger" onClick={() => open('signout')}>Sign out of this phone…</button>
+      ) : (
+        <div className="notice bad stack small">
+          This phone forgets your data and key. Everything stays in your account: sign in again to get it back.
+          <div className="row">
+            <button className="btn danger grow" disabled={busy} onClick={() => void run(session.signOut)}>Sign out</button>
+            <button className="btn grow" onClick={() => open('none')}>Cancel</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SecurityCard({ session }: { session: GithubSession }) {
   const [autolock, setAutolock] = useState(getAutolockMin());
   const [mode, setMode] = useState<'none' | 'pin' | 'token' | 'wipe'>('none');
   const [a, setA] = useState('');
@@ -210,6 +290,7 @@ function SecurityCard() {
 }
 
 function DataCard() {
+  const session = useSession();
   const st = useStore();
   const data = st.data;
   const exportJson = () => {
@@ -241,7 +322,11 @@ function DataCard() {
         {data.sessions.filter((s) => !s.deleted).length} workouts · {data.weights.filter((w) => !w.deleted).length} weigh-ins
         {st.lastSync ? ` · last synced ${fmtDate(toISODate(new Date(st.lastSync)), { day: 'numeric', month: 'short' })} ${new Date(st.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
       </p>
-      <p className="tiny muted">Every save is a commit in your private repo, so GitHub keeps the full history of your data as a free backup.</p>
+      <p className="tiny muted">
+        {session.kind === 'github'
+          ? 'Every save is a commit in your private repo, so GitHub keeps the full history of your data as a free backup.'
+          : 'Saved to your account, locked with your key. Export keeps a copy of your own.'}
+      </p>
       <a className="btn tint" href="#/import"><Icon name="download" size={17} /> Import past workouts (from memory)</a>
       <div className="row-wrap">
         <button className="btn grow" onClick={() => void getStore().syncNow()}><Icon name="sync" size={16} /> Sync</button>

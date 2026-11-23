@@ -626,6 +626,8 @@ button.idx { border: 0; padding: 0; cursor: pointer; justify-self: center; }
 .prose b { color: var(--text); }
 .auth-wrap { position: relative; isolation: isolate; min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; }
 .auth-box { width: 100%; max-width: 440px; }
+.recovery-key { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 10px; padding: 14px; border-radius: var(--r-md); background: var(--surface-2); font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 1.05rem; font-weight: 600; letter-spacing: 0.08em; text-align: center; user-select: all; -webkit-user-select: all; }
+.input.mono { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; letter-spacing: 0.04em; }
 .logo { font-family: var(--font-round); font-size: 2.6rem; font-weight: 900; letter-spacing: -0.04em; line-height: 1; }
 .logo span { color: inherit; }
 .pin-input { font-size: 1.6rem !important; letter-spacing: 0.4em; text-align: center; font-weight: 700; min-height: 62px !important; border-radius: 999px !important; }
