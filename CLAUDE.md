@@ -45,6 +45,7 @@ Boot sequence (`src/App.tsx`): `boot` → `setup` or `locked` → `open`. Once o
 - Delete by tombstone (`deleted = true`), never by removing the record, and filter `!deleted` when reading.
 - A new top-level `AppData` collection must be added to `emptyData`, `mergeData` and `normalizeData`, or it is silently dropped. A device still running an older build drops it too, so prefer optional fields on existing records (unknown fields on a record survive).
 - `Routine.exerciseIds` must stay in sync with `Routine.items`.
+- `Routine.order` is the routine's day in the rotation. `activeRoutines()` sorts by it, then by name, and a routine's place in that list is its day number (`dayNumber()`). Anything that rebuilds a routine record, like the editor's save, must carry `order` over.
 
 **Game engine (`lib/engine.ts`, `lib/trophies.ts`).** `computeGame(data, exMap)` replays the whole log in date order and returns a `GameState`. Stars, levels, streaks, records, trophies and seasons are never stored.
 - Changing `RULES`, `RANKS`, `FLAMES` or the trophy tables needs no migration, but it re-scores every user's history on next load and can change their level. Treat that as a product decision. `npm run calibrate` shows the effect on a real log.

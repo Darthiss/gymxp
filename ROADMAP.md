@@ -139,6 +139,8 @@ Shipped before Phase 4, at the owner's request.
 
 - **Body and strength goals.** A coach's plan, reviewed and adjusted: [what was built and why](docs/GAME_DESIGN.md#body-and-strength-review-november-2026). The Body tab reads weight as a weekly average with a monthly rate judged against a phase (lean gain, cut or maintain), adds tape measurements (waist, neck, arm and chest; for women, hips and thigh in place of chest since S.1) to the weigh-in they're taken with, and estimates body fat, lean mass and FFMI. A gain gets a check-in when the waist is up 4 cm, and a gain-quality number after 8 weeks. Strength has a "Lift someone" goal with three benchmarks, barbell lifts show estimated 1RM ÷ bodyweight, sets can be marked as warm-ups, and the logger fills in the next weight ("Go up") once every working set reaches the top of the routine's range. Goblet Squat and two new carries, Front Carry and Goblet Carry, joined the catalog. The legends no longer compare your lifts with their records.
 
+- **Routine days.** Routines are numbered as days of the rotation (1, 2, 3…) on the Routines tab, Today, the logger and the end screen, and "Reorder days" sets the order. Until then they keep their name order. "Up next" is still the routine done longest ago, so a missed day comes back; ties go to the earlier day.
+
 - **Farmer's Walk,** logged as weight per hand and seconds walked. Adding it made time records work on any timed exercise, and exercise pages show the longest time in place of an estimated 1RM.
 
 ---

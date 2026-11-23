@@ -8,7 +8,7 @@ import { careerClock, LEGENDS, timesMoved } from './legends';
 import { bigMoments, careerStory } from './career';
 import { gameFor } from './game';
 import { emptyData, type AppData, type Exercise, type Routine, type Session } from './types';
-import { withExercise, activeRoutines, firstReps, fmtRest, fmtTarget, goUp, hitTarget, inOrder, lastDone, moveTo, nextPosition, planFor, repsForSet, routineItems, upNextRoutine, weightStep } from './routines';
+import { withExercise, withDays, dayNumber, activeRoutines, firstReps, fmtRest, fmtTarget, goUp, hitTarget, inOrder, lastDone, moveTo, nextPosition, planFor, repsForSet, routineItems, upNextRoutine, weightStep } from './routines';
 import {
   bodyFatBand, compositionAt, currentKg, currentPhase, ffmiLabel, FFMI_MARKS, ffmiOf, gainQuality, kgNear, liveWeights, measureNear, measuresFor, monthlyRate,
   navyBodyFat, phaseSummary, rateBand, weeklyAverages, withPhase,
@@ -1160,6 +1160,35 @@ describe('routines', () => {
     expect(done.get('b')).toBe('2026-10-03');
     expect(upNextRoutine(rs, done)?.id).toBe('a');
     expect(upNextRoutine([a], done)).toBeNull(); // nothing to rotate
+  });
+
+  it('numbers routines as days: by the order you set, then by name', () => {
+    const d = emptyData();
+    d.routines = [routine('p', 'Push', []), routine('l', 'Legs', []), routine('u', 'Pull', []), { ...routine('x', 'Old', []), deleted: true }];
+    const names = () => activeRoutines(d).map((r) => r.name);
+    expect(names()).toEqual(['Legs', 'Pull', 'Push']); // no order set yet: by name, as before
+    expect(dayNumber(activeRoutines(d), activeRoutines(d)[1])).toBe(2);
+    d.routines = withDays(d.routines, ['p', 'u', 'l'], 5);
+    expect(names()).toEqual(['Push', 'Pull', 'Legs']);
+    expect(d.routines.find((r) => r.id === 'x')).toMatchObject({ updatedAt: 1 }); // deleted ones aren't touched
+    expect(d.routines.find((r) => r.id === 'x')!.order).toBeUndefined();
+    // A new routine, with no day yet, goes last.
+    d.routines.push(routine('a', 'Arms', []));
+    expect(names()).toEqual(['Push', 'Pull', 'Legs', 'Arms']);
+    // Moving one only re-saves the routines whose day changed.
+    const moved = withDays(d.routines, ['p', 'l', 'u', 'a'], 9);
+    expect(moved.filter((r) => r.updatedAt === 9).map((r) => r.id).sort()).toEqual(['a', 'l', 'u']);
+    expect(moved.find((r) => r.id === 'p')).toBe(d.routines.find((r) => r.id === 'p')); // unchanged, same object
+    // One routine needs no number.
+    expect(dayNumber([d.routines[0]], d.routines[0])).toBeNull();
+  });
+
+  it('suggests the earliest day first when routines tie', () => {
+    const d = emptyData();
+    d.routines = withDays([routine('a', 'A', ['Leg_Press']), routine('b', 'B', ['Butterfly']), routine('c', 'C', ['Face_Pull'])], ['c', 'b', 'a'], 2);
+    d.sessions = [sess('2026-10-01', [{ exerciseId: 'Face_Pull', sets: [{ kg: 20, reps: 10 }] }])]; // day 1 done; days 2 and 3 never
+    const rs = activeRoutines(d);
+    expect(upNextRoutine(rs, lastDone(d, rs))?.id).toBe('b'); // day 2, not day 3
   });
 });
 

@@ -5,7 +5,7 @@ import { settingFor, useExerciseMap, useGame } from '../lib/game';
 import { navigate } from '../lib/router';
 import { logHref } from '../lib/today';
 import {
-  activeRoutines, fmtRest, fmtTarget, goUp, hitTarget, inOrder, lastDone, loadOrder, loadTicks, moveTo, nextPosition, repsForSet, REST_OPTIONS, routineItems, saveOrder, saveTicks, totalSets, upNextRoutine, withExercise, type Ticks,
+  activeRoutines, dayNumber, fmtRest, fmtTarget, goUp, hitTarget, inOrder, lastDone, loadOrder, loadTicks, moveTo, nextPosition, repsForSet, REST_OPTIONS, routineItems, saveOrder, saveTicks, totalSets, upNextRoutine, withDays, withExercise, type Ticks,
 } from '../lib/routines';
 import { fmtDate, plural, today, uid } from '../lib/util';
 import type { Routine, RoutineItem } from '../lib/types';
@@ -14,7 +14,7 @@ import { RoutineCheckCard } from '../components/RoutineCheck';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { ExerciseInfo } from '../components/ExerciseInfo';
 import { ReorderSheet } from '../components/ReorderSheet';
-import { ExerciseThumb, LargeTitle, PageHead, Sheet, toast, ProgressBar } from '../components/ui';
+import { DayNo, ExerciseThumb, LargeTitle, PageHead, Sheet, toast, ProgressBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { lastTime, SettingNote } from './Log';
 
@@ -29,6 +29,7 @@ export function Routines() {
   const next = upNextRoutine(routines, done);
   const g = useGame();
   const pickable = useMemo(() => allExercises(data), [data]);
+  const [ordering, setOrdering] = useState(false);
   const findings = useMemo(
     () => checkRotation({ data, routines, weekGoal: g.weekGoal, exMap, pickable }),
     [data, routines, g.weekGoal, exMap, pickable],
@@ -61,12 +62,20 @@ export function Routines() {
           <a className="btn primary" href="#/routine-edit/new"><Icon name="plus" size={18} stroke={2.6} /> New routine</a>
         </div>
       )}
+      {routines.length > 1 && (
+        <div className="row" style={{ justifyContent: 'flex-end', marginBottom: -6 }}>
+          <button className="btn ghost sm" style={{ minHeight: 0, padding: '2px 4px' }} onClick={() => setOrdering(true)}><Icon name="sliders" size={14} /> Reorder days</button>
+        </div>
+      )}
       {routines.map((r) => {
         const items = routineItems(r);
         return (
           <a key={r.id} className="card card-link stack routine-card" href={`#/routines/${r.id}`}>
             <div className="row between">
-              <h3 className="ellipsis">{r.name}</h3>
+              <div className="row" style={{ gap: 10, minWidth: 0 }}>
+                <DayNo big n={dayNumber(routines, r)} />
+                <h3 className="ellipsis">{r.name}</h3>
+              </div>
               {next?.id === r.id ? <span className="tag accent">Up next</span> : <Icon name="chevR" size={18} style={{ color: 'var(--muted)' }} />}
             </div>
             <div className="small dim">{plural(items.length, 'exercise')} · {plural(totalSets(r), 'set')} · {fmtDone(done.get(r.id))}</div>
@@ -90,7 +99,32 @@ export function Routines() {
           allGood="Your rotation trains every major muscle and movement. Nice plan."
         />
       )}
+      {ordering && <DaysSheet routines={routines} onClose={() => setOrdering(false)} />}
     </div>
+  );
+}
+
+/** Set which routine is day 1, 2, 3… Saves on every move, like the rest of the app. */
+function DaysSheet({ routines, onClose }: { routines: Routine[]; onClose: () => void }) {
+  const move = (from: number, to: number) => {
+    const ids = moveTo(routines.map((r) => r.id), from, to);
+    getStore().update((d) => { d.routines = withDays(d.routines, ids); }, 'Reorder routine days');
+  };
+  return (
+    <Sheet onClose={onClose} title="Order of your days">
+      <p className="small dim" style={{ lineHeight: 1.45, marginBottom: 12 }}>Day 1 is the first workout of your rotation. "Up next" is still the one you did longest ago, so a missed day comes back instead of being skipped.</p>
+      <div className="group">
+        {routines.map((r, i) => (
+          <div key={r.id} className="cell static">
+            <DayNo big n={i + 1} />
+            <span className="grow bold small ellipsis">{r.name}</span>
+            <button className="icon-btn plain" disabled={i === 0} style={{ opacity: i === 0 ? 0.25 : 1 }} onClick={() => move(i, i - 1)} aria-label={`Move ${r.name} up`}><Icon name="arrowUp" size={18} /></button>
+            <button className="icon-btn plain" disabled={i === routines.length - 1} style={{ opacity: i === routines.length - 1 ? 0.25 : 1 }} onClick={() => move(i, i + 1)} aria-label={`Move ${r.name} down`}><Icon name="arrowDown" size={18} /></button>
+          </div>
+        ))}
+      </div>
+      <button className="btn primary block" style={{ marginTop: 14 }} onClick={onClose}>Done</button>
+    </Sheet>
   );
 }
 
@@ -104,7 +138,9 @@ export function RoutineGuide({ id }: { id: string }) {
   const [info, setInfo] = useState<string | null>(null);
   const [order, setOrderState] = useState(() => loadOrder(id, date));
   const [reordering, setReordering] = useState(false);
-  const done = useMemo(() => (routine ? lastDone(data, activeRoutines(data)).get(routine.id) : undefined), [data, routine]);
+  const all = useMemo(() => activeRoutines(data), [data]);
+  const done = useMemo(() => (routine ? lastDone(data, all).get(routine.id) : undefined), [data, all, routine]);
+  const day = routine ? dayNumber(all, routine) : null;
 
   if (!routine) return <PageHead title="Routine not found" backTo="routines" />;
   const items = inOrder(routineItems(routine), order);
@@ -130,7 +166,7 @@ export function RoutineGuide({ id }: { id: string }) {
         </div>
         <ProgressBar thin pct={sets ? setsDone / sets : 0} />
         <div className="row between">
-          <span className="tiny dim">{fmtDone(done)}</span>
+          <span className="tiny dim">{day ? `Day ${day} of ${all.length} · ` : ''}{fmtDone(done)}</span>
           <span className="row" style={{ gap: 14 }}>
             {items.length > 1 && <button className="btn ghost sm" style={{ minHeight: 0, padding: 0 }} onClick={() => setReordering(true)}>Reorder</button>}
             {setsDone > 0 && <button className="btn ghost sm" style={{ minHeight: 0, padding: 0 }} onClick={() => setTicks({})}>Start over</button>}
@@ -247,6 +283,7 @@ export function RoutineEdit({ id }: { id: string }) {
     const rec = {
       id: existing?.id ?? uid(), updatedAt: Date.now(), name: name.trim(),
       exerciseIds: clean.map((it) => it.exerciseId), items: clean, ...(note.trim() ? { note: note.trim() } : {}),
+      ...(existing?.order !== undefined ? { order: existing.order } : {}), // editing a routine keeps its day
     };
     getStore().update((d) => { d.routines = d.routines.filter((r) => r.id !== rec.id); d.routines.push(rec); }, `Routine ${rec.name}`);
     navigate(`routines/${rec.id}`, true);

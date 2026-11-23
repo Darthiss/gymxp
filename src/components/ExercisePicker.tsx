@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react';
 import { allExercises, EQUIPMENT_CHIPS, searchExercises } from '../lib/exercises';
 import { useData } from '../lib/store';
 import { MUSCLE_GROUPS, type Exercise, type Routine } from '../lib/types';
-import { activeRoutines } from '../lib/routines';
+import { activeRoutines, dayNumber } from '../lib/routines';
 import { sortSessions } from '../lib/engine';
 import { ExerciseInfo } from './ExerciseInfo';
-import { CloseButton, ExerciseThumb, Sheet } from './ui';
+import { CloseButton, DayNo, ExerciseThumb, Sheet } from './ui';
 import { Icon } from './Icon';
 
 export function ExercisePicker({
@@ -89,7 +89,7 @@ export function ExercisePicker({
           <div className="chips">
             {routines.map((r) => (
               <button key={r.id} className="chip accent" onClick={() => onPickMany(r.exerciseIds.filter((id) => !exclude.includes(id)), r)}>
-                <Icon name="play" size={11} fill stroke={0} /> {r.name} · {r.exerciseIds.length}
+                {dayNumber(routines, r) ? <DayNo n={dayNumber(routines, r)} /> : <Icon name="play" size={11} fill stroke={0} />} {r.name} · {r.exerciseIds.length}
               </button>
             ))}
           </div>

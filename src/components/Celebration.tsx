@@ -2,14 +2,14 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { beatsNeeded, levelInfo, RULES, type GameState, type SessionResult, type StarItem } from '../lib/engine';
 import { fmtBeat, fmtPr } from '../lib/exercises';
 import { bigMoments, type BigMoment } from '../lib/career';
-import { activeRoutines, lastDone, upNextRoutine } from '../lib/routines';
+import { activeRoutines, dayNumber, lastDone, upNextRoutine } from '../lib/routines';
 import { useData } from '../lib/store';
 import { weekMessage } from '../lib/today';
 import { fmtNum, plural, today, weekKey } from '../lib/util';
 import type { Exercise, Session } from '../lib/types';
 import { Icon } from './Icon';
 import { Bro } from './Bro';
-import { Confetti, ProgressBar, Sheet } from './ui';
+import { Confetti, DayNo, ProgressBar, Sheet } from './ui';
 
 /** Every star a workout earned beyond the 3-star rating itself. */
 export function RewardLines({ items }: { items: StarItem[] }) {
@@ -174,7 +174,7 @@ export function Celebration({ result, session, before, after, edited, exMap, onC
             {thisWeek && (
               <div className="row between small dim" style={{ textAlign: 'left', gap: 12, padding: '0 4px' }}>
                 <span>{after.thisWeekVisits} of {after.weekGoal} this week · {weekMessage(after).text}</span>
-                {nextRoutine && <span className="bold" style={{ flex: 'none', color: 'var(--text)' }}>Next: {nextRoutine.name}</span>}
+                {nextRoutine && <span className="bold row" style={{ flex: 'none', color: 'var(--text)', gap: 5 }}>Next: <DayNo n={dayNumber(routines, nextRoutine)} /> {nextRoutine.name}</span>}
               </div>
             )}
 

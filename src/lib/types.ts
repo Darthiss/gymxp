@@ -105,6 +105,7 @@ export interface Routine extends Rec {
   exerciseIds: string[]; // kept in sync with `items` so older data and app versions still work
   items?: RoutineItem[]; // missing on routines saved before targets existed
   note?: string;
+  order?: number; // its day in the rotation (1, 2, 3…); routines without one come after, by name
 }
 
 // Per-exercise machine settings ("seat 4, back pad 2") — keyed by exercise id.

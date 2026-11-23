@@ -3,9 +3,24 @@
 import { sortSessions, workingSets } from './engine';
 import type { AppData, Exercise, Routine, RoutineItem, SetEntry } from './types';
 
-/** Live routines, sorted by name so "Day A, Day B, Day C" read in order everywhere. */
+/** Live routines in rotation order: by the day you set (Reorder), then by name, so "Day A, Day B, Day C"
+ *  read in order even before you set one. A routine's place in this list is its day number. */
 export function activeRoutines(data: AppData): Routine[] {
-  return data.routines.filter((r) => !r.deleted).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+  return data.routines.filter((r) => !r.deleted).sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || a.name.localeCompare(b.name, undefined, { numeric: true }));
+}
+
+/** A routine's day in the rotation (1-based), or null when there's only one, which needs no number. */
+export function dayNumber(routines: Routine[], r: Routine): number | null {
+  return routines.length > 1 && routines.includes(r) ? routines.indexOf(r) + 1 : null;
+}
+
+/** Routines with their days set from `ids` (the new order, first day first). Only the ones whose day
+ *  changed get a new `updatedAt`, so a sync carries just those. Others pass through unchanged. */
+export function withDays(all: Routine[], ids: string[], now = Date.now()): Routine[] {
+  return all.map((r) => {
+    const i = ids.indexOf(r.id);
+    return i < 0 || r.order === i + 1 ? r : { ...r, order: i + 1, updatedAt: now };
+  });
 }
 
 /** A routine's steps. Routines saved before targets existed get 3 sets and no rep target. */

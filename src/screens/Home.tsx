@@ -6,10 +6,10 @@ import { ChallengeRow, GoalList, LevelCard, StreakCard } from '../components/Pro
 import { WorkoutRow } from '../components/WorkoutRow';
 import { broSays, greeting, logHref, logMode, upNext } from '../lib/today';
 import { holidayOn } from '../lib/holidays';
-import { activeRoutines, lastDone, upNextRoutine } from '../lib/routines';
+import { activeRoutines, dayNumber, lastDone, upNextRoutine } from '../lib/routines';
 import { fmtDate, plural, today } from '../lib/util';
 import { Icon } from '../components/Icon';
-import { SectionHead, SyncBadge } from '../components/ui';
+import { DayNo, SectionHead, SyncBadge } from '../components/ui';
 import { Bro } from '../components/Bro';
 import { LiftGoalRow } from '../components/LiftGoal';
 import { currentPhase, liveWeights, phaseSummary, WAIST_CHECK_CM } from '../lib/body';
@@ -25,7 +25,7 @@ export function Home() {
   const routines = useMemo(() => {
     const all = activeRoutines(data);
     const next = upNextRoutine(all, lastDone(data, all));
-    return next ? [next, ...all.filter((r) => r !== next)].map((r) => ({ r, next: r === next })) : all.map((r) => ({ r, next: false }));
+    return (next ? [next, ...all.filter((r) => r !== next)] : all).map((r) => ({ r, next: r === next, day: dayNumber(all, r) }));
   }, [data]);
   const trainedToday = data.sessions.some((s) => !s.deleted && s.date === today());
   const feriado = holidayOn(today());
@@ -94,9 +94,9 @@ export function Home() {
             <a className="chip" href={logHref(after ? 'live' : 'after')} style={{ color: 'var(--text-2)' }}>
               <Icon name={after ? 'clock' : 'history'} size={14} /> {after ? 'Start live instead' : 'Log it afterwards'}
             </a>
-            {routines.map(({ r, next }) => (
+            {routines.map(({ r, next, day }) => (
               <a key={r.id} className={`chip${next ? ' accent' : ''}`} href={`#/routines/${r.id}`}>
-                <Icon name="list" size={14} /> {next ? `Up next: ${r.name}` : r.name}
+                {day ? <DayNo n={day} /> : <Icon name="list" size={14} />} {next ? `Up next: ${r.name}` : r.name}
               </a>
             ))}
           </div>

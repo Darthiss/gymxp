@@ -11,10 +11,10 @@ import { lookupWeather } from '../components/WeatherField';
 import { navigate } from '../lib/router';
 import { addDays, fmtDate, fmtNum, parseWorkoutLine, plural, today, uid } from '../lib/util';
 import type { AppData, Routine } from '../lib/types';
-import { activeRoutines, firstReps, routineItems } from '../lib/routines';
+import { activeRoutines, dayNumber, firstReps, routineItems } from '../lib/routines';
 import { buildSessions, freshImportDraft, PLAN_NAMES, type ImportDraft, type Plan, type PlanItem, type Row } from '../lib/backfill';
 import { ExercisePicker } from '../components/ExercisePicker';
-import { Confetti, ExerciseThumb, LevelBadge, PageHead, Sheet, toast, ProgressBar } from '../components/ui';
+import { Confetti, DayNo, ExerciseThumb, LevelBadge, PageHead, Sheet, toast, ProgressBar } from '../components/ui';
 import { Icon } from '../components/Icon';
 
 const IMPORT_RANK = rankFor(levelForStars(RULES.importedStarCap)).title;
@@ -205,7 +205,7 @@ export function Backfill() {
           {routines.length > 0 && (
             <div className="chips">
               {routines.map((r) => (
-                <button key={r.id} className="chip" onClick={() => addItems(r.exerciseIds, r)}>▶ Load “{r.name}”</button>
+                <button key={r.id} className="chip" onClick={() => addItems(r.exerciseIds, r)}>{dayNumber(routines, r) ? <DayNo n={dayNumber(routines, r)} /> : '▶'} Load “{r.name}”</button>
               ))}
             </div>
           )}

@@ -9,13 +9,13 @@ import { WeatherField } from '../components/WeatherField';
 import { back, navigate, type Route } from '../lib/router';
 import { fmtDate, num, nowTime, parseWatchText, plural, today, uid, type WatchImport } from '../lib/util';
 import type { AppData, Exercise, Routine, RoutineItem, Session, SetEntry } from '../lib/types';
-import { activeRoutines, fmtTarget, goUp, inOrder, loadOrder, moveTo, nextPosition, planFor, repsForSet, routineItems, steppedUp, type GoUp } from '../lib/routines';
+import { activeRoutines, dayNumber, fmtTarget, goUp, inOrder, loadOrder, moveTo, nextPosition, planFor, repsForSet, routineItems, steppedUp, type GoUp } from '../lib/routines';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { PlateCalc } from '../components/PlateCalc';
 import { ExerciseInfo } from '../components/ExerciseInfo';
 import { ReorderSheet } from '../components/ReorderSheet';
 import { Celebration } from '../components/Celebration';
-import { Cell, CellIcon, ExerciseThumb, PageHead, PickerField, Sheet, StarRating, toast } from '../components/ui';
+import { Cell, CellIcon, DayNo, ExerciseThumb, PageHead, PickerField, Sheet, StarRating, toast } from '../components/ui';
 import { Icon } from '../components/Icon';
 
 interface DraftSet { kg: string; reps: string; w?: boolean } // w: a warm-up, left out of every stat
@@ -351,7 +351,7 @@ export function Log({ route }: { route: Route }) {
           {routines.length > 0 && (
             <div className="row-wrap" style={{ justifyContent: 'center', marginTop: 4 }}>
               {routines.map((r) => (
-                <button key={r.id} className="chip accent" onClick={() => addExercise(r.exerciseIds, r)}><Icon name="play" size={11} fill stroke={0} /> {r.name}</button>
+                <button key={r.id} className="chip accent" onClick={() => addExercise(r.exerciseIds, r)}>{dayNumber(routines, r) ? <DayNo n={dayNumber(routines, r)} /> : <Icon name="play" size={11} fill stroke={0} />} {r.name}</button>
               ))}
             </div>
           )}

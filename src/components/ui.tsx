@@ -68,6 +68,11 @@ export function PickerField({ type, value, onChange, label, placeholder, max }: 
   );
 }
 
+/** A routine's day in the rotation: a small numbered ring in the text colour, or a filled disc (`big`). */
+export function DayNo({ n, big }: { n: number | null; big?: boolean }) {
+  return n ? <span className={`day-no${big ? ' big' : ''}`} aria-label={`Day ${n}`}>{n}</span> : null;
+}
+
 export function ProgressBar({ pct, gold, thin, color }: { pct: number; gold?: boolean; thin?: boolean; color?: string }) {
   return (
     <div className={`bar${gold ? ' gold' : ''}${thin ? ' thin' : ''}`} role="progressbar" aria-valuenow={Math.round(pct * 100)} aria-valuemin={0} aria-valuemax={100}>
