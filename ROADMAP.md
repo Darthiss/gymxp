@@ -6,7 +6,7 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 
 ## Where things stand
 
-*As of 23 November 2026.* Phases 1, 2, 3 and 5 are live: the star system, the new end screen, trophies, legends, a full balance review and training insights. The app is now called Bro, with a new look and mascot. Phase 5 went before Phase 4 at the owner's request, and so did body and strength goals. **Next:** [Phase S](#phase-s-a-second-user), a second user (a woman), before Spanish and the public launch. Its first two steps are done; her setup and first month are next. Then the checks below, then Phase 4.
+*As of 23 November 2026.* Phases 1, 2, 3 and 5 are live: the star system, the new end screen, trophies, legends (shelved since), a full balance review and training insights. The app is now called Bro, with a new look and mascot. Phase 5 went before Phase 4 at the owner's request, and so did body and strength goals. **Next:** [Phase A](#phase-a-private-accounts), private accounts on Supabase: no GitHub, free, end-to-end encrypted, for the owner, the second user and up to five friends. The second user ([Phase S](#phase-s-a-second-user), a woman) has no GitHub account, so she starts once Phase A is live, and the owner moves over first. Then [Phase 4](#phase-4-spanish), Spanish. The public launch has no date and no target.
 
 **Open checks, all for the owner:**
 - [ ] **On an iPhone,** log a workout afterwards and confirm "Add time" shows and opens the picker (step 1.1).
@@ -36,12 +36,21 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 - [x] **3.3** Legends rework · M
 - [x] **3.4** Balance review: ranks, rarity, long-term trophies · M
 
-**Phase S: A second user** (next, before Spanish and the public launch)
+**Phase A: Private accounts** (next)
+- [ ] **A.1** Owner: create the two Supabase projects · S · *[owner's guide](docs/ACCOUNTS.md)*
+- [ ] **A.2** A seam for sync, with GitHub still behind it · M
+- [ ] **A.3** End-to-end encryption and the recovery key · M
+- [ ] **A.4** Sign-up, sign-in, sync and photos on Supabase · L
+- [ ] **A.5** Nightly backup, privacy page and account deletion · S
+- [ ] **A.6** Move the owner over, then retire the GitHub path · S
+
+**Phase S: A second user** (S.3 on, once Phase A is live)
 - [x] **S.1** Sex-specific health review: every body and health formula checked for women · M
 - [x] **S.2** Glute and lower-body exercises, and the staples women train most · S
-- [ ] **S.3** Her setup: account, data repo, profile and routine · S
+- [ ] **S.3** Her setup: account, install, profile and routine · S
 - [ ] **S.4** Her first month: playtest and fix what's missing · S
 - [ ] **S.5** Decide the open questions for her · S
+- [ ] **S.6** Friends: up to five more, after her first month · S
 
 **Phase 4: Spanish**
 - [ ] **4.1** i18n foundation · M
@@ -53,9 +62,9 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 - [x] **5.2** Body map · M
 - [x] **5.3** Routine check: what's missing · M
 
-**Phase 6: Public launch** (last)
-- [ ] **6.1** Choose the backend and settle what can't change later · M
-- [ ] **6.2** Sign-up and sync without GitHub · L
+**Phase 6: Public launch** (last, no date and no target)
+- [ ] **6.1** Settle what can't change later · M
+- [ ] **6.2** Open sign-up to anyone · M
 - [ ] **6.3** Install flow and reminders · M
 - [ ] **6.4** Friends and leagues · L
 
@@ -71,8 +80,10 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 | Hero Physique | Shelved behind a flag, with code and tests kept. Decide its future before Phase 6 |
 | Legends | Shelved behind a flag in November 2026, at the owner's request, with code and tests kept. Their challenges pay no stars while off. Decide with Hero |
 | Spanish register | Neutral Latin American |
-| Accounts | Public sign-up without GitHub, on the web and installable from the browser. Built last |
-| Next user | A second user, a woman, before Spanish and the public launch. Health formulas follow the profile's sex wherever the science differs |
+| Accounts | Supabase on the free plan, built next (Phase A) for the owner, the second user and up to five friends. Email and password, with sign-up limited to a guest list. No GitHub. Google can come later if it works in an iPhone Home Screen app; Apple needs a paid developer account |
+| Privacy | End-to-end encrypted. Each phone locks the data before uploading it, so Supabase, the backups and the owner as admin see only emails, sync times and sizes. A forgotten password is fixed with the recovery key; losing both loses the data, by design |
+| Public launch | No date and no target. Private accounts first, then Spanish, then decide |
+| Next user | A second user, a woman, once Phase A is live and before Spanish. Health formulas follow the profile's sex wherever the science differs |
 
 ## Open question
 
@@ -85,17 +96,20 @@ Work top to bottom. Each step is one branch, small enough to ship alone. Tick it
 3. **Rewards next,** on top of the new system. These shipped before the playtest finished, at the owner's request.
 4. **Spanish after the rewrites,** so we didn't translate text about to be deleted. It was planned before insights, but the owner wanted the body map sooner, so Phase 5 shipped first and its text joins the 4.2 translation.
 5. **Insights** share one library (5.1), so it comes first.
-6. **A second user before Spanish,** at the owner's request. One real person who isn't the owner, and the first woman, will show what the app gets wrong for someone else, and that's cheaper to learn now than after translating it. If she'd rather use it in Spanish, Phase 4 comes straight after.
-7. **Public launch last.** It's the biggest change here, and the people it serves will expect Spanish and stable rules from day one.
+6. **Private accounts before her,** because she has no GitHub account and the log is health data. Phase A is sized for seven people, not the public: one free Supabase setup, a guest list, end-to-end encryption. The owner moves over first, so his long log tests it before anyone else's data is on it.
+7. **A second user before Spanish,** at the owner's request. One real person who isn't the owner, and the first woman, will show what the app gets wrong for someone else, and that's cheaper to learn now than after translating it. If she'd rather use it in Spanish, Phase 4 comes straight after.
+8. **Public launch last, with no date.** Phase A does the hard technical part. What's left is opening sign-up, and the responsibilities that come with strangers' data.
 
 ## Working rules
 
 - **Before merging:** `npm test`, `npm run build`, and a real look at the change with `?demo`. Unit tests didn't catch either of the two worst bugs in Phase 3.
 - **Shipping:** `main` deploys immediately and there is no staging. After pushing, confirm the Actions run and check the live site. iOS-specific fixes need a real iPhone, which means after deploying or through an HTTPS tunnel.
+- **Accounts:** from Phase A on, local dev uses the `bro-test` Supabase project. Try account and sync changes there, never on real accounts.
 - **Rules:** scoring is recomputed from the log, so any change re-scores all history. This is cheap now, with one real user, and gets expensive after the public launch. Settle the rules before Phase 6.
 - **Language:** from step 4.2 on, new text ships in both languages.
-- **Seams:** keep network code behind `Store` and the engine pure. That's what makes Phase 6 a swap and not a rewrite.
-- **Public repo:** these docs are public, so keep real training data out of them.
+- **Seams:** keep network code behind `Store` and the engine pure. That's what makes Phase A a swap and not a rewrite.
+- **Privacy:** nothing readable leaves the phone. A later server feature (reminders, leagues) gets only the little it needs, sent on purpose, never the log.
+- **Public repo:** these docs are public, so keep real training data and people's names out of them. The Supabase project URL and publishable key are public by design and can live in the repo. The secret key and the database password never do.
 
 ---
 
@@ -146,9 +160,55 @@ Shipped before Phase 4, at the owner's request.
 
 ---
 
+## Phase A: Private accounts
+
+For the owner, the second user and up to five friends, and nobody else yet. She has no GitHub account and the log is health data, so the bar is: no GitHub, free, private by design, and simple on an iPhone. The owner's part, step by step, is in [docs/ACCOUNTS.md](docs/ACCOUNTS.md).
+
+**The shape, decided in November 2026:**
+- **Supabase on the free plan:** database, sign-in and file storage in one service. Two projects: `bro` for real accounts and `bro-test` for development, which is all the free plan allows. Free projects [pause after a week without database activity](https://supabase.com/docs/guides/platform/free-project-pausing), and the nightly backup (A.5) keeps them awake. Pro ($25 a month) removes that if it ever matters.
+- **Email and password.** There are no redirects, so it works inside an iPhone Home Screen app, and iPhone suggests and saves the password. Magic links are out: they open in Safari, whose storage is separate from the installed app. Google can come later, once tested on an iPhone. Apple needs the paid developer account.
+- **A guest list.** Sign-up only accepts emails the owner has added, enforced by Supabase's [Before User Created hook](https://supabase.com/docs/guides/auth/auth-hooks/before-user-created-hook). There's no confirmation email, since the list already vouches for the address.
+- **End-to-end encrypted.** The server stores a locked box per person. Merging already happens on the device, and `crypto.ts` already does AES-256-GCM with PBKDF2 at 600,000 iterations, so this costs little.
+- **The same data shape.** One sealed `data.json` per person, saved only if nobody else saved first, otherwise fetch, merge and retry, as GitHub's SHA check works today. App changes never need a database change, because the server can't read the shape.
+
+### A.1 Owner: create the two Supabase projects · S
+
+No code: the account, both projects, the region, the sign-in settings, and each project's URL and publishable key. See [the guide](docs/ACCOUNTS.md#1-now-create-the-projects).
+
+### A.2 A seam for sync · M
+
+Put a `Remote` interface between `Store` and the network: load the data with its version, save it against the version it was loaded at (a `ConflictError` when someone saved first), and put and get a file. `github.ts` implements it first, with no change in behaviour. Test conflict, merge and retry against an in-memory fake.
+
+### A.3 End-to-end encryption and the recovery key · M
+
+- **The data key:** one random AES-256-GCM key per person seals everything uploaded, the data and photos alike.
+- **From the password,** PBKDF2 (salted with the email, as Bitwarden does, so it's known before sign-in) and then HKDF derive two separate things: the login secret Supabase checks, and the key that wraps the data key. Supabase never receives anything that can open the data.
+- **The recovery key** is random, shown once at sign-up to save in iPhone's Passwords app, and wraps the data key a second time. Both wrapped copies are stored with the account.
+- **On the phone,** the data key is kept as a non-extractable key in IndexedDB, so the app opens straight away without typing anything. Signing out deletes it and the cache.
+- **Changes:** a new password or email, while signed in, rewraps the key. A forgotten password takes an emailed code plus the recovery key. Without both, nobody can open the data, and sign-up says so plainly.
+- **The PIN vault goes.** An optional app lock can come back later if anyone wants it.
+
+### A.4 Sign-up, sign-in, sync and photos on Supabase · L
+
+- **Database:** one row per person (the sealed data, its version and the wrapped keys), with Row Level Security so each account reaches only its own row. A save is a function that only writes when the version matches. Photos go in a private bucket, one folder per person, sealed before upload. The SQL lives in the repo, and the owner runs it once per project.
+- **Screens:** create account, sign in, forgot password and the recovery key, in the app's current style. Set `autocomplete` on every field, so iPhone offers a strong password and fills it later. Settings gets change password (which signs out other devices) and a new recovery key, in place of the token and PIN. Deleting a user also deletes their row and photos.
+- **Password reset:** the email carries a code typed into the app, not a link, so it never lands in Safari. On the free plan, [editing that email needs your own sender](https://supabase.com/changelog/46599-changes-to-email-template-customisation-on-free-tier), so the owner sets up a dedicated Gmail ([guide, step 2](docs/ACCOUNTS.md#2-with-a4-an-email-sender-for-password-resets)).
+- **Config:** each project's URL and publishable key in the repo, and the project's host added to the CSP's `connect-src`.
+- GitHub keeps working through A.2's seam until A.6.
+
+### A.5 Nightly backup, privacy page and account deletion · S
+
+- **Backup:** a GitHub Action in the owner's private data repo dumps the sealed rows every night and commits them. They're unreadable without each person's key, and the query counts as activity, so the project doesn't pause.
+- **Privacy page:** one screen saying what's stored, who can see it (nobody but you; the admin sees your email and when you synced), where it lives, and how to export or delete it.
+- **Delete account** in Settings removes the row, the photos and the sign-in. Export already exists.
+
+### A.6 Move the owner over, then retire the GitHub path · S
+
+Rehearse on `bro-test` with a copy first. Export from the GitHub version, create the account, import, and check that workouts, sets, weigh-ins, `goalHistory`, tombstones and imported workouts all survive, with the same level and stars. Use it for a week or two. Then remove `github.ts`, the vault and the token screens. The old data repo stays as an archive, and as the backup's home.
+
 ## Phase S: A second user
 
-The next user is a woman, and she comes before Spanish and the public launch. Bro was built and tuned around one man's training, so this phase makes every body and health number right for her and fills the catalog with what she's likely to train.
+The next user is a woman, and she comes before Spanish and the public launch, on the private accounts from Phase A. Bro was built and tuned around one man's training, so this phase makes every body and health number right for her and fills the catalog with what she's likely to train.
 
 ### S.1 Sex-specific health review · M · ✓
 
@@ -160,9 +220,9 @@ Every formula and range that differs between women and men now follows the profi
 
 ### S.3 Her setup · S
 
-- **Her own data.** Each user's log lives in their own private GitHub repo, so she needs a GitHub account, a private repo and a fine-grained token, set up together. Using her own account keeps her data out of the owner's. This is the friction 6.2 removes for everyone later.
+- **Her account.** The owner adds her email to the guest list. On her iPhone: open the link in Safari, Add to Home Screen, then create the account inside the installed app, not in Safari, whose storage is separate. Save the recovery key in Passwords together. Steps in [the guide](docs/ACCOUNTS.md#6-with-s3-add-her).
 - **Profile first:** sex, height and birth year, before her first weigh-in, since they pick the formulas. Then a weekly goal she can keep, and her routine in Routines.
-- **Install** it to her Home Screen, and check the Body tab and the logger on her phone.
+- **Check on her phone** the Body tab and the logger.
 
 ### S.4 Her first month · S
 
@@ -179,6 +239,10 @@ Product choices, best made with her after S.4:
 - **Legends** are shelved for now. If they return, they're four men: add women, with commonly reported facts only?
 - **Lift someone** sets the deadlift at 1.5× her own bodyweight. If the person she'd lift is much heavier than her, that target may need to follow their weight instead.
 - **Hero Physique** is shelved, and was built around a male actor's training. If it returns, it needs a version for women or a neutral one.
+
+### S.6 Friends · S
+
+Up to five more, after her first month, each set up the same way as S.3. Fix what her month turned up first, so they start on a better app. Seven people sit well inside the free plan.
 
 ## Phase 4: Spanish
 
@@ -262,21 +326,16 @@ Then compare with what you actually logged over the last 4 weeks, which catches 
 
 ## Phase 6: Public launch
 
-Anyone can register and use Bro in the browser or install it from there, with no GitHub. The owner's 2–3 friends are the first users. This is the largest change on the roadmap, and it's deliberately last.
+Anyone can register, not only the guest list. **No date and no target:** decide after Spanish whether to do it at all. Phase A already built accounts, sync and encryption, so this phase is mostly about strangers: opening the door safely and the responsibilities that come with it.
 
 Research the details when this phase starts, since prices and platform rules will have moved by then.
 
-### 6.1 Choose the backend and settle what can't change later · M
+### 6.1 Settle what can't change later · M
 
-**Decide the technical shape:**
-- **Backend:** a hosted option such as Supabase or Firebase, or something self-run. This adds a server, a monthly cost and a new CSP host.
-- **Sync model:** today the app saves the whole `data.json` on each change. That should become per-record, which the existing `Rec` merge rules already suit.
-- **Photos:** custom machine photos live in the data repo today (`uploadPhoto`, `photoUrl`), so they need file storage.
-- **Sign-in:** email and password, magic links or Google. The PIN vault goes away or becomes an optional local lock.
-- **Staging:** `main` deploys straight to users today. Other people's data needs a preview environment first.
+**Check the technical shape** built in Phase A: whether one sealed `data.json` per person still fits once logs are years long. If not, move to per-record sync, which the `Rec` merge rules already suit.
 
 **Decide the responsibilities:**
-- **Privacy:** today only you hold your data, in your own repo. Hosting other people's body weight and training history means a privacy policy, account deletion and data export, plus deciding whether data is end-to-end encrypted.
+- **Privacy:** Phase A already encrypts end to end and has export, deletion and a privacy page. Strangers' data also needs a proper privacy policy and terms, checked by someone who knows Argentine data law, where health data is sensitive data, and the law wherever else users are.
 - **Real people:** a public product naming Arnold, Ronnie, Eddie and Thor, quoting one and using "Mr. Olympia" is different from a personal app. Check this, and decide whether Legends keeps real names. The same goes for Tom Holland in Hero Physique, along with whether Hero returns at all.
 
 **Decide what's frozen, because rules re-score everyone:**
@@ -287,25 +346,27 @@ Research the details when this phase starts, since prices and platform rules wil
 - Feriado bonuses and holiday trophies use Argentine holidays (`holidays.ts`), and season names assume the southern hemisphere (`SEASON_NAMES`). Add a country setting, or make these Argentina-only and hide them elsewhere.
 - Everything is in kilograms. Decide whether pounds are needed. Sets store kg, so that would be a display setting.
 
-### 6.2 Sign-up and sync without GitHub · L
+### 6.2 Open sign-up to anyone · M
 
-Replace `github.ts` and the vault behind the existing `Store` interface. The engine, screens and merge rules should barely change. Outside `Store`, the setup and token screens use GitHub directly (`Auth.tsx`, `Settings.tsx`), and both get replaced.
-
-**Migration:** existing users, starting with the owner, move over using the existing Export and Import JSON path. Run it with real data before anyone else joins. `goalHistory`, tombstones and imported workouts must all survive.
+- **Replace the guest list** with open sign-up, protected by a CAPTCHA (Supabase supports Cloudflare Turnstile and hCaptcha) and rate limits.
+- **Email from your own domain** through a transactional email provider, in place of the Gmail sender, so mail doesn't land in spam.
+- **Supabase Pro** ($25 a month) for daily backups and no pausing, once strangers depend on it.
+- **A staging site,** so `main` doesn't deploy straight to strangers.
+- **Google sign-in,** if it works inside an iPhone Home Screen app by then.
 
 ### 6.3 Install flow and reminders · M
 
 - **Install:** iOS has no install prompt, so people need a clear "Add to Home Screen" guide. Android and desktop can use the browser's prompt.
 - **Onboarding:** a new person should get the first-workout win quickly. The in-app "how it works" already fits one screen, so show it once and keep Import past workouts easy to find.
-- **Reminders:** Web Push needs the server this phase adds, and on iOS it [only works once the app is on the Home Screen](https://documentation.onesignal.com/docs/en/web-push-for-ios). Send them sparingly: only when a streak is at risk, using the same logic as `weekMessage`, or on a day you usually train. Keep the no-guilt copy. Check the current state of iOS and EU rules at this point.
+- **Reminders:** Web Push needs a small server job, which Supabase can run, and on iOS it [only works once the app is on the Home Screen](https://documentation.onesignal.com/docs/en/web-push-for-ios). The log is sealed, so the phone uploads only what a reminder needs, such as "nothing logged by Thursday", never the log. Send them sparingly: only when a streak is at risk, using the same logic as `weekMessage`, or on a day you usually train. Keep the no-guilt copy. Check the current state of iOS and EU rules at this point.
 
 ### 6.4 Friends and leagues · L
 
 - **Share card:** a workout summary as an image through the Web Share API, for WhatsApp. It's the cheapest social feature, so do it first.
-- **Friends and a weekly league,** opt-in, in small groups. **Score it on workout stars and Perfect Week stars only.** Trophies pay big one-offs and imported history could add a burst, either of which would swamp a weekly table. `SessionResult.items` already separates these by `kind`.
+- **Friends and a weekly league,** opt-in, in small groups. **Score it on workout stars and Perfect Week stars only.** Trophies pay big one-offs and imported history could add a burst, either of which would swamp a weekly table. `SessionResult.items` already separates these by `kind`. The log stays sealed, so each phone shares only its weekly totals, on purpose, with its friends.
 - **Friend cards** on the Legends tab can reuse `LegendCard`'s layout.
 - **Friend streaks.**
-- **Cheating:** scores are computed on the device, so anyone can fake them. The weekly cap on those two sources limits how much it helps, and the server can re-run the pure engine to check scores if this ever matters.
+- **Cheating:** scores are computed on the device, so anyone can fake them, and with the log sealed the server can't re-check them. The weekly cap on those two sources limits how much it helps, which is enough among friends.
 
 The [design doc](docs/GAME_DESIGN.md#later-when-there-are-other-players) explains why stars suit this well.
 
@@ -321,8 +382,10 @@ The [design doc](docs/GAME_DESIGN.md#later-when-there-are-other-players) explain
 | sacar las estrellas / rank points, análisis gamificador | [Game design](docs/GAME_DESIGN.md), 2.2–2.4 ✓ |
 | agregar farmers walk, con peso y segundos | ✓ |
 | setting para tener la app en español latino | 4.1–4.3 |
-| 2 o 3 amigos: cuenta y compararse | 6.1–6.4 |
-| registro sin GitHub, web app instalable desde el navegador | 6.1–6.3 |
+| 2 o 3 amigos: cuenta y compararse | Phase A, S.6; comparing in 6.4 |
+| registro sin GitHub, web app instalable desde el navegador | Phase A, S.3 |
+| que ella y hasta 5 amigos entren sin GitHub: gratis, privado y seguro, con datos de salud | Phase A |
+| orden: Supabase y migrar, después español, después lanzamiento público sin fecha | [Why this order](#why-this-order) |
 | por ahora sacar y dejar guardado el hero physic | 2.1 ✓ |
 | mejorar la parte de legends, más divertida | 3.3 ✓ |
 | volver los achievements e hitos más importantes | 3.2 ✓ |
@@ -330,4 +393,4 @@ The [design doc](docs/GAME_DESIGN.md#later-when-there-are-other-players) explain
 | análisis de qué le falta a la rutina | 5.1, 5.3 |
 | que la app funcione para ella: cada cálculo de salud y medidas según el sexo | S.1 ✓ |
 | más ejercicios de glúteos y los más usados por mujeres | S.2 ✓ |
-| ella es la próxima usuaria, antes del español y del lanzamiento | S.3–S.5 |
+| ella es la próxima usuaria, antes del español y del lanzamiento | Phase A, S.3–S.5 |

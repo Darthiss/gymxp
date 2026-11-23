@@ -38,7 +38,7 @@ Boot sequence (`src/App.tsx`): `boot` → `setup` or `locked` → `open`. Once o
 
 **Vault (`lib/vault.ts`, `lib/crypto.ts`).** The GitHub token and repo name are sealed with a key derived from the user's PIN. The non-extractable key stays in IndexedDB until the auto-lock window expires.
 
-**Store (`lib/store.ts`).** One instance per unlocked session, read through `useStore()` / `useData()` and written through `getStore()`. Every change goes through `getStore().update(mutator, commitMessage)`: the mutator gets a deep copy, the encrypted cache in localStorage updates at once, and the whole `data.json` is PUT to GitHub after a short debounce. Each sync is one commit in the data repo. A SHA conflict triggers fetch, merge, retry. Keep network code behind `Store`: Phase 6 replaces it.
+**Store (`lib/store.ts`).** One instance per unlocked session, read through `useStore()` / `useData()` and written through `getStore()`. Every change goes through `getStore().update(mutator, commitMessage)`: the mutator gets a deep copy, the encrypted cache in localStorage updates at once, and the whole `data.json` is PUT to GitHub after a short debounce. Each sync is one commit in the data repo. A SHA conflict triggers fetch, merge, retry. Keep network code behind `Store`: Phase A of the roadmap replaces GitHub with Supabase.
 
 **Data rules (`lib/types.ts`, `lib/merge.ts`).** Syncable records extend `Rec` and merge last-writer-wins per record, by `updatedAt`.
 - Set `updatedAt: Date.now()` on every change.

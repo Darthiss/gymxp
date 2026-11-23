@@ -585,8 +585,8 @@ Workout stars and Perfect Weeks suit friends and public leagues well, because th
 
 - **Weekly friend league, scored on those two only.** Trophies pay big one-offs and imported history could add a burst, either of which would swamp a weekly table. [Competition was the strongest gamified arm in a 602-person trial](https://www.healio.com/news/primary-care/20190909/gamification-may-improve-effectiveness-of-weight-loss-interventions), and it lasted after the game ended. But [leaderboards can push away less competitive people](https://pmc.ncbi.nlm.nih.gov/articles/PMC8916940), so make it opt-in and keep groups small.
 - **Friend streaks,** for two people keeping a streak together.
-- **Reminders.** Push needs a server, and on iOS it [only works for apps added to the Home Screen](https://documentation.onesignal.com/docs/en/web-push-for-ios). It arrives with accounts in Phase 6.
-- **Rule changes affect everyone.** Scores derive from the log, so changing a rule or removing a trophy can lower a level someone earned. Settle what's frozen before launch: see [Phase 6.1](../ROADMAP.md#61-choose-the-backend-and-settle-what-cant-change-later--m).
+- **Reminders.** Push needs a server, and on iOS it [only works for apps added to the Home Screen](https://documentation.onesignal.com/docs/en/web-push-for-ios). Accounts arrive in Phase A; reminders wait for Phase 6.3.
+- **Rule changes affect everyone.** Scores derive from the log, so changing a rule or removing a trophy can lower a level someone earned. Settle what's frozen before launch: see [Phase 6.1](../ROADMAP.md#61-settle-what-cant-change-later--m).
 
 ## Alternatives rejected
 
