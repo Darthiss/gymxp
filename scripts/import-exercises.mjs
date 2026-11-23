@@ -550,8 +550,8 @@ const CURATED = [
       'Stop while your posture is still good, and set it down the way you picked it up: knees bent, back flat.',
       'In Bro, log the total weight you carried and how many seconds you walked. To progress, walk longer, then go heavier.',
     ] },
-  // One dumbbell, so no loadFactor: log the dumbbell itself.
-  { src: null, id: 'Goblet_Carry', primary: ['Abdominals'], secondary: ['Middle Back', 'Front Delts', 'Biceps'], pattern: 'carry', name: 'Goblet Carry', group: 'Core', equipment: 'Dumbbell', hold: true,
+  // One dumbbell, so no loadFactor: log the dumbbell itself. Its photo was added by hand.
+  { src: null, id: 'Goblet_Carry', photos: 1, primary: ['Abdominals'], secondary: ['Middle Back', 'Front Delts', 'Biceps'], pattern: 'carry', name: 'Goblet Carry', group: 'Core', equipment: 'Dumbbell', hold: true,
     aliases: ['Goblet Walk', 'Dumbbell Goblet Carry', 'Kettlebell Goblet Carry', 'Caminata con mancuerna al pecho', 'Caminata goblet', 'Paseo goblet'],
     look: 'You walk tall holding one dumbbell upright against your chest, hands cupped under the top end: the same hold as a goblet squat (or a kettlebell by its horns). It trains your core and upper back to stay upright with a load in front of you. Log the weight of the one dumbbell and the seconds you walked.',
     instructions: [
@@ -615,6 +615,12 @@ for (const c of CURATED) {
   if (c.src === null && !(c.id && c.primary && c.secondary && c.instructions)) throw new Error(`${c.name}: an exercise without src needs id, primary, secondary and instructions`);
   const id = c.id ?? c.src;
   const images = [];
+  // A hand-written exercise can have photos of its own: `photos: n` expects public/ex/<id>/0.jpg … n-1.jpg.
+  for (let i = 0; i < (c.photos ?? 0); i++) {
+    const rel = `ex/${id}/${i}.jpg`;
+    try { await fs.access(path.join(ROOT, 'public', rel)); } catch { throw new Error(`${id}: photo ${rel} is missing`); }
+    images.push(rel);
+  }
   for (let i = 0; i < src.images.length && i < 2; i++) {
     const rel = `ex/${id}/${i}.jpg`;
     images.push(rel);

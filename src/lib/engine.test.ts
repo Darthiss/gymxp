@@ -1932,7 +1932,7 @@ describe('lift goal', () => {
     expect(exMap.get('Front_Carry')!.loadFactor).toBeUndefined(); // one load, logged as the total
     expect(exMap.get('Goblet_Squat')).toMatchObject({ pattern: 'squat', group: 'Legs', primaryMuscles: ['Quadriceps', 'Glutes'] });
     expect(exMap.get('Goblet_Squat')!.loadFactor).toBeUndefined();
-    expect(exMap.get('Goblet_Carry')).toMatchObject({ hold: true, pattern: 'carry', group: 'Core', equipment: 'Dumbbell', images: [] });
+    expect(exMap.get('Goblet_Carry')).toMatchObject({ hold: true, pattern: 'carry', group: 'Core', equipment: 'Dumbbell', images: ['ex/Goblet_Carry/0.jpg'] });
     expect(exMap.get('Goblet_Carry')!.loadFactor).toBeUndefined(); // one dumbbell, logged as itself
     expect(searchExercises(allExercises(emptyData()), 'mancuerna al pecho')[0].id).toBe('Goblet_Carry');
     expect(searchExercises(allExercises(emptyData()), 'goblet carry')[0].id).toBe('Goblet_Carry');

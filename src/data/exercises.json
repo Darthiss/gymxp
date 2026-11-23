@@ -3700,7 +3700,9 @@
    "Stop while your posture is still good, then set the dumbbell down with your knees bent and back flat.",
    "In Bro, log the weight of the dumbbell and how many seconds you walked. To progress, walk longer, then pick the next dumbbell."
   ],
-  "images": [],
+  "images": [
+   "ex/Goblet_Carry/0.jpg"
+  ],
   "hold": true,
   "pattern": "carry"
  },
