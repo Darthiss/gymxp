@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { hasVault, forgetKey, tryResume, type Unlocked } from './lib/vault';
 import { setCurrentStore, Store, useStore } from './lib/store';
+import { githubRemote } from './lib/github';
 import { Session } from './lib/session';
 import { useRoute } from './lib/router';
 import { Setup, Unlock } from './screens/Auth';
@@ -26,7 +27,7 @@ export function App() {
   const [phase, setPhase] = useState<Phase>({ kind: 'boot' });
 
   const open = useCallback(async (u: Unlocked) => {
-    const store = new Store(u.key, u.cfg);
+    const store = new Store(u.key, githubRemote(u.cfg));
     setCurrentStore(store);
     setPhase({ kind: 'open', unlocked: u, store });
     await store.open();
@@ -68,7 +69,7 @@ export function App() {
             unlocked: phase.unlocked,
             lock,
             setUnlocked: async (u: Unlocked) => {
-              await phase.store.rekey(u.key, u.cfg);
+              await phase.store.rekey(u.key, githubRemote(u.cfg));
               setPhase({ ...phase, unlocked: u });
             },
           }

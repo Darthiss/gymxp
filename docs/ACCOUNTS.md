@@ -7,16 +7,18 @@ What the owner does by hand for [Phase A](../ROADMAP.md#phase-a-private-accounts
 ## 1. Now: create the projects
 
 1. Go to [supabase.com](https://supabase.com) and sign up. **Continue with GitHub** is quickest. When it asks for an organization, choose the **Free** plan.
-2. Create a **new project** named `bro`:
-   - **Database password:** press **Generate** and save it in your password manager. The app never uses it; the nightly backup does (step 4).
-   - **Region:** South America (São Paulo) if it's listed, otherwise the closest one. It can't be changed later.
-   - Leave the rest as it is. It takes a couple of minutes to start.
-3. Create a second project the same way, named `bro-test`, with its own password. Development and rehearsals use it, so real accounts are never touched. The free plan allows exactly two projects.
+2. Create a **new project** named `Bro`:
+   - **GitHub (optional):** leave it empty. The database barely changes, since each person's data is one sealed blob, so a one-time SQL paste beats giving Supabase access to the repo. It can be connected later.
+   - **Database password:** generate one, press **Copy** and save it in your password manager before creating. The app never uses it; the nightly backup does (step 4).
+   - **Region:** press **Need a specific region?** and choose South America (São Paulo) if it's listed, otherwise **Americas**. It can't be changed later.
+   - **Data access:** keep **Enable Data API** on, since the app talks to the database through it. Leave **Grant API access to new tables automatically** off, since the setup file grants only what the app needs. Turn **Enable RLS on new tables automatically** on, so any new table starts locked.
+   - Leave **Advanced configuration** as it is. It takes a couple of minutes to start.
+3. Create a second project the same way, named `Bro test`, with its own password. Development and rehearsals use it, so real accounts are never touched. The free plan allows exactly two projects.
 4. In **each** project, open **Authentication**, then the sign-in settings:
    - **Allow new users to sign up:** off for now. It goes back on in step 3, once the guest list is in place.
    - **Email** sign-in: on. **Confirm email:** off. The guest list replaces it, and confirmation links open in Safari instead of the installed app.
    - Leave the password rules alone. The app checks the real password itself, and Supabase only ever sees a long derived secret.
-5. Copy each project's **Project URL** and **publishable key** and send them over. Both are on the project's home page or under **Project Settings** (**Data API** for the URL, **API Keys** for the key).
+5. Copy each project's **Project URL** and **publishable key** and send them over. Both are under **Project Settings**: **Data API** for the URL, **API Keys** for the key. The app needs the URL without `/rest/v1`. Both projects are now recorded in `src/lib/supabaseConfig.ts`.
 
 Until the app uses them, the projects may pause after a week without activity. That's harmless: press **Restore** in the dashboard when we need them.
 

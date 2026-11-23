@@ -2,6 +2,7 @@
 // with no vault, no GitHub and no writes to the real encrypted cache. Used to preview UI.
 // Imported dynamically behind import.meta.env.DEV, so it never ships in the build.
 import { Store } from '../lib/store';
+import { memoryRemote } from '../lib/remote';
 import type { Unlocked } from '../lib/vault';
 import { addDays, today, uid } from '../lib/util';
 import { emptyData, type AppData, type Session } from '../lib/types';
@@ -93,7 +94,7 @@ function sampleDraft() {
 export async function openDemo(): Promise<{ unlocked: Unlocked; store: Store }> {
   const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
   const unlocked: Unlocked = { key, cfg: { owner: 'demo', repo: 'gymxp-data', token: 'demo' } };
-  const store = new Store(key, unlocked.cfg);
+  const store = new Store(key, memoryRemote());
   const drafts = new Map<string, unknown>();
   if (location.search.includes('draft')) drafts.set('gymxp:draft', sampleDraft());
   // Keep everything in memory: never touch GitHub or the real encrypted cache.

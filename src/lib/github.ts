@@ -1,19 +1,13 @@
-// Minimal GitHub REST client for reading/writing files in the private data repo.
-import { b64ToUtf8, utf8ToB64 } from './crypto';
+// Minimal GitHub REST client for reading/writing files in the private data repo, and the
+// Remote that syncs data.json through it.
+import { b64ToUtf8, bytesToB64, utf8ToB64 } from './crypto';
+import { AuthError, ConflictError, RemoteError, type Remote } from './remote';
 
 export interface GhConfig {
   token: string;
   owner: string;
   repo: string;
 }
-
-export class GhError extends Error {
-  constructor(message: string, readonly status: number) {
-    super(message);
-  }
-}
-export class ConflictError extends GhError {}
-export class AuthError extends GhError {}
 
 const API = 'https://api.github.com';
 
@@ -31,7 +25,7 @@ async function gh(cfg: GhConfig, path: string, init: RequestInit = {}, accept = 
       },
     });
   } catch {
-    throw new GhError('Network error: you may be offline', 0);
+    throw new RemoteError('Network error: you may be offline', 0);
   }
   if (res.ok || res.status === 404) return res;
   let msg = `GitHub error ${res.status}`;
@@ -40,10 +34,10 @@ async function gh(cfg: GhConfig, path: string, init: RequestInit = {}, accept = 
     if (j?.message) msg = `${msg}: ${j.message}`;
   } catch { /* ignore */ }
   if (res.status === 401) throw new AuthError('GitHub rejected the token (expired or revoked?)', 401);
-  if (res.status === 403 && /rate limit/i.test(msg)) throw new GhError('GitHub rate limit hit, try again in a few minutes', 403);
+  if (res.status === 403 && /rate limit/i.test(msg)) throw new RemoteError('GitHub rate limit hit, try again in a few minutes', 403);
   if (res.status === 403) throw new AuthError(`Token lacks permission for this repo. ${msg}`, 403);
   if (res.status === 409 || (res.status === 422 && /sha/i.test(msg))) throw new ConflictError('File changed on another device', res.status);
-  throw new GhError(msg, res.status);
+  throw new RemoteError(msg, res.status);
 }
 
 export interface RepoInfo {
@@ -54,7 +48,7 @@ export interface RepoInfo {
 
 export async function checkRepo(cfg: GhConfig): Promise<RepoInfo> {
   const res = await gh(cfg, '');
-  if (res.status === 404) throw new GhError('Repository not found. Check the owner/name, and that the token has access to it.', 404);
+  if (res.status === 404) throw new RemoteError('Repository not found. Check the owner/name, and that the token has access to it.', 404);
   const j = await res.json();
   return { fullName: j.full_name, isPrivate: !!j.private, canPush: !!j.permissions?.push };
 }
@@ -76,7 +70,7 @@ export async function putFile(cfg: GhConfig, path: string, contentB64: string, m
     method: 'PUT',
     body: JSON.stringify({ message, content: contentB64, ...(sha ? { sha } : {}) }),
   });
-  if (res.status === 404) throw new GhError('Repository not found or token has no write access', 404);
+  if (res.status === 404) throw new RemoteError('Repository not found or token has no write access', 404);
   const j = await res.json();
   return j.content.sha as string;
 }
@@ -88,4 +82,21 @@ export async function getBinaryFile(cfg: GhConfig, path: string): Promise<Blob |
   const res = await gh(cfg, filePath(path), {}, 'application/vnd.github.raw+json');
   if (res.status === 404) return null;
   return res.blob();
+}
+
+const DATA_PATH = 'data.json';
+
+/** Sync through the private data repo: each save is a commit, and the file's SHA is its version. */
+export function githubRemote(cfg: GhConfig): Remote {
+  return {
+    async load() {
+      const f = await getTextFile(cfg, DATA_PATH);
+      return f && { text: f.text, version: f.sha };
+    },
+    save: (text, version, message) => putTextFile(cfg, DATA_PATH, text, message, version),
+    async putFile(path, file) {
+      await putFile(cfg, path, bytesToB64(new Uint8Array(await file.arrayBuffer())), 'Add exercise photo');
+    },
+    getFile: (path) => getBinaryFile(cfg, path),
+  };
 }

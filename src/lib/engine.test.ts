@@ -25,6 +25,8 @@ import { MAPPED } from '../components/BodyMap';
 import { checkRotation, planVolume } from './routineCheck';
 import { bmiApplies, goalAllowed, goalReached, hardHeartRate, minGoalKg, trendKg, whtrLabel, whtrOf } from './body';
 import { e1rm } from './engine';
+import { Store } from './store';
+import { AuthError, memoryRemote } from './remote';
 
 let n = 0;
 const sess = (date: string, exercises: Session['exercises'], extra: Partial<Session> = {}): Session => ({
@@ -2086,5 +2088,96 @@ describe('glutes and lower body', () => {
     expect(top('patada de burro')).toBe('Glute_Kickback');
     expect(top('peso muerto sumo')).toBe('Sumo_Deadlift');
     expect(top('flexiones de rodillas')).toBe('Knee_Push-Up');
+  });
+});
+describe('sync through a Remote', () => {
+  // Store runs in the browser: give it just enough of one.
+  beforeEach(() => {
+    const mem = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (k: string) => mem.get(k) ?? null,
+      setItem: (k: string, v: string) => void mem.set(k, v),
+      removeItem: (k: string) => void mem.delete(k),
+    });
+    vi.stubGlobal('window', {
+      setTimeout: (fn: () => void, ms: number) => setTimeout(fn, ms),
+      clearTimeout: (t: ReturnType<typeof setTimeout>) => clearTimeout(t),
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    });
+    vi.stubGlobal('document', { addEventListener: () => {}, removeEventListener: () => {}, visibilityState: 'visible' });
+    vi.stubGlobal('navigator', { onLine: true });
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  const weighIn = (id: string, kg: number) => ({ id, date: '2026-11-20', kg, updatedAt: 1 });
+  const withWeights = (...ws: ReturnType<typeof weighIn>[]) => JSON.stringify({ ...emptyData(), weights: ws });
+  const kgs = (text?: string) => (JSON.parse(text ?? '{}').weights ?? []).map((w: { kg: number }) => w.kg).sort();
+  async function opened(remote: ReturnType<typeof memoryRemote>) {
+    const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    const store = new Store(key, remote);
+    await store.open();
+    return store;
+  }
+
+  it('creates the data on first sync', async () => {
+    const remote = memoryRemote();
+    const store = await opened(remote);
+    expect(remote.saves).toBe(1);
+    expect(JSON.parse(remote.text!).sessions).toEqual([]);
+    expect(store.getState().status).toBe('synced');
+    store.dispose();
+  });
+
+  it('loads what was saved and saves edits on top', async () => {
+    const remote = memoryRemote(withWeights(weighIn('a', 80)));
+    const store = await opened(remote);
+    expect(store.getState().data.weights.map((w) => w.kg)).toEqual([80]);
+    store.update((d) => void d.weights.push(weighIn('b', 81)), 'Weigh-in');
+    await store.syncNow();
+    expect(kgs(remote.text)).toEqual([80, 81]);
+    expect(store.getState().dirty).toBe(false);
+    store.dispose();
+  });
+
+  it("merges another device's save instead of overwriting it", async () => {
+    const remote = memoryRemote(withWeights(weighIn('a', 80)));
+    const store = await opened(remote);
+    remote.otherDeviceSaves(withWeights(weighIn('a', 80), weighIn('phone', 79)));
+    store.update((d) => void d.weights.push(weighIn('laptop', 82)), 'Weigh-in');
+    await store.syncNow();
+    expect(kgs(remote.text)).toEqual([79, 80, 82]);
+    expect(store.getState().data.weights.map((w) => w.kg).sort()).toEqual([79, 80, 82]);
+    expect(store.getState().status).toBe('synced');
+    store.dispose();
+  });
+
+  it('stops retrying when the credentials are rejected', async () => {
+    const remote = memoryRemote(withWeights());
+    const store = await opened(remote);
+    let tries = 0;
+    remote.save = async () => {
+      tries++;
+      throw new AuthError('Rejected', 401);
+    };
+    vi.useFakeTimers();
+    store.update((d) => void d.weights.push(weighIn('b', 81)), 'Weigh-in');
+    await store.syncNow();
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(tries).toBe(1);
+    expect(store.getState()).toMatchObject({ status: 'error', dirty: true, error: 'Rejected' });
+    store.dispose();
+  });
+
+  it('reads photos through the remote', async () => {
+    const remote = memoryRemote(withWeights());
+    const store = await opened(remote);
+    await remote.putFile('photos/a.jpg', new Blob(['jpeg']));
+    expect(await store.photoUrl('photos/a.jpg')).toMatch(/^blob:/);
+    await expect(store.photoUrl('photos/none.jpg')).rejects.toThrow('Photo not found');
+    store.dispose();
   });
 });

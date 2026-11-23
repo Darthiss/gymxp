@@ -1,14 +1,13 @@
-// App data store: encrypted local cache for instant/offline use + sync to data.json
-// in the private GitHub repo. Concurrent edits from two devices are merged per record.
+// App data store: encrypted local cache for instant/offline use + sync of data.json through
+// a Remote (lib/remote.ts). Concurrent edits from two devices are merged per record.
 import { useSyncExternalStore } from 'react';
-import { seal, unseal, bytesToB64, type Sealed } from './crypto';
-import { ConflictError, AuthError, getBinaryFile, getTextFile, putFile, putTextFile, type GhConfig } from './github';
+import { seal, unseal, type Sealed } from './crypto';
+import { AuthError, ConflictError, type Remote } from './remote';
 import { mergeData, normalizeData } from './merge';
 import { emptyData, type AppData } from './types';
 import { CACHE_KEY, touchKey } from './vault';
 import { uid } from './util';
 
-const DATA_PATH = 'data.json';
 const DRAFT_KEY = 'gymxp:draft';
 export const IMPORT_DRAFT_KEY = 'gymxp:import';
 
@@ -25,7 +24,8 @@ export interface StoreState {
 
 interface CachePayload {
   data: AppData;
-  sha?: string;
+  version?: string; // the remote version this cache was last synced at
+  sha?: string; // its name before A.2, still read from older caches
   dirty: boolean;
   lastSync?: number;
 }
@@ -33,7 +33,7 @@ interface CachePayload {
 export class Store {
   private state: StoreState = { data: emptyData(), status: 'loading', dirty: false, ready: false };
   private listeners = new Set<() => void>();
-  private sha?: string;
+  private remoteVersion?: string;
   private version = 0; // bumps on every local edit
   private pushTimer?: number;
   private pushing = false;
@@ -42,7 +42,7 @@ export class Store {
   private lastPull = 0;
   private disposed = false;
 
-  constructor(private key: CryptoKey, private cfg: GhConfig) {}
+  constructor(private key: CryptoKey, private remote: Remote) {}
 
   // ---- subscription ----
   subscribe = (fn: () => void) => {
@@ -55,15 +55,11 @@ export class Store {
     this.listeners.forEach((l) => l());
   }
 
-  get config() {
-    return this.cfg;
-  }
-
   // ---- lifecycle ----
   async open() {
     const cached = await this.readCache();
     if (cached) {
-      this.sha = cached.sha;
+      this.remoteVersion = cached.version ?? cached.sha;
       this.set({ data: normalizeData(cached.data), dirty: cached.dirty, lastSync: cached.lastSync, ready: true });
     }
     window.addEventListener('online', this.onOnline);
@@ -92,10 +88,10 @@ export class Store {
   };
 
   /** Replace the encryption key (after a PIN change) and re-encrypt the cache. */
-  async rekey(key: CryptoKey, cfg: GhConfig) {
+  async rekey(key: CryptoKey, remote: Remote) {
     const drafts = await Promise.all([DRAFT_KEY, IMPORT_DRAFT_KEY].map(async (k) => [k, await this.loadDraft(k)] as const));
     this.key = key;
-    this.cfg = cfg;
+    this.remote = remote;
     await this.writeCache();
     for (const [k, d] of drafts) if (d) await this.saveDraft(d, k);
   }
@@ -113,7 +109,7 @@ export class Store {
 
   private async writeCache() {
     try {
-      const payload: CachePayload = { data: this.state.data, sha: this.sha, dirty: this.state.dirty, lastSync: this.state.lastSync };
+      const payload: CachePayload = { data: this.state.data, version: this.remoteVersion, dirty: this.state.dirty, lastSync: this.state.lastSync };
       localStorage.setItem(CACHE_KEY, JSON.stringify(await seal(this.key, payload)));
     } catch (e) {
       console.warn('cache write failed', e);
@@ -150,10 +146,10 @@ export class Store {
     if (!this.state.ready) this.set({ status: 'loading' });
     const v0 = this.version;
     try {
-      const remote = await getTextFile(this.cfg, DATA_PATH);
+      const remote = await this.remote.load();
       if (!remote) {
-        // First run against an empty repo: create the file.
-        this.sha = undefined;
+        // Nothing saved yet: create it.
+        this.remoteVersion = undefined;
         this.set({ dirty: true });
         await this.push(true);
         return;
@@ -161,11 +157,11 @@ export class Store {
       const remoteData = normalizeData(JSON.parse(remote.text));
       if (this.state.dirty || this.version !== v0) {
         // Local edits exist (possibly made while we were fetching): merge, never overwrite.
-        this.sha = remote.sha;
+        this.remoteVersion = remote.version;
         this.set({ data: mergeData(this.state.data, remoteData) });
         await this.push(true);
       } else {
-        this.sha = remote.sha;
+        this.remoteVersion = remote.version;
         this.set({ data: remoteData, status: 'synced', error: undefined, lastSync: Date.now() });
         await this.writeCache();
       }
@@ -187,7 +183,7 @@ export class Store {
     this.set({ status: 'saving' });
     try {
       const text = JSON.stringify(this.state.data);
-      this.sha = await putTextFile(this.cfg, DATA_PATH, text, message, this.sha);
+      this.remoteVersion = await this.remote.save(text, this.remoteVersion, message);
       this.pendingMessages = this.pendingMessages.slice(msgs.length);
       const stillDirty = this.version !== versionAtStart;
       this.set({ dirty: stillDirty, status: 'synced', error: undefined, lastSync: Date.now() });
@@ -197,11 +193,11 @@ export class Store {
     } catch (e) {
       this.pushing = false;
       if (e instanceof ConflictError && attempt < 3) {
-        // Someone (another device) changed data.json: fetch, merge, retry.
+        // Someone (another device) saved first: fetch, merge, retry.
         try {
-          const remote = await getTextFile(this.cfg, DATA_PATH);
+          const remote = await this.remote.load();
           if (remote) {
-            this.sha = remote.sha;
+            this.remoteVersion = remote.version;
             this.set({ data: mergeData(this.state.data, normalizeData(JSON.parse(remote.text))) });
           }
           return this.push(true, attempt + 1);
@@ -243,8 +239,7 @@ export class Store {
   async uploadPhoto(file: Blob): Promise<string> {
     const jpeg = await downscaleJpeg(file, 1280, 0.8);
     const path = `photos/${uid()}.jpg`;
-    const b64 = bytesToB64(new Uint8Array(await jpeg.arrayBuffer()));
-    await putFile(this.cfg, path, b64, 'Add exercise photo');
+    await this.remote.putFile(path, jpeg);
     this.photoCache.set(path, Promise.resolve(URL.createObjectURL(jpeg)));
     return path;
   }
@@ -252,7 +247,7 @@ export class Store {
   photoUrl(path: string): Promise<string> {
     let p = this.photoCache.get(path);
     if (!p) {
-      p = getBinaryFile(this.cfg, path).then((b) => {
+      p = this.remote.getFile(path).then((b) => {
         if (!b) throw new Error('Photo not found');
         return URL.createObjectURL(b);
       });
